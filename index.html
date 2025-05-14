@@ -5,51 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Вход в систему задач</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f0f0f0;
+        /* Твои стили остаются без изменений */
+        body { 
+            font-family: Arial, sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+            background-color: #f0f0f0; 
         }
-        .login-container {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            width: 300px;
-            text-align: center;
+        .login-container { 
+            background-color: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 0 10px rgba(0,0,0,0.1); 
+            width: 300px; 
+            text-align: center; 
         }
-        .login-container h2 {
-            margin-bottom: 20px;
+        .login-container h2 { margin-bottom: 20px; }
+        .login-container input { 
+            width: 100%; 
+            padding: 10px; 
+            margin: 10px 0; 
+            border: 1px solid #ccc; 
+            border-radius: 4px; 
+            box-sizing: border-box; 
         }
-        .login-container input {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
+        .login-container button { 
+            width: 100%; 
+            padding: 10px; 
+            background-color: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
         }
-        .login-container button {
-            width: 100%;
-            padding: 10px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .login-container button:hover {
-            background-color: #0056b3;
-        }
-        .error {
-            color: red;
-            margin-top: 10px;
-            display: none;
-        }
+        .login-container button:hover { background-color: #0056b3; }
+        .error { color: red; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
@@ -67,11 +60,9 @@
             const password = document.getElementById('password').value;
             const errorElement = document.getElementById('error');
 
-            // Очищаем сообщение об ошибке
             errorElement.style.display = 'none';
             errorElement.textContent = '';
 
-            // Формируем JSON для отправки
             const data = {
                 phoneNumber: phoneNumber,
                 password: password
@@ -86,20 +77,44 @@
                     body: JSON.stringify(data)
                 });
 
+                // Проверяем, вернул ли сервер ошибку HTTP (например, 400, 401, 500)
+                if (!response.ok) {
+                    // Пытаемся прочитать тело ошибки, если оно есть и в JSON
+                    let errorMessage = `Ошибка ${response.status}: ${response.statusText}`;
+                    try {
+                        const errorResult = await response.json();
+                        errorMessage = errorResult.message || errorMessage;
+                    } catch (e) {
+                        // Если тело ошибки не JSON или пустое, используем стандартное сообщение
+                    }
+                    errorElement.textContent = errorMessage;
+                    errorElement.style.display = 'block';
+                    return; // Прерываем выполнение функции
+                }
+
                 const result = await response.json();
 
                 if (result.success) {
                     // Успешная авторизация
-                    alert(`Добро пожаловать, ${result.userName}! Ваш ID: ${result.userId}`);
-                    // Здесь можно перенаправить на другую страницу или показать список задач
+                    // Сохраняем нужные данные в localStorage
+                    localStorage.setItem('userName', result.userName);
+                    localStorage.setItem('userId', result.userId); // GUID
+                    localStorage.setItem('userCode', result.userCode); // Код пользователя (например, "000000279")
+
+                    // alert(`Добро пожаловать, ${result.userName}! Ваш ID: ${result.userId}, Ваш Код: ${result.userCode}`); // Можно убрать или оставить для отладки
+                    
+                    // Перенаправляем на страницу со списком задач
+                    window.location.href = 'tasks.html'; // Предполагаем, что страница будет называться tasks.html
+
                 } else {
-                    // Ошибка авторизации
+                    // Ошибка авторизации, которую вернул наш API (например, "Неверный номер телефона или пароль.")
                     errorElement.textContent = result.message || 'Ошибка входа';
                     errorElement.style.display = 'block';
                 }
             } catch (error) {
-                // Ошибка сети или сервера
-                errorElement.textContent = 'Ошибка сервера: ' + error.message;
+                // Ошибка сети или другая проблема с fetch
+                console.error('Ошибка при выполнении запроса login:', error);
+                errorElement.textContent = 'Ошибка сети или сервера: ' + error.message;
                 errorElement.style.display = 'block';
             }
         }
