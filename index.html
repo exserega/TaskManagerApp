@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вход в систему задач</title>
+    <title>Регистрация</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh; /* Изменено: используем min-height для адаптивности */
+            height: 100vh;
             margin: 0;
             background-color: #f0f0f0;
         }
-        .container { /* Общий контейнер для формы и приветствия */
+        .register-container {
             background-color: white;
             padding: 20px;
             border-radius: 8px;
@@ -22,159 +22,78 @@
             width: 300px;
             text-align: center;
         }
-        .container h2 {
+        .register-container h2 {
             margin-bottom: 20px;
         }
-        .form-group { /* Добавлен класс для группировки label и input */
-            margin-bottom: 15px;
-            text-align: left;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        .form-group input {
+        .register-container input {
             width: 100%;
             padding: 10px;
+            margin: 10px 0;
             border: 1px solid #ccc;
             border-radius: 4px;
             box-sizing: border-box;
         }
-        button {
+        .register-container button {
             width: 100%;
             padding: 10px;
-            background-color: #007bff;
+            background-color: #28a745;
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 16px; /* Добавлен размер шрифта */
-            transition: background-color 0.3s ease; /* Плавное изменение цвета */
         }
-        button:hover {
-            background-color: #0056b3;
+        .register-container button:hover {
+            background-color: #218838;
         }
         .error {
             color: red;
             margin-top: 10px;
-            min-height: 1.2em; /* Занимает место, даже если пусто */
-        }
-        #welcomeMessage { /* Стили для приветственного сообщения */
-            margin-top: 20px;
-            font-size: 1.1em;
-            color: #333;
-        }
-        #logoutButton { /* Стили для кнопки выхода */
-            margin-top: 15px;
-            background-color: #dc3545; /* Красный цвет для кнопки выхода */
-        }
-        #logoutButton:hover {
-             background-color: #c82333;
-        }
-        /* Классы для скрытия/отображения элементов */
-        .hidden {
             display: none;
+        }
+        .success {
+            color: green;
+            margin-top: 10px;
+            display: none;
+        }
+        .link {
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div id="loginSection">
-            <h2>Вход в систему</h2>
-            <form id="loginForm">
-                 <div class="form-group">
-                    <label for="phoneNumber">Номер телефона:</label>
-                    <input type="text" id="phoneNumber" placeholder="Номер телефона" required>
-                 </div>
-                 <div class="form-group">
-                    <label for="password">Пароль:</label>
-                    <input type="password" id="password" placeholder="Пароль" required>
-                 </div>
-                <button type="submit">Войти</button> </form>
-            <p id="errorMessage" class="error"></p> </div>
-
-        <div id="welcomeSection" class="hidden">
-            <h2>Добро пожаловать!</h2>
-            <p id="welcomeMessage"></p>
-            <button id="logoutButton">Выйти</button>
+    <div class="register-container">
+        <h2>Регистрация</h2>
+        <input type="text" id="phoneNumber" placeholder="Номер телефона" required>
+        <input type="password" id="password" placeholder="Пароль" required>
+        <button onclick="register()">Зарегистрироваться</button>
+        <p id="error" class="error"></p>
+        <p id="success" class="success"></p>
+        <div class="link">
+            <a href="/index.html">Уже есть аккаунт? Войти</a>
         </div>
     </div>
 
     <script>
-        // URL вашего HTTP-сервиса авторизации
-        const LOGIN_API_URL = 'https://1c.c-r.kz/Registrator_test/hs/ClientAPI/auth/login';
+        async function register() {
+            const phoneNumber = document.getElementById('phoneNumber').value;
+            const password = document.getElementById('password').value;
+            const errorElement = document.getElementById('error');
+            const successElement = document.getElementById('success');
 
-        // Получаем ссылки на элементы формы и приветствия
-        const loginSection = document.getElementById('loginSection');
-        const welcomeSection = document.getElementById('welcomeSection');
-        const loginForm = document.getElementById('loginForm');
-        const phoneNumberInput = document.getElementById('phoneNumber');
-        const passwordInput = document.getElementById('password');
-        const errorMessageElement = document.getElementById('errorMessage'); // Обновлено id
-        const welcomeMessageElement = document.getElementById('welcomeMessage');
-        const logoutButton = document.getElementById('logoutButton');
+            // Очищаем сообщения
+            errorElement.style.display = 'none';
+            errorElement.textContent = '';
+            successElement.style.display = 'none';
+            successElement.textContent = '';
 
-        // Функция для отображения сообщений об ошибке
-        function displayError(message) {
-            errorMessageElement.textContent = message;
-            errorMessageElement.style.display = 'block';
-        }
-
-        // Функция для скрытия сообщения об ошибке
-        function hideError() {
-             errorMessageElement.textContent = '';
-             errorMessageElement.style.display = 'none';
-        }
-
-        // Функция для отображения секции входа
-        function showLoginSection() {
-            loginSection.classList.remove('hidden');
-            welcomeSection.classList.add('hidden');
-            hideError(); // Скрываем ошибки при показе формы входа
-        }
-
-        // Функция для отображения секции приветствия
-        function showWelcomeSection(userName, userId) {
-            loginSection.classList.add('hidden');
-            welcomeSection.classList.remove('hidden');
-            welcomeMessageElement.textContent = `Добро пожаловать, ${userName}! Ваш ID: ${userId}`;
-            hideError(); // Скрываем ошибки, если они были
-        }
-
-        // Функция для сохранения данных пользователя после успешного входа
-        function saveUserData(userId, userName) {
-            localStorage.setItem('userId', userId);
-            localStorage.setItem('userName', userName);
-        }
-
-        // Функция для получения данных пользователя из локального хранилища
-        function getUserData() {
-            const userId = localStorage.getItem('userId');
-            const userName = localStorage.getItem('userName');
-            if (userId && userName) {
-                return { userId, userName };
-            }
-            return null;
-        }
-
-        // Функция для удаления данных пользователя при выходе
-        function clearUserData() {
-            localStorage.removeItem('userId');
-            localStorage.removeItem('userName');
-        }
-
-        // Асинхронная функция для отправки запроса авторизации
-        async function performLogin(phoneNumber, password) {
-            hideError(); // Очищаем предыдущие ошибки
-
+            // Формируем JSON для отправки
             const data = {
                 phoneNumber: phoneNumber,
                 password: password
             };
 
             try {
-                const response = await fetch(LOGIN_API_URL, {
+                const response = await fetch('https://1c.c-r.kz/Registrator_test/hs/auth/register', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -182,68 +101,23 @@
                     body: JSON.stringify(data)
                 });
 
-                // Проверяем статус ответа. Если не 2xx, считаем ошибкой (кроме 401, который обрабатываем отдельно)
-                if (!response.ok && response.status !== 401 && response.status !== 400) {
-                     // Если статус 500 или другой неожиданный
-                    const errorText = await response.text(); // Пытаемся прочитать текст ошибки
-                    throw new Error(`Ошибка HTTP: ${response.status} - ${response.statusText}. Ответ сервера: ${errorText}`);
-                }
-
-                // Пытаемся прочитать ответ как JSON
                 const result = await response.json();
 
-                if (response.status === 200 && result.success) {
-                    // Успешная авторизация
-                    saveUserData(result.userId, result.userName); // Сохраняем данные
-                    showWelcomeSection(result.userName, result.userId); // Показываем приветствие
-                } else if ((response.status === 401 || response.status === 400) && !result.success) {
-                    // Ошибка авторизации или неверный формат данных (обработанный 1С)
-                    displayError(result.message || 'Ошибка входа');
+                if (result.success) {
+                    // Успешная регистрация
+                    successElement.textContent = 'Регистрация прошла успешно! Теперь вы можете войти.';
+                    successElement.style.display = 'block';
                 } else {
-                    // Неожиданный формат ответа от сервера
-                     displayError('Неожиданный ответ от сервера.');
-                     console.error('Неожиданный ответ:', result); // Логируем для отладки
+                    // Ошибка регистрации
+                    errorElement.textContent = result.message || 'Ошибка регистрации';
+                    errorElement.style.display = 'block';
                 }
-
             } catch (error) {
-                // Ошибка сети, CORS, или другие исключения
-                displayError('Ошибка при выполнении запроса: ' + error.message);
-                console.error('Ошибка fetch:', error); // Логируем для отладки
+                // Ошибка сети или сервера
+                errorElement.textContent = 'Ошибка сервера: ' + error.message;
+                errorElement.style.display = 'block';
             }
         }
-
-        // Обработчик отправки формы
-        loginForm.addEventListener('submit', function(event) {
-            event.preventDefault(); // Предотвращаем стандартную отправку формы (перезагрузку страницы)
-
-            const phoneNumber = phoneNumberInput.value.trim(); // Убираем пробелы
-            const password = passwordInput.value.trim();
-
-            if (phoneNumber && password) {
-                performLogin(phoneNumber, password);
-            } else {
-                displayError('Пожалуйста, введите номер телефона и пароль.');
-            }
-        });
-
-        // Обработчик кнопки выхода
-        logoutButton.addEventListener('click', function() {
-            clearUserData(); // Очищаем данные пользователя
-            showLoginSection(); // Показываем форму входа
-        });
-
-        // Проверяем статус авторизации при загрузке страницы
-        document.addEventListener('DOMContentLoaded', function() {
-            const userData = getUserData();
-            if (userData) {
-                // Если данные пользователя найдены, показываем приветствие
-                showWelcomeSection(userData.userName, userData.userId);
-            } else {
-                // Иначе показываем форму входа
-                showLoginSection();
-            }
-        });
-
     </script>
 </body>
 </html>
