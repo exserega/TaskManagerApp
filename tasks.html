@@ -7,160 +7,105 @@
     <style>
        /* Общие стили для страницы */
 /* Общие стили для страницы */
+/* Общие стили */
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; /* Более системный стек шрифтов */
-    margin: 0;
-    padding: 20px;
-    background-color: #f4f6f8; /* Чуть другой оттенок серого фона */
-    color: #333; /* Основной цвет текста */
-    line-height: 1.65; /* Улучшенная читаемость */
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; /* Современный шрифт Inter, если доступен */
+    background-color: #f8f9fa; /* Очень светлый серый/голубоватый фон */
+    color: #343a40; /* Темно-серый для основного текста */
+    line-height: 1.6;
+    padding: 20px; /* Добавим padding для body, чтобы контейнер не прилипал к краям на малых экранах */
 }
 
 .container {
-    max-width: 1000px; /* Еще немного увеличим */
-    margin: 30px auto; 
+    max-width: 900px; /* Чуть уже для компактности */
+    margin: 40px auto;
     background-color: #ffffff;
-    padding: 30px 40px; /* Увеличим внутренние отступы */
-    border-radius: 16px; /* Более выраженное скругление */
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08); /* Более мягкая, но заметная тень */
+    padding: 35px 45px; /* Увеличим внутренние отступы */
+    border-radius: 10px; 
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Очень легкая тень */
 }
 
-/* Верхняя панель с именем пользователя */
+/* Верхняя панель */
 #topBar {
-    display: flex;
     justify-content: flex-end;
-    align-items: center;
-    padding-bottom: 15px;
-    margin-bottom: 25px;
-    font-size: 0.9em; /* Чуть меньше, чтобы не отвлекало */
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    font-size: 0.9em;
+    border-bottom: 1px solid #e9ecef; /* Более светлый разделитель */
 }
+#userNameDisplay { color: #495057; margin-right: 15px; }
+#userNameDisplay strong { color: #212529; font-weight: 500; }
+.logout-link-top { color: #007bff; }
 
-#userNameDisplay {
-    color: #555;
-    margin-right: 20px;
-}
-#userNameDisplay strong {
-    color: #000;
-    font-weight: 500;
-}
-
-.logout-link-top {
-    color: #007bff;
-    text-decoration: none;
-    font-weight: 500;
-}
-.logout-link-top:hover {
-    text-decoration: underline;
-}
-
-/* Блок с кнопкой "Новая Задача +" и заголовком "Мои задачи" */
+/* Заголовок и кнопка */
 .main-header {
     text-align: center;
-    margin-bottom: 35px; /* Увеличим отступ */
+    margin-bottom: 40px;
 }
-
-/* Кнопка "Новая Задача +" */
 .create-task-button {
-    display: inline-block;
-    padding: 18px 50px; /* Еще крупнее */
-    background-image: linear-gradient(to right, #007bff 0%, #0056b3 100%); /* Градиент */
+    padding: 16px 45px;
+    background-color: #007bff; /* Яркий синий акцент */
     color: white;
-    text-decoration: none;
-    border-radius: 10px; /* Немного большее скругление */
-    font-size: 1.35em;  /* Еще крупнее шрифт */
-    font-weight: 600; /* Более жирный */
-    border: none;
-    box-shadow: 0 5px 15px rgba(0, 91, 179, 0.3); /* Тень под цвет кнопки */
-    transition: all 0.3s ease; /* Более плавный переход */
-    margin-bottom: 25px; 
+    border-radius: 8px;
+    font-size: 1.25em;
+    font-weight: 500;
+    box-shadow: none; /* Плоская кнопка */
+    transition: background-color 0.2s ease;
+    margin-bottom: 25px;
 }
 .create-task-button:hover {
-    background-image: linear-gradient(to right, #0056b3 0%, #007bff 100%); /* Инверсия градиента */
-    box-shadow: 0 7px 20px rgba(0, 91, 179, 0.4);
-    transform: translateY(-3px); 
+    background-color: #0056b3;
+    transform: none; /* Убираем эффект подъема для минимализма */
+    box-shadow: none;
 }
-.create-task-button:active { /* Эффект при нажатии */
-    transform: translateY(-1px);
-    box-shadow: 0 3px 10px rgba(0, 91, 179, 0.3);
-}
-
-
-/* Заголовок "Мои задачи" */
-h1 { 
-    font-size: 2.5em; /* Крупнее */
-    color: #2c3e50; /* Более глубокий сине-серый */
-    margin-bottom: 30px; 
-    font-weight: 300; /* Более легкое начертание для современного вида */
-    letter-spacing: -0.5px; /* Немного уменьшим межбуквенное расстояние */
+h1 { /* Мои задачи */
+    font-size: 2.4em;
+    color: #212529; /* Очень темный, почти черный */
+    font-weight: 600; /* Более акцентный */
+    letter-spacing: -0.5px;
+    margin-bottom: 0; /* Уберем отступ, так как кнопка над ним */
 }
 
-/* Список задач */
-.task-list {
-    list-style: none;
-    padding: 0;
-}
-
+/* Карточки задач */
 .task-item {
-    background-color: #fff; /* Карточки снова белые для контраста с фоном body */
-    border: 1px solid #e0e0e0; /* Более светлая рамка */
-    padding: 25px; /* Увеличим отступы внутри карточки */
-    margin-bottom: 25px; 
-    border-radius: 12px; /* Согласуем скругление с контейнером */
-    box-shadow: 0 5px 10px rgba(0,0,0,0.06); 
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start; 
-    cursor: pointer;
-    transition: all 0.25s ease-in-out;
+    background-color: #fff;
+    border: 1px solid #e9ecef; /* Тонкая светлая рамка */
+    padding: 25px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04); /* Едва заметная тень */
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .task-item:hover {
-    border-color: #007bff; /* Яркая рамка при наведении */
-    box-shadow: 0 8px 15px rgba(0,0,0,0.1);
-    transform: translateY(-4px); 
+    border-color: #007bff;
+    box-shadow: 0 4px 10px rgba(0, 123, 255, 0.1);
+    transform: none; /* Убираем эффект подъема */
 }
-
-.task-info {
-    flex-grow: 1;
-    margin-right: 25px; /* Увеличим отступ */
+.task-info h3 { /* Тема и номер */
+    font-size: 1.3em;
+    color: #343a40;
+    font-weight: 600; /* Четкий заголовок задачи */
+    margin-bottom: 8px;
 }
-
-.task-info h3 { /* Краткое описание и номер */
-    margin: 0 0 12px 0; 
-    font-size: 1.4em; /* Еще крупнее */
-    color: #343a40;   
-    font-weight: 600; /* Жирнее для акцента */
-    line-height: 1.3; /* Если тема длинная */
-}
-
 .task-info p { /* Дата и клиент */
-    margin: 0 0 8px 0; 
-    font-size: 1.05em;  /* Крупнее */
-    color: #555e68; /* Чуть другой оттенок серого */
+    font-size: 0.95em;
+    color: #6c757d; /* Серый для второстепенной информации */
+    margin-bottom: 5px;
 }
-.task-info p:last-child {
-    margin-bottom: 0; /* Убираем нижний отступ у последнего параграфа в блоке */
+.task-status { /* Статус */
+    padding: 6px 14px;
+    border-radius: 6px; /* Менее круглый */
+    font-size: 0.85em;
+    font-weight: 500;
+    align-self: flex-start; /* Выравнивание по верху */
+    border: none; /* Убираем рамку, цвет фона будет достаточен */
 }
-
-
-/* Статус задачи */
-.task-status {
-    padding: 7px 18px; /* Увеличим */
-    border-radius: 8px; /* Менее круглые, более "таблеточные" */
-    font-size: 0.9em;  
-    font-weight: 500; /* Средняя жирность */
-    white-space: nowrap;
-    align-self: flex-start; /* Выравниваем по верху, если информация о задаче многострочная */
-    margin-top: 3px; /* Небольшой отступ сверху для выравнивания с текстом */
-    border: 1px solid transparent; /* Для консистентности, если у некоторых статусов будет рамка */
-}
-/* Обновленные цвета для статусов с лучшим контрастом и современным видом */
-.status-new { background-color: #fff3cd; color: #856404; border-color: #ffeeba; } /* Светло-желтый фон, темно-желтый текст и рамка */
-.status-in-progress { background-color: #cce5ff; color: #004085; border-color: #b8daff; } /* Светло-синий фон, темно-синий текст и рамка */
-.status-completed { background-color: #d4edda; color: #155724; border-color: #c3e6cb; } /* Светло-зеленый фон, темно-зеленый текст и рамка */
-.status-default { background-color: #e2e3e5; color: #383d41; border-color: #d6d8db; } /* Светло-серый */
-.status-согласование-оценки { background-color: #ffe8cc; color: #995400; border-color: #ffdabb; } /* Светло-оранжевый */
-.status-ожидает-ответа-клиента { background-color: #e6ddeb; color: #521b8a; border-color: #d9c6ec; } /* Светло-фиолетовый */
-
+/* Цвета для статусов (примеры, можно адаптировать) */
+.status-new { background-color: #e6f7ff; color: #005f8d; } /* Светло-голубой фон, темно-синий текст */
+.status-in-progress { background-color: #fff0e6; color: #b35f00; } /* Светло-оранжевый фон, темно-оранжевый текст */
+.status-completed { background-color: #e6fff0; color: #00692c; } /* Светло-зеленый фон, темно-зеленый текст */
+.status-согласование-оценки { background-color: #ffe6cc; color: #994d00; }
+.status-default { background-color: #f0f0f0; color: #555; }
 
 /* Сообщения */
 #loadingMessage, #errorMessage, #noTasksMessage {
