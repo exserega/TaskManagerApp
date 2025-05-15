@@ -223,7 +223,7 @@ h1 {
             const noTasksMessageDiv = document.getElementById('noTasksMessage');
 
             if (userNameDisplaySpan && userName && userCode) { // Добавил проверку userNameDisplaySpan на null
-                userNameDisplaySpan.innerHTML = `Пользователь: <strong>${userName}</strong> (Код: ${userCode})`;
+                userNameDisplaySpan.innerHTML = `Пользователь: <strong>${userName}</strong>`;
             } else if (!userName || !userCode) { // Если нет данных пользователя
                 // Можно добавить вывод в консоль, если userNameDisplaySpan не найден, для отладки
                 if (!userNameDisplaySpan) {
