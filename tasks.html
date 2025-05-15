@@ -170,13 +170,20 @@ h1 { /* Главный заголовок "Мои задачи" */
     </style>
 </head>
 <body>
-      <div class="container">
-        <div class="header-actions">
-            <div id="userInfo"></div>
-            <a href="#" class="create-task-button" onclick="alert('Функционал создания задачи будет добавлен позже'); return false;">Новая Задача +</a>
+     <div class="container">
+        <div id="topBar"> <span id="userNameDisplay"></span> <a href="index.html" onclick="logout()" class="logout-link-top">Выйти</a> </div>
+
+        <div class="main-header"> <a href="#" class="create-task-button" onclick="alert('Функционал создания задачи будет добавлен позже'); return false;">Новая Задача +</a>
+            <h1>Мои задачи</h1>
         </div>
-        
-        <h1>Мои задачи</h1> <div id="loadingMessage" style="display: none;">Загрузка задач...</div>
+                
+        <div id="loadingMessage" style="display: none;">Загрузка задач...</div>
+        <div id="errorMessage" class="error-message" style="display: none;"></div>
+        <ul id="taskListContainer" class="task-list">
+            </ul>
+        <div id="noTasksMessage" style="display: none;">У вас пока нет задач.</div>
+
+        </div>
         <div id="errorMessage" class="error-message" style="display: none;"></div>
         <ul id="taskListContainer" class="task-list">
             </ul>
