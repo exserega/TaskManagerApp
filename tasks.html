@@ -29,80 +29,111 @@
             background-color: #e7f3fe;
             border-left: 5px solid #2196F3;
         }
-        .task-list {
-            list-style: none;
-            padding: 0;
-        }
-        .task-item {
-            background-color: #f9f9f9;
-            border: 1px solid #eee;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .task-item h3 {
-            margin: 0 0 5px 0;
-            font-size: 1.1em;
-        }
-        .task-item p {
-            margin: 0;
-            font-size: 0.9em;
-            color: #555;
-        }
-        .task-status {
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 0.8em;
-            font-weight: bold;
-        }
-        .status-new { background-color: #ffc107; color: #fff; }
-        .status-in-progress { background-color: #03a9f4; color: #fff; }
-        .status-completed { background-color: #4caf50; color: #fff; }
-        .status-default { background-color: #9e9e9e; color: #fff; }
-        #loadingMessage, #errorMessage, #noTasksMessage {
-            text-align: center;
-            padding: 20px;
-            font-size: 1.1em;
-        }
-        .error-message {
-            color: red;
-            border: 1px solid red;
-            background-color: #ffebee;
-        }
-        /* Стили для кнопки "Создать задачу" (пока просто для вида) */
-        .create-task-button {
-            display: inline-block;
-            padding: 10px 20px;
-            margin-top: 20px;
-            background-color: #007bff;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            text-align: center;
-        }
-        .create-task-button:hover {
-            background-color: #0056b3;
-        }
+      .task-list {
+    list-style: none;
+    padding: 0;
+}
+
+.task-item {
+    background-color: #ffffff; /* Сделаем фон карточки белым */
+    border: 1px solid #ddd;    /* Добавим рамку */
+    padding: 15px;
+    margin-bottom: 15px;      /* Увеличим отступ между карточками */
+    border-radius: 8px;       /* Скруглим углы сильнее */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Легкая тень для объема */
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start; /* Выравнивание по верху, если контент разной высоты */
+    cursor: pointer; /* Оставляем курсор-указатель */
+}
+
+.task-item:hover {
+    border-color: #007bff; /* Подсветка рамки при наведении */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Контейнер для основной информации о задаче (номер, тема, дата, клиент) */
+.task-info { /* Мы добавили этот div в JS при формировании HTML */
+    flex-grow: 1; /* Занимает доступное пространство, отодвигая статус вправо */
+    margin-right: 15px; /* Отступ от статуса */
+}
+
+.task-info h3 {
+    margin: 0 0 8px 0; /* Увеличим нижний отступ у заголовка */
+    font-size: 1.2em;  /* Немного увеличим шрифт заголовка */
+    color: #333;
+}
+
+.task-info p {
+    margin: 0 0 4px 0; /* Небольшие отступы между параграфами */
+    font-size: 0.95em;
+    color: #555;
+}
+
+.task-status {
+    padding: 6px 12px; /* Немного увеличим padding */
+    border-radius: 20px; /* Сильнее скруглим */
+    font-size: 0.85em;
+    font-weight: bold;
+    white-space: nowrap; /* Чтобы текст статуса не переносился */
+    align-self: center; /* Вертикальное выравнивание статуса по центру, если контент задачи высокий */
+}
+
+/* ... (существующие стили для status-new, status-in-progress и т.д. остаются) ... */
+/* ... (стили для loadingMessage, errorMessage, noTasksMessage остаются) ... */
+
+/* Кнопка "Создать новую задачу" - переместим ее наверх и стилизуем */
+.header-actions {
+    display: flex;
+    justify-content: space-between; /* Чтобы приветствие и кнопка были по разным сторонам */
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+#userInfo { /* Немного изменим userInfo, чтобы он был частью header-actions */
+    margin-bottom: 0; /* Убираем нижний отступ, так как он теперь в .header-actions */
+    /* Остальные стили для userInfo можно оставить или адаптировать */
+}
+
+.create-task-button {
+    display: inline-block;
+    padding: 12px 25px; /* Увеличим кнопку */
+    background-color: #28a745; /* Зеленый цвет, как часто бывает для "Создать" */
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 1em;
+    font-weight: bold;
+    text-align: center;
+    border: none; /* Убираем рамку, если она не нужна */
+}
+.create-task-button:hover {
+    background-color: #218838; /* Более темный зеленый при наведении */
+}
+
+/* Ссылка Выйти - можно тоже немного стилизовать */
+.logout-link {
+    display: block; /* Чтобы занимала всю ширину и была под кнопкой */
+    margin-top: 30px;
+    text-align: right; /* Например, справа */
+    color: #007bff;
+}
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Система управления задачами</h1>
-        <div id="userInfo"></div>
-
-        <h2>Мои задачи</h2>
-        <div id="loadingMessage" style="display: none;">Загрузка задач...</div>
+      <div class="container">
+        <div class="header-actions">
+            <div id="userInfo"></div>
+            <a href="#" class="create-task-button" onclick="alert('Функционал создания задачи будет добавлен позже'); return false;">Новая Задача +</a>
+        </div>
+        
+        <h1>Мои задачи</h1> <div id="loadingMessage" style="display: none;">Загрузка задач...</div>
         <div id="errorMessage" class="error-message" style="display: none;"></div>
         <ul id="taskListContainer" class="task-list">
             </ul>
         <div id="noTasksMessage" style="display: none;">У вас пока нет задач.</div>
 
-        <a href="#" class="create-task-button" onclick="alert('Функционал создания задачи будет добавлен позже'); return false;">Создать новую задачу</a>
-        <br><br>
-        <a href="index.html" onclick="logout()">Выйти</a>
+        <a href="index.html" onclick="logout()" class="logout-link">Выйти</a>
     </div>
 
     <script>
