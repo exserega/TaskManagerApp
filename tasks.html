@@ -317,7 +317,7 @@ h1 { /* Мои задачи */
                 let taskHTML = '<div class="task-info">';
                 taskHTML += '<h3>' + (task.summary || 'Без темы') + ' (№' + (task.number || 'б/н') + ')</h3>';
                 taskHTML += '<p>Дата: ' + formattedDate + '</p>';
-                taskHTML += '<p>Клиент: ' + (task.clientName || 'не указан') + '</p>';
+               
                 taskHTML += '</div>'; 
                 taskHTML += '<span class="task-status ' + statusClass + '">' + (task.status || 'Статус не определен') + '</span>';
                 listItem.innerHTML = taskHTML;
