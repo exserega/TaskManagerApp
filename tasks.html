@@ -195,50 +195,72 @@
             }
         }
 
-        function displayTasks(tasks) {
-            const taskListContainer = document.getElementById('taskListContainer');
-            taskListContainer.innerHTML = ''; // Очищаем на всякий случай
+       function displayTasks(tasks) {
+                const taskListContainer = document.getElementById('taskListContainer');
+                taskListContainer.innerHTML = ''; // Очищаем на всякий случай
 
-            tasks.forEach(task => {
-                const listItem = document.createElement('li');
-                listItem.className = 'task-item';
+                tasks.forEach(task => {
+                    const listItem = document.createElement('li');
+                    listItem.className = 'task-item';
 
-                // Определяем класс для статуса для стилизации
-                let statusClass = 'status-default';
-                if (task.status) {
-                    const statusNormalized = task.status.toLowerCase().replace(/\s+/g, '-'); // Например, "в работе" -> "в-работе"
-                    if (statusNormalized.includes('новая')) statusClass = 'status-new';
-                    else if (statusNormalized.includes('в-работе')) statusClass = 'status-in-progress';
-                    else if (statusNormalized.includes('выполнена') || statusNormalized.includes('завершена')) statusClass = 'status-completed';
-                }
+                    let statusClass = 'status-default';
+                    if (task.status) {
+                        const statusNormalized = String(task.status).toLowerCase().replace(/\s+/g, '-');
+                        if (statusNormalized.includes('новая')) statusClass = 'status-new';
+                        else if (statusNormalized.includes('в-работе') || statusNormalized.includes('в работе')) statusClass = 'status-in-progress';
+                        else if (statusNormalized.includes('выполнена') || statusNormalized.includes('завершена')) statusClass = 'status-completed';
+                    }
+                    
+                    let formattedDate = task.date;
+                    if (task.date) {
+                        try {
+                            let dateObj = new Date(task.date);
+                            if (isNaN(dateObj.getTime())) {
+                                dateObj = new Date(task.date.replace('Т', ' '));
+                            }
+                            if (!isNaN(dateObj.getTime())) {
+                                formattedDate = dateObj.toLocaleString('ru-RU', {
+                                    year: 'numeric', month: 'long', day: 'numeric',
+                                    hour: '2-digit', minute: '2-digit'
+                                });
+                            } else {
+                                formattedDate = "Некорректная дата";
+                            }
+                        } catch (e) { 
+                            formattedDate = task.date + " (ошибка формата)";
+                            console.error("Ошибка форматирования даты:", e, " для значения:", task.date);
+                        }
+                    } else {
+                        formattedDate = 'не указана';
+                    }
 
-                // Форматируем дату для более читаемого вида
-                let formattedDate = task.date;
-                try {
-                    formattedDate = new Date(task.date).toLocaleString('ru-RU', {
-                        year: 'numeric', month: 'long', day: 'numeric',
-                        hour: '2-digit', minute: '2-digit'
-                    });
-                } catch (e) { /* оставляем как есть, если не парсится */ }
-
-
-                listItem.innerHTML = `
-                    <div>
-                        <h3><span class="math-inline">\{task\.summary \|\| 'Без темы'\} \(№</span>{task.number || 'б/н'})</h3>
-                        <p>Дата: ${formattedDate || 'не указана'}</p>
-                        <p>Клиент: ${task.clientName || 'не указан'}</p>
-                        </div>
-                    <span class="task-status <span class="math-inline">\{statusClass\}"\></span>{task.status || 'Статус не определен'}</span>
-                `;
-                // Добавляем обработчик клика для перехода к деталям задачи (пока просто alert)
-                listItem.onclick = function() {
-                    alert('Переход к задаче ' + task.id + ' будет реализован позже.');
-                    // В будущем здесь будет: window.location.href = `task-details.html?taskId=${task.id}`;
-                };
-                listItem.style.cursor = 'pointer';
-                taskListContainer.appendChild(listItem);
-            });
-        }
+                    // --- ИЗМЕНЕНИЕ ЗДЕСЬ: Формируем HTML через конкатенацию строк ---
+                    let taskHTML = '<div class="task-info">'; // Открываем div для информации о задаче
+                    taskHTML += '<h3>' + (task.summary || 'Без темы') + ' (№' + (task.number || 'б/н') + ')</h3>';
+                    taskHTML += '<p>Дата: ' + formattedDate + '</p>';
+                    taskHTML += '<p>Клиент: ' + (task.clientName || 'не указан') + '</p>';
+                    // taskHTML += '<p>ID Задачи (для отладки): ' + task.id + '</p>'; // Раскомментируй для отладки ID
+                    taskHTML += '</div>'; // Закрываем div для информации о задаче
+                    
+                    taskHTML += '<span class="task-status ' + statusClass + '">' + (task.status || 'Статус не определен') + '</span>';
+                    
+                    listItem.innerHTML = taskHTML;
+                    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+                    
+                    listItem.onclick = function() {
+                        // Сохраняем ID задачи для передачи на другую страницу
+                        localStorage.setItem('currentTaskId', task.id);
+                        localStorage.setItem('currentTaskNumber', task.number); // Сохраним и номер для удобства
+                        // alert('Переход к задаче ' + task.id + ' будет реализован позже.');
+                        // В будущем здесь будет: window.location.href = `task-details.html`; // taskId будет читаться из localStorage на новой странице
+                        // ПОКА ПРОСТО ВЫВЕДЕМ ДАННЫЕ ЗАДАЧИ В КОНСОЛЬ ДЛЯ ПРОВЕРКИ
+                        console.log("Выбрана задача:", task); 
+                        alert("Просмотр задачи " + task.number + " будет на следующей странице (пока не сделано)");
+                    };
+                    listItem.style.cursor = 'pointer';
+                    taskListContainer.appendChild(listItem);
+                });
+            }
 
         function logout() {
             localStorage.removeItem('userName');
