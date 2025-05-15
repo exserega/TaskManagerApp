@@ -5,118 +5,167 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Мои задачи</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f4f7f6;
-            color: #333;
-        }
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-        }
-        h1, h2 {
-            color: #0056b3;
-        }
-        #userInfo {
-            margin-bottom: 20px;
-            padding: 10px;
-            background-color: #e7f3fe;
-            border-left: 5px solid #2196F3;
-        }
-      .task-list {
+       /* Общие стили для страницы */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Более современный шрифт */
+    margin: 0;
+    padding: 20px;
+    background-color: #e9ecef; /* Слегка серый фон для контраста с белыми элементами */
+    color: #495057; /* Мягкий темно-серый для основного текста */
+    line-height: 1.6; /* Улучшает читаемость */
+}
+
+.container {
+    max-width: 960px; /* Немного увеличим максимальную ширину */
+    margin: 20px auto; /* Добавим отступ сверху/снизу */
+    background-color: #fff;
+    padding: 25px 30px; /* Увеличим внутренние отступы */
+    border-radius: 12px; /* Более скругленные углы */
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1); /* Более выраженная, но мягкая тень */
+}
+
+/* Заголовки */
+h1, h2 {
+    color: #343a40; /* Темно-серый для заголовков */
+    margin-bottom: 20px;
+}
+h1 { /* Главный заголовок "Мои задачи" */
+    font-size: 2.2em; /* Крупнее */
+    text-align: center; /* По центру, если это главный заголовок страницы задач */
+    margin-bottom: 30px;
+}
+
+/* Блок с информацией о пользователе и кнопкой "Новая задача" */
+.header-actions {
+    display: flex;
+    flex-direction: column; /* Кнопка будет под информацией о пользователе */
+    align-items: center; /* Центрируем все содержимое */
+    margin-bottom: 30px; /* Увеличим отступ снизу */
+    padding-bottom: 20px;
+    border-bottom: 1px solid #dee2e6; /* Разделительная линия */
+}
+
+#userInfo {
+    font-size: 1.1em; /* Крупнее шрифт для приветствия */
+    color: #007bff;   /* Синий цвет для акцента */
+    margin-bottom: 20px; /* Отступ до кнопки */
+    text-align: center;
+    padding: 10px;
+    background-color: transparent; /* Убрали фон, так как есть общий фон контейнера */
+    border-left: none; /* Убрали левую границу */
+}
+#userInfo strong {
+    font-weight: 600; /* Более жирное начертание имени */
+}
+
+/* Кнопка "Новая Задача +" */
+.create-task-button {
+    display: inline-block;
+    padding: 15px 40px; /* Значительно увеличим кнопку */
+    background-color: #007bff; /* Основной синий цвет */
+    color: white;
+    text-decoration: none;
+    border-radius: 8px; /* Скругленные углы */
+    font-size: 1.2em;  /* Крупнее шрифт на кнопке */
+    font-weight: 500;
+    text-align: center;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0,123,255,0.2); /* Тень для кнопки */
+    transition: all 0.2s ease-in-out; /* Плавный переход для hover-эффекта */
+}
+.create-task-button:hover {
+    background-color: #0056b3; /* Темнее при наведении */
+    box-shadow: 0 6px 8px rgba(0,123,255,0.3);
+    transform: translateY(-2px); /* Легкий подъем при наведении */
+}
+
+/* Список задач */
+.task-list {
     list-style: none;
     padding: 0;
 }
 
 .task-item {
-    background-color: #ffffff; /* Сделаем фон карточки белым */
-    border: 1px solid #ddd;    /* Добавим рамку */
-    padding: 15px;
-    margin-bottom: 15px;      /* Увеличим отступ между карточками */
-    border-radius: 8px;       /* Скруглим углы сильнее */
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Легкая тень для объема */
+    background-color: #f8f9fa; /* Светло-серый фон для карточек */
+    border: 1px solid #dee2e6; 
+    padding: 20px; /* Увеличим внутренние отступы */
+    margin-bottom: 20px; 
+    border-radius: 10px; 
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05); /* Мягкая тень для карточек */
     display: flex;
     justify-content: space-between;
-    align-items: flex-start; /* Выравнивание по верху, если контент разной высоты */
-    cursor: pointer; /* Оставляем курсор-указатель */
+    align-items: flex-start; 
+    cursor: pointer;
+    transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out; /* Плавные переходы */
 }
-
 .task-item:hover {
-    border-color: #007bff; /* Подсветка рамки при наведении */
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    border-color: #adb5bd;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+    transform: translateY(-3px); /* Эффект "подъема" карточки */
 }
 
-/* Контейнер для основной информации о задаче (номер, тема, дата, клиент) */
-.task-info { /* Мы добавили этот div в JS при формировании HTML */
-    flex-grow: 1; /* Занимает доступное пространство, отодвигая статус вправо */
-    margin-right: 15px; /* Отступ от статуса */
+.task-info {
+    flex-grow: 1;
+    margin-right: 20px;
 }
 
-.task-info h3 {
-    margin: 0 0 8px 0; /* Увеличим нижний отступ у заголовка */
-    font-size: 1.2em;  /* Немного увеличим шрифт заголовка */
-    color: #333;
+.task-info h3 { /* Краткое описание и номер */
+    margin: 0 0 10px 0; 
+    font-size: 1.3em; /* Крупнее */
+    color: #212529;   /* Темнее для лучшей читаемости */
+    font-weight: 500; /* Средняя жирность */
 }
 
-.task-info p {
-    margin: 0 0 4px 0; /* Небольшие отступы между параграфами */
-    font-size: 0.95em;
-    color: #555;
+.task-info p { /* Дата и клиент */
+    margin: 0 0 6px 0; 
+    font-size: 1em;  /* Крупнее */
+    color: #6c757d; /* Серый для второстепенной информации */
 }
 
+/* Статус задачи */
 .task-status {
-    padding: 6px 12px; /* Немного увеличим padding */
-    border-radius: 20px; /* Сильнее скруглим */
-    font-size: 0.85em;
-    font-weight: bold;
-    white-space: nowrap; /* Чтобы текст статуса не переносился */
-    align-self: center; /* Вертикальное выравнивание статуса по центру, если контент задачи высокий */
+    padding: 8px 15px; /* Увеличим */
+    border-radius: 25px; 
+    font-size: 0.9em;  /* Немного крупнее */
+    font-weight: 600;  /* Жирнее */
+    white-space: nowrap;
+    align-self: center; 
+    text-transform: capitalize; /* Первая буква заглавная */
 }
+/* Цвета для статусов (оставляем твои работающие, можно будет их менять) */
+.status-new { background-color: #ffc107; color: #212529; } /* Желтый, текст темный */
+.status-in-progress { background-color: #17a2b8; color: #fff; } /* Бирюзовый */
+.status-completed { background-color: #28a745; color: #fff; } /* Зеленый */
+.status-default { background-color: #6c757d; color: #fff; } /* Серый */
+/* Добавь другие классы, если у тебя больше статусов, например: */
+.status-согласование-оценки { background-color: #fd7e14; color: #fff; } /* Оранжевый */
+.status-ожидает-ответа-клиента { background-color: #6610f2; color: #fff; } /* Фиолетовый */
 
-/* ... (существующие стили для status-new, status-in-progress и т.д. остаются) ... */
-/* ... (стили для loadingMessage, errorMessage, noTasksMessage остаются) ... */
 
-/* Кнопка "Создать новую задачу" - переместим ее наверх и стилизуем */
-.header-actions {
-    display: flex;
-    justify-content: space-between; /* Чтобы приветствие и кнопка были по разным сторонам */
-    align-items: center;
-    margin-bottom: 25px;
-}
-
-#userInfo { /* Немного изменим userInfo, чтобы он был частью header-actions */
-    margin-bottom: 0; /* Убираем нижний отступ, так как он теперь в .header-actions */
-    /* Остальные стили для userInfo можно оставить или адаптировать */
-}
-
-.create-task-button {
-    display: inline-block;
-    padding: 12px 25px; /* Увеличим кнопку */
-    background-color: #28a745; /* Зеленый цвет, как часто бывает для "Создать" */
-    color: white;
-    text-decoration: none;
-    border-radius: 5px;
-    font-size: 1em;
-    font-weight: bold;
+/* Сообщения */
+#loadingMessage, #errorMessage, #noTasksMessage {
     text-align: center;
-    border: none; /* Убираем рамку, если она не нужна */
+    padding: 25px;
+    font-size: 1.2em; /* Крупнее */
+    margin-top: 20px;
 }
-.create-task-button:hover {
-    background-color: #218838; /* Более темный зеленый при наведении */
+.error-message {
+    color: #721c24; /* Темно-красный */
+    border: 1px solid #f5c6cb;
+    background-color: #f8d7da; /* Светло-розовый */
+    border-radius: 5px;
 }
 
-/* Ссылка Выйти - можно тоже немного стилизовать */
+/* Ссылка "Выйти" */
 .logout-link {
-    display: block; /* Чтобы занимала всю ширину и была под кнопкой */
+    display: block;
     margin-top: 30px;
-    text-align: right; /* Например, справа */
+    text-align: center; /* По центру под списком */
     color: #007bff;
+    font-size: 1em;
+}
+.logout-link:hover {
+    text-decoration: underline;
 }
     </style>
 </head>
