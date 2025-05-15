@@ -170,10 +170,12 @@ h1 { /* Главный заголовок "Мои задачи" */
     </style>
 </head>
 <body>
-     <div class="container">
-        <div id="topBar"> <span id="userNameDisplay"></span> <a href="index.html" onclick="logout()" class="logout-link-top">Выйти</a> </div>
+    <div class="container"> <div id="topBar">
+            <span id="userNameDisplay"></span> <a href="index.html" onclick="logout()" class="logout-link-top">Выйти</a>
+        </div>
 
-        <div class="main-header"> <a href="#" class="create-task-button" onclick="alert('Функционал создания задачи будет добавлен позже'); return false;">Новая Задача +</a>
+        <div class="main-header">
+            <a href="#" class="create-task-button" onclick="alert('Функционал создания задачи будет добавлен позже'); return false;">Новая Задача +</a>
             <h1>Мои задачи</h1>
         </div>
                 
@@ -183,44 +185,45 @@ h1 { /* Главный заголовок "Мои задачи" */
             </ul>
         <div id="noTasksMessage" style="display: none;">У вас пока нет задач.</div>
 
-        </div>
-        <div id="errorMessage" class="error-message" style="display: none;"></div>
-        <ul id="taskListContainer" class="task-list">
-            </ul>
-        <div id="noTasksMessage" style="display: none;">У вас пока нет задач.</div>
-
-        <a href="index.html" onclick="logout()" class="logout-link">Выйти</a>
-    </div>
-
-    <script>
+        </div> <script>
         window.onload = function() {
             const userName = localStorage.getItem('userName');
             const userCode = localStorage.getItem('userCode');
-            const userId = localStorage.getItem('userId'); // GUID, если нужен
+            // const userId = localStorage.getItem('userId'); // GUID, если нужен
 
-            const userInfoDiv = document.getElementById('userInfo');
+            const userNameDisplaySpan = document.getElementById('userNameDisplay'); // Теперь должен найтись
             const loadingMessageDiv = document.getElementById('loadingMessage');
             const errorMessageDiv = document.getElementById('errorMessage');
             const taskListContainer = document.getElementById('taskListContainer');
             const noTasksMessageDiv = document.getElementById('noTasksMessage');
 
-            if (userName) {
-                userInfoDiv.innerHTML = `Добро пожаловать, <strong>${userName}</strong>! (Код: ${userCode})`;
-            } else {
-                // Если данных пользователя нет, возможно, стоит перенаправить на страницу входа
-                userInfoDiv.textContent = 'Информация о пользователе не найдена.';
-                window.location.href = 'index.html'; // Перенаправляем на вход
+            if (userNameDisplaySpan && userName && userCode) { // Добавил проверку userNameDisplaySpan на null
+                userNameDisplaySpan.innerHTML = `Пользователь: <strong>${userName}</strong> (Код: ${userCode})`;
+            } else if (!userName || !userCode) { // Если нет данных пользователя
+                // Можно добавить вывод в консоль, если userNameDisplaySpan не найден, для отладки
+                if (!userNameDisplaySpan) {
+                    console.error("Элемент #userNameDisplay не найден на странице!");
+                }
+                console.log("Данные пользователя не найдены в localStorage, перенаправление на index.html");
+                window.location.href = 'index.html'; 
                 return;
             }
 
-            if (!userCode) {
-                errorMessageDiv.textContent = 'Код пользователя не найден. Пожалуйста, войдите снова.';
-                errorMessageDiv.style.display = 'block';
+            // Если userCode есть, но userNameDisplaySpan не был найден ранее (хотя не должен при правильном HTML),
+            // то тоже проблема, но loadTasks можно попробовать вызвать.
+            // Основная проверка на userCode для загрузки задач:
+            if (!userCode) { 
+                if(errorMessageDiv) { // Проверяем, что errorMessageDiv существует
+                    errorMessageDiv.textContent = 'Код пользователя не найден. Пожалуйста, войдите снова.';
+                    errorMessageDiv.style.display = 'block';
+                }
                 return;
             }
-
             loadTasks(userCode);
         };
+
+        // Функции loadTasks(userCode), displayTasks(tasks), logout() остаются БЕЗ ИЗМЕНЕНИЙ 
+        // (используй те версии, которые мы отладили в предыдущих шагах, где задачи отображались корректно)
 
         async function loadTasks(userCode) {
             const loadingMessageDiv = document.getElementById('loadingMessage');
@@ -228,26 +231,19 @@ h1 { /* Главный заголовок "Мои задачи" */
             const taskListContainer = document.getElementById('taskListContainer');
             const noTasksMessageDiv = document.getElementById('noTasksMessage');
 
-            loadingMessageDiv.style.display = 'block';
-            errorMessageDiv.style.display = 'none';
-            taskListContainer.innerHTML = ''; // Очищаем предыдущий список
-            noTasksMessageDiv.style.display = 'none';
+            // Проверяем, что все элементы существуют, прежде чем использовать их
+            if (loadingMessageDiv) loadingMessageDiv.style.display = 'block';
+            if (errorMessageDiv) errorMessageDiv.style.display = 'none';
+            if (taskListContainer) taskListContainer.innerHTML = ''; 
+            if (noTasksMessageDiv) noTasksMessageDiv.style.display = 'none';
 
-            // Формируем URL. Убедись, что он правильный!
             const apiUrl = `https://1c.c-r.kz/Registrator_test/hs/auth/taskslist/${userCode}`;
-
             console.log('Запрашиваем задачи по URL:', apiUrl);
 
             try {
-                const response = await fetch(apiUrl, {
-                    method: 'GET', // Указываем метод GET
-                    headers: {
-                        // Можно добавить заголовки, если они требуются вашим API, 
-                        // например, 'Authorization': 'Bearer ваш_токен', если бы была авторизация по токену
-                    }
-                });
+                const response = await fetch(apiUrl, { method: 'GET' });
 
-                loadingMessageDiv.style.display = 'none';
+                if (loadingMessageDiv) loadingMessageDiv.style.display = 'none';
 
                 if (!response.ok) {
                     let errorMsg = `Ошибка загрузки задач: ${response.status} ${response.statusText}`;
@@ -256,11 +252,11 @@ h1 { /* Главный заголовок "Мои задачи" */
                         if (errorData && errorData.message) {
                             errorMsg += ` - ${errorData.message}`;
                         }
-                    } catch (e) {
-                        // Не удалось распарсить тело ошибки как JSON
+                    } catch (e) { /* Не удалось распарсить */ }
+                    if (errorMessageDiv) {
+                        errorMessageDiv.textContent = errorMsg;
+                        errorMessageDiv.style.display = 'block';
                     }
-                    errorMessageDiv.textContent = errorMsg;
-                    errorMessageDiv.style.display = 'block';
                     console.error('Ошибка ответа сервера:', response);
                     return;
                 }
@@ -271,90 +267,88 @@ h1 { /* Главный заголовок "Мои задачи" */
                 if (tasks && tasks.length > 0) {
                     displayTasks(tasks);
                 } else {
-                    noTasksMessageDiv.style.display = 'block';
+                    if (noTasksMessageDiv) noTasksMessageDiv.style.display = 'block';
                 }
 
             } catch (error) {
-                loadingMessageDiv.style.display = 'none';
-                errorMessageDiv.textContent = 'Сетевая ошибка или ошибка при выполнении запроса: ' + error.message;
-                errorMessageDiv.style.display = 'block';
+                if (loadingMessageDiv) loadingMessageDiv.style.display = 'none';
+                if (errorMessageDiv) {
+                    errorMessageDiv.textContent = 'Сетевая ошибка или ошибка при выполнении запроса: ' + error.message;
+                    errorMessageDiv.style.display = 'block';
+                }
                 console.error('Сетевая ошибка:', error);
             }
         }
 
-       function displayTasks(tasks) {
-                const taskListContainer = document.getElementById('taskListContainer');
-                taskListContainer.innerHTML = ''; // Очищаем на всякий случай
-
-                tasks.forEach(task => {
-                    const listItem = document.createElement('li');
-                    listItem.className = 'task-item';
-
-                    let statusClass = 'status-default';
-                    if (task.status) {
-                        const statusNormalized = String(task.status).toLowerCase().replace(/\s+/g, '-');
-                        if (statusNormalized.includes('новая')) statusClass = 'status-new';
-                        else if (statusNormalized.includes('в-работе') || statusNormalized.includes('в работе')) statusClass = 'status-in-progress';
-                        else if (statusNormalized.includes('выполнена') || statusNormalized.includes('завершена')) statusClass = 'status-completed';
-                    }
-                    
-                    let formattedDate = task.date;
-                    if (task.date) {
-                        try {
-                            let dateObj = new Date(task.date);
-                            if (isNaN(dateObj.getTime())) {
-                                dateObj = new Date(task.date.replace('Т', ' '));
-                            }
-                            if (!isNaN(dateObj.getTime())) {
-                                formattedDate = dateObj.toLocaleString('ru-RU', {
-                                    year: 'numeric', month: 'long', day: 'numeric',
-                                    hour: '2-digit', minute: '2-digit'
-                                });
-                            } else {
-                                formattedDate = "Некорректная дата";
-                            }
-                        } catch (e) { 
-                            formattedDate = task.date + " (ошибка формата)";
-                            console.error("Ошибка форматирования даты:", e, " для значения:", task.date);
-                        }
-                    } else {
-                        formattedDate = 'не указана';
-                    }
-
-                    // --- ИЗМЕНЕНИЕ ЗДЕСЬ: Формируем HTML через конкатенацию строк ---
-                    let taskHTML = '<div class="task-info">'; // Открываем div для информации о задаче
-                    taskHTML += '<h3>' + (task.summary || 'Без темы') + ' (№' + (task.number || 'б/н') + ')</h3>';
-                    taskHTML += '<p>Дата: ' + formattedDate + '</p>';
-                    taskHTML += '<p>Клиент: ' + (task.clientName || 'не указан') + '</p>';
-                    // taskHTML += '<p>ID Задачи (для отладки): ' + task.id + '</p>'; // Раскомментируй для отладки ID
-                    taskHTML += '</div>'; // Закрываем div для информации о задаче
-                    
-                    taskHTML += '<span class="task-status ' + statusClass + '">' + (task.status || 'Статус не определен') + '</span>';
-                    
-                    listItem.innerHTML = taskHTML;
-                    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
-                    
-                    listItem.onclick = function() {
-                        // Сохраняем ID задачи для передачи на другую страницу
-                        localStorage.setItem('currentTaskId', task.id);
-                        localStorage.setItem('currentTaskNumber', task.number); // Сохраним и номер для удобства
-                        // alert('Переход к задаче ' + task.id + ' будет реализован позже.');
-                        // В будущем здесь будет: window.location.href = `task-details.html`; // taskId будет читаться из localStorage на новой странице
-                        // ПОКА ПРОСТО ВЫВЕДЕМ ДАННЫЕ ЗАДАЧИ В КОНСОЛЬ ДЛЯ ПРОВЕРКИ
-                        console.log("Выбрана задача:", task); 
-                        alert("Просмотр задачи " + task.number + " будет на следующей странице (пока не сделано)");
-                    };
-                    listItem.style.cursor = 'pointer';
-                    taskListContainer.appendChild(listItem);
-                });
+        function displayTasks(tasks) {
+            const taskListContainer = document.getElementById('taskListContainer');
+            if (!taskListContainer) {
+                console.error("Элемент #taskListContainer не найден для отображения задач!");
+                return;
             }
+            taskListContainer.innerHTML = ''; 
+
+            tasks.forEach(task => {
+                const listItem = document.createElement('li');
+                listItem.className = 'task-item';
+
+                let statusClass = 'status-default';
+                if (task.status) {
+                    const statusNormalized = String(task.status).toLowerCase().replace(/\s+/g, '-');
+                    if (statusNormalized.includes('новая')) statusClass = 'status-new';
+                    else if (statusNormalized.includes('в-работе') || statusNormalized.includes('в работе')) statusClass = 'status-in-progress';
+                    else if (statusNormalized.includes('выполнена') || statusNormalized.includes('завершена')) statusClass = 'status-completed';
+                    else if (statusNormalized.includes('согласование-оценки')) statusClass = 'status-согласование-оценки';
+                    else if (statusNormalized.includes('ожидает-ответа-клиента')) statusClass = 'status-ожидает-ответа-клиента';
+                }
+                
+                let formattedDate = task.date;
+                if (task.date) {
+                    try {
+                        let dateObj = new Date(task.date);
+                        if (isNaN(dateObj.getTime())) {
+                            dateObj = new Date(task.date.replace('Т', ' '));
+                        }
+                        if (!isNaN(dateObj.getTime())) {
+                            formattedDate = dateObj.toLocaleString('ru-RU', {
+                                year: 'numeric', month: 'long', day: 'numeric',
+                                hour: '2-digit', minute: '2-digit'
+                            });
+                        } else {
+                            formattedDate = "Некорректная дата";
+                        }
+                    } catch (e) { 
+                        formattedDate = task.date + " (ошибка формата)";
+                        console.error("Ошибка форматирования даты:", e, " для значения:", task.date);
+                    }
+                } else {
+                    formattedDate = 'не указана';
+                }
+
+                let taskHTML = '<div class="task-info">';
+                taskHTML += '<h3>' + (task.summary || 'Без темы') + ' (№' + (task.number || 'б/н') + ')</h3>';
+                taskHTML += '<p>Дата: ' + formattedDate + '</p>';
+                taskHTML += '<p>Клиент: ' + (task.clientName || 'не указан') + '</p>';
+                taskHTML += '</div>'; 
+                taskHTML += '<span class="task-status ' + statusClass + '">' + (task.status || 'Статус не определен') + '</span>';
+                listItem.innerHTML = taskHTML;
+                
+                listItem.onclick = function() {
+                    localStorage.setItem('currentTaskId', task.id);
+                    localStorage.setItem('currentTaskNumber', task.number);
+                    console.log("Выбрана задача:", task); 
+                    alert("Просмотр задачи " + task.number + " будет на следующей странице (пока не сделано)");
+                };
+                listItem.style.cursor = 'pointer';
+                taskListContainer.appendChild(listItem);
+            });
+        }
 
         function logout() {
             localStorage.removeItem('userName');
             localStorage.removeItem('userId');
             localStorage.removeItem('userCode');
-            // Можно добавить и другие действия при выходе, например, запрос к серверу на завершение сессии
-            // window.location.href = 'index.html'; // Перенаправление на страницу входа уже есть в самой ссылке
+            // window.location.href = 'index.html'; // Уже есть в самой ссылке
         }
     </script>
 </body>
