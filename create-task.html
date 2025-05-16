@@ -209,8 +209,9 @@
                 <label for="configuration">Конфигурация</label>
                 <select id="configuration" name="configurationCode">
                     <option value="">-- Выберите конфигурацию --</option>
-                    </select>
-                <small id="configInfo" style="display:none;"></small> </div>
+                </select>
+                <small id="configInfo"></small>
+            </div>
 
             <div class="form-group">
                 <label for="details">Детальное описание</label>
@@ -224,7 +225,11 @@
 
             <button type="submit" class="submit-button">Создать задачу</button>
         </form>
-        <div id="formMessage" class="message"></div> <a href="tasks.html" class="back-link">&larr; К списку задач</a> </div>
+        <div id="formMessage" class="message"></div>
+        <a href="tasks.html" class="back-link">&larr; К списку задач</a>
+    </div>
+
+    </body>
 
     <script>
         window.onload = function() {
