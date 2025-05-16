@@ -4,50 +4,175 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Создание новой задачи</title>
-    <link rel="stylesheet" href="styles.css"> <style>
-        /* Дополнительные стили для этой страницы, если нужны */
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f6f8; padding: 20px; color: #333; }
-        .container { max-width: 700px; margin: 30px auto; background-color: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
-        h1 { color: #2c3e50; text-align: center; margin-bottom: 25px; }
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: #495057; }
+    <style>
+        /* --- Стили из tasks.html (Концепция 3: Современный корпоративный) --- */
+        /* Общие стили */
+        body {
+            font-family: 'Open Sans', sans-serif; /* Используем Open Sans как на tasks.html, или оставьте 'Segoe UI' если предпочитаете для форм */
+            background-color: #eef1f5;
+            color: #37474f;
+            line-height: 1.7;
+            padding: 20px;
+            margin: 0; /* Добавлено для сброса отступов body */
+        }
+
+        .container {
+            max-width: 700px; /* Для формы можно сделать чуть уже, чем для списка задач */
+            margin: 40px auto;
+            background-color: #ffffff;
+            padding: 40px 50px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
+        }
+
+        /* Заголовки */
+        h1 {
+            font-size: 2.2em; /* Чуть меньше, чем на tasks.html, но все равно крупный */
+            color: #37474f;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 35px; /* Отступ под заголовком */
+        }
+
+        /* --- Новые стили для формы в create-task.html --- */
+        .form-group {
+            margin-bottom: 25px; /* Увеличим отступ между группами */
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 10px; /* Увеличим отступ под лейблом */
+            font-weight: 600; /* Сделаем жирнее */
+            font-size: 0.95em;
+            color: #4a5568; /* Немного другой оттенок серого */
+        }
+        
+        .form-group label .required-star {
+            color: #e53e3e; /* Красный для звездочки */
+            margin-left: 4px;
+        }
+
         .form-group input[type="text"],
         .form-group textarea,
-        .form-group select {
+        .form-group select,
+        .form-group input[type="file"] { /* Стилизуем и input[type="file"] насколько возможно */
             width: 100%;
-            padding: 12px;
-            border: 1px solid #ced4da;
-            border-radius: 6px;
+            padding: 14px 18px; /* Увеличим padding */
+            border: 1px solid #dfe4ea; /* Светлее рамка */
+            border-radius: 10px; /* Более скругленные углы, как у кнопки */
             box-sizing: border-box;
             font-size: 1em;
+            color: #37474f;
+            background-color: #f7f9fc; /* Очень светлый фон для полей */
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
-        .form-group textarea { min-height: 120px; resize: vertical; }
-        .form-group input[type="file"] { padding: 10px; /* Файловые инпуты стилизуются ограниченно */ }
-        .submit-button {
-            display: block; /* Чтобы занимала всю ширину */
-            width: 100%;   /* Занимает всю ширину родителя */
-            padding: 15px;
-            background-image: linear-gradient(to right, #28a745 0%, #218838 100%);
+        
+        .form-group input[type="text"]:focus,
+        .form-group textarea:focus,
+        .form-group select:focus,
+        .form-group input[type="file"]:focus {
+            border-color: #8e44ad; /* Фиолетовый при фокусе, как у кнопки */
+            box-shadow: 0 0 0 3px rgba(142, 68, 173, 0.15); /* Легкая тень при фокусе */
+            outline: none;
+        }
+
+        .form-group textarea {
+            min-height: 140px; /* Чуть выше */
+            resize: vertical;
+        }
+        
+        /* Стили для input[type="file"] могут быть ограничены, но попробуем */
+        .form-group input[type="file"] {
+            padding: 10px; /* Для файлового инпута padding может вести себя иначе */
+            line-height: 1.5; /* Чтобы текст не прилипал */
+        }
+        
+        /* Для кастомного вида input[type="file"] часто используют трюки с <label> */
+        /* Но для простоты оставим стандартный, но стилизованный насколько возможно */
+
+
+        /* Кнопка отправки - используем стиль .create-task-button из tasks.html */
+        .submit-button { /* Переименовал для соответствия */
+            display: block; 
+            width: 100%;   
+            padding: 18px 30px; /* Адаптируем padding, если нужно */
+            background-image: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); 
             color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-size: 1.15em;
+            text-decoration: none; 
+            border-radius: 10px; 
+            font-size: 1.15em; /* Можно чуть меньше, чем кнопка "Новая задача" */
             font-weight: 600;
-            border: none;
-            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+            box-shadow: 0 6px 20px rgba(155, 89, 182, 0.3); 
             transition: all 0.3s ease;
+            border: none;
             cursor: pointer;
             text-align: center;
+            margin-top: 30px; /* Отступ над кнопкой */
         }
+
         .submit-button:hover {
-            background-image: linear-gradient(to right, #218838 0%, #28a745 100%);
-            box-shadow: 0 7px 20px rgba(40, 167, 69, 0.4);
-            transform: translateY(-2px);
+            background-image: linear-gradient(135deg, #8e44ad 0%, #9b59b6 100%);
+            box-shadow: 0 8px 25px rgba(155, 89, 182, 0.4);
+            transform: translateY(-3px); /* Убрал scale для кнопки формы */
         }
-        .message { padding: 15px; margin-top: 20px; border-radius: 6px; text-align: center; display:none; }
-        .message.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .message.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .back-link { display: block; text-align: center; margin-top: 20px; color: #007bff; }
+        .submit-button:active {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(155, 89, 182, 0.3);
+        }
+        .submit-button:disabled {
+            background-image: linear-gradient(135deg, #c7a5d9 0%, #b989cc 100%);
+            box-shadow: 0 6px 20px rgba(199, 165, 217, 0.2);
+            cursor: not-allowed;
+            transform: translateY(0);
+        }
+
+
+        /* Сообщения об ошибках/успехе */
+        .message {
+            padding: 18px 25px; /* Увеличим padding */
+            margin-top: 25px;
+            border-radius: 10px; /* Как у полей и кнопки */
+            text-align: center;
+            display: none;
+            font-size: 0.95em;
+            border-width: 1px;
+            border-style: solid;
+        }
+
+        .message.success {
+            background-color: #d4edda; /* Как на tasks.html, но можно адаптировать */
+            color: #155724;
+            border-color: #c3e6cb;
+        }
+
+        .message.error {
+            background-color: #f8d7da; /* Как на tasks.html */
+            color: #721c24;
+            border-color: #f5c6cb;
+        }
+        
+        /* Ссылка "Назад" */
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 30px;
+            color: #4527a0; /* Как .logout-link-top */
+            font-weight: 500;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        .back-link:hover {
+            color: #8e44ad; /* При наведении */
+            text-decoration: underline;
+        }
+        
+        /* Для информации о загрузке конфигураций */
+        #configInfo {
+            font-size: 0.85em;
+            color: #546e7a;
+            margin-top: 8px;
+            display: block; /* Чтобы был на новой строке */
+        }
     </style>
 </head>
 <body>
