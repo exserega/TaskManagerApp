@@ -1,0 +1,138 @@
+/* styles.css */
+
+/* --- Глобальные сбросы и основные стили --- */
+body {
+    font-family: 'Open Sans', sans-serif;
+    background-color: #eef1f5; /* Светлый серо-голубой фон */
+    color: #37474f; /* Темно-сине-серый текст */
+    line-height: 1.6; 
+    margin: 0;
+    padding: 20px; /* Общий padding для body, если нужен, иначе можно убрать и задавать для .container */
+}
+
+/* --- Общий контейнер для контента страниц --- */
+.container {
+    max-width: 1000px; /* Или другое значение по умолчанию, можно переопределять на страницах */
+    margin: 40px auto;
+    background-color: #ffffff;
+    padding: 40px 50px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
+}
+
+/* --- Стили для заголовков --- */
+h1 { 
+    color: #37474f;
+    font-weight: 700;
+    text-align: center; /* Можно сделать общим, или переопределять */
+}
+
+/* Стили для tasks.html (список задач) */
+.tasks-page-container .main-header h1 { /* Более специфичный селектор для "Мои задачи" */
+    font-size: 2.8em; 
+    margin-bottom: 0;
+}
+.tasks-page-container .main-header {
+    text-align: center;
+    margin-bottom: 45px;
+}
+
+/* Стили для create-task.html и task-details.html (заголовки поменьше) */
+.create-task-page-container h1,
+.task-details-page-container .page-header h1 {
+    font-size: 2.2em; /* Или 1.8em для task-details */
+    margin-bottom: 35px; /* Или другой отступ */
+}
+/* Если у task-details.html свой .page-header, его стили тоже сюда */
+.page-header {
+    background-color: #f8f9fa; 
+    padding: 20px 30px;
+    border-bottom: 1px solid #dfe4ea;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.task-details-page-container .page-header h1 { /* Для заголовка внутри page-header */
+     font-size: 1.8em; 
+     margin: 0;
+     flex-grow: 1; 
+     text-align: left;
+}
+
+
+/* --- Верхняя панель (если используется на нескольких страницах) --- */
+#topBar { 
+    display: flex; 
+    justify-content: flex-end;
+    padding-bottom: 15px;
+    margin-bottom: 30px;
+    font-size: 0.95em;
+    border-bottom: 1px solid #dfe4ea;
+}
+#userNameDisplay { color: #546e7a; margin-right: 15px; }
+#userNameDisplay strong { color: #263238; font-weight: 600; }
+.logout-link-top { color: #4527a0; font-weight: 600; text-decoration: none; }
+.logout-link-top:hover { text-decoration: underline; }
+
+
+/* --- Общие стили для кнопок (пример) --- */
+.button-primary { /* Общий класс для основных кнопок */
+    display: inline-block;
+    padding: 18px 30px; 
+    background-image: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); 
+    color: white;
+    text-decoration: none; 
+    border-radius: 10px; 
+    font-weight: 600;
+    box-shadow: 0 6px 20px rgba(155, 89, 182, 0.3); 
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+}
+.button-primary:hover {
+    background-image: linear-gradient(135deg, #8e44ad 0%, #9b59b6 100%);
+    box-shadow: 0 8px 25px rgba(155, 89, 182, 0.4);
+    transform: translateY(-3px);
+}
+.button-primary:active {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(155, 89, 182, 0.3);
+}
+.button-primary:disabled {
+    background-image: linear-gradient(135deg, #c7a5d9 0%, #b989cc 100%);
+    box-shadow: 0 6px 20px rgba(199, 165, 217, 0.2);
+    cursor: not-allowed;
+    transform: translateY(0);
+}
+
+/* Кнопка "Новая Задача +" на tasks.html (если ей нужен больший padding или font-size) */
+.create-task-button { /* Может наследовать от .button-primary и добавлять/переопределять */
+    padding: 18px 55px; 
+    font-size: 1.3em; 
+    margin-bottom: 30px;
+}
+
+/* Кнопка "Создать задачу" на create-task.html */
+.submit-button { /* Может наследовать от .button-primary */
+    width: 100%;   
+    font-size: 1.2em; 
+    margin-top: 35px;
+}
+
+
+/* --- Стили для форм (create-task.html) --- */
+.form-group {
+    margin-bottom: 28px;
+}
+/* ... и так далее для всех остальных стилей формы, которые я приводил ... */
+
+
+/* --- Стили для карточек задач (tasks.html) --- */
+.task-item {
+    /* ... ваши стили для .task-item ... */
+}
+/* ... и т.д. ... */
+
+/* --- Стили для деталей задачи и чата (task-details.html) --- */
+/* ... все стили, которые я предложил для task-details ... */
