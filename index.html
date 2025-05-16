@@ -11,14 +11,15 @@
     
     <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body class="login-page"> {/* <--- ДОБАВЛЕН КЛАСС */}
     <div class="login-container">
         <h2>Вход в систему</h2>
         <input type="text" id="phoneNumber" placeholder="Номер телефона" required>
         <input type="password" id="password" placeholder="Пароль" required>
-        <button onclick="login()">Войти</button>
+        <button class="button-primary" onclick="login()">Войти</button> {/* <--- ДОБАВЛЕН КЛАСС button-primary */}
         <p id="error" class="error"></p>
     </div>
+    </body>
 
     <script>
         async function login() {
