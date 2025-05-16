@@ -369,101 +369,119 @@ body.task-details-page .container {
 .attached-files-list i { margin-right: 8px; color: #8e44ad; }
 
 /* --- Стили для чата (WhatsApp-like) --- */
+/* --- Стили для чата (WhatsApp-like) - УЛУЧШЕННАЯ ЧИТАЕМОСТЬ --- */
 .chat-container {
     display: flex;
     flex-direction: column;
     flex-grow: 1; 
-    background-color: #e5ddd5; 
+    background-color: #e5ddd5; /* Оставляем фон WhatsApp */
+    /* Для фона с паттерном (если хотите добавить свой):
+    background-image: url('путь_к_вашему/whatsapp_pattern.png'); 
+    background-repeat: repeat; */
     overflow: hidden; 
     position: relative; 
 }
+
 .chat-messages {
     flex-grow: 1;
-    padding: 20px;
+    padding: 20px 15px; /* Немного уменьшил горизонтальный padding для сообщений */
     overflow-y: auto; 
     display: flex;
     flex-direction: column;
 }
+
 .message-bubble {
-    max-width: 70%;
-    padding: 10px 15px;
-    border-radius: 18px; 
+    max-width: 75%; /* Чуть шире можно */
+    padding: 10px 16px; /* Немного изменил padding */
+    border-radius: 12px; /* Менее круглые, более стандартные */
     margin-bottom: 12px; 
-    font-size: 0.95em;
-    line-height: 1.4;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.12); 
+    font-size: 0.98em; /* Слегка увеличил шрифт сообщений */
+    line-height: 1.45;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Более выраженная тень */
     word-wrap: break-word; 
-}
-.message-bubble.sent { 
-    background-color: #dcf8c6; 
-    align-self: flex-end; 
-    border-bottom-right-radius: 5px; 
-}
-.message-bubble.received { 
-    background-color: #ffffff; 
-    align-self: flex-start; 
-    border-bottom-left-radius: 5px; 
-}
-.message-sender {
-    font-weight: 600;
-    font-size: 0.8em;
-    margin-bottom: 4px;
-    color: #546e7a; 
-    display: none; 
-}
-.message-content p { margin: 0; padding: 0; }
-.message-timestamp {
-    font-size: 0.75em;
-    color: #999; 
-    text-align: right;
-    margin-top: 5px;
-    display: block; 
+    position: relative; /* Для возможного "хвостика" через псевдоэлементы, если понадобится */
 }
 
+.message-bubble.sent { 
+    background-color: #dcf8c6; /* Оставляем зеленый */
+    color: #1f2c33; /* Более темный текст для зеленого фона */
+    align-self: flex-end; 
+    border-bottom-right-radius: 5px; /* "Хвостик" */
+}
+
+.message-bubble.received { 
+    background-color: #ffffff; 
+    color: #1f2c33; /* Тот же темный текст для белого фона */
+    align-self: flex-start; 
+    border-bottom-left-radius: 5px; /* "Хвостик" */
+}
+        
+.message-content p { 
+    margin: 0; 
+    padding: 0; 
+    font-weight: 400; /* Стандартная жирность, можно 500 для "чуть жирнее" */
+}
+
+.message-timestamp {
+    font-size: 0.78em; /* Чуть крупнее время */
+    color: #667781; /* Более темный серый для времени, но не черный */
+    text-align: right;
+    margin-top: 6px;
+    display: block; 
+}
+.message-bubble.sent .message-timestamp { /* Чтобы время на зеленых сообщениях было видно */
+    color: #618053; 
+}
+
+
+/* Поле ввода сообщения */
 .chat-input-area {
     display: flex;
-    padding: 12px 18px; 
-    background-color: #f0f0f0; 
-    border-top: 1px solid #ddd;
+    padding: 10px 15px; /* Уменьшил padding для компактности */
+    background-color: #f0f2f5; /* Более светлый фон для поля ввода, как в новых WA */
+    border-top: 1px solid #d1d7db; /* Разделитель */
     align-items: center; 
 }
+
 .chat-input-area textarea {
     flex-grow: 1;
-    border: 1px solid #ccc; 
-    padding: 12px 15px;
-    border-radius: 22px; 
+    border: 1px solid #d1d7db; 
+    padding: 10px 15px; /* Уменьшил padding */
+    border-radius: 20px; 
     resize: none;
     font-size: 1em;
     font-family: 'Open Sans', sans-serif;
-    min-height: 24px; 
+    min-height: 22px; 
     max-height: 100px; 
     overflow-y: auto; 
     line-height: 1.4;
-    margin-right: 12px; 
-    box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+    margin-right: 10px; 
+    background-color: #fff; /* Белый фон для самого поля ввода */
 }
 .chat-input-area textarea:focus {
     outline: none;
     border-color: #8e44ad; 
-    box-shadow: inset 0 1px 2px rgba(0,0,0,0.05), 0 0 0 2px rgba(142, 68, 173, 0.1);
+    box-shadow: 0 0 0 2px rgba(142, 68, 173, 0.15); /* Тень при фокусе */
 }
+
 .chat-send-button {
     background-color: #8e44ad; 
     color: white;
     border: none;
     border-radius: 50%; 
-    width: 48px;
-    height: 48px;
-    font-size: 1.4em;
+    width: 44px; /* Чуть меньше кнопка */
+    height: 44px;
+    font-size: 1.3em; /* Размер иконки */
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: background-color 0.2s ease, transform 0.1s ease;
 }
-.chat-send-button:hover { background-color: #773a92; }
+.chat-send-button:hover { background-color: #773a92; } 
 .chat-send-button:active { transform: scale(0.95); } 
 .chat-send-button:disabled { background-color: #c7a5d9; cursor: not-allowed; }
+
 
 /* Стили для спиннера загрузки, если нужен */
 .loading-spinner, .error-message-placeholder { 
