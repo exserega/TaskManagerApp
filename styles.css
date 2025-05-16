@@ -476,28 +476,128 @@ body.task-details-page .container {
     color: #c53030; 
 }
 
-/* styles.css - ВРЕМЕННЫЙ ТЕСТ */
+/* styles.css */
+
+/* Убедитесь, что эти общие стили есть в самом начале файла, если они еще не там */
+body {
+    font-family: 'Open Sans', sans-serif;
+    background-color: #eef1f5;
+    color: #37474f;
+    line-height: 1.6; 
+    margin: 0;
+    /* padding: 20px; /* Убрали отсюда, т.к. login-page сама управляет */
+}
+
+/* ================================================================ */
+/* =================== СТИЛИ ДЛЯ INDEX.HTML (ВХОД) ================ */
+/* ================================================================ */
 
 body.login-page {
-    background-color: red !important; /* Яркий цвет для явной проверки */
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
-    margin: 0;
-    padding: 20px;
+    min-height: 100vh; /* Используем min-height для гибкости */
+    padding: 20px; /* Отступы от краев экрана */
+    box-sizing: border-box; /* Чтобы padding не влиял на общую высоту 100vh */
 }
 
-.login-page .login-container {
-    background-color: lightblue !important; /* Яркий цвет */
-    padding: 40px;
-    border-radius: 10px;
-    width: 350px;
-    text-align: center;
-    border: 2px solid black;
+.login-page .login-container { /* Класс для основного блока на странице входа */
+    background-color: #ffffff;
+    padding: 40px 50px;
+    border-radius: 20px; /* Сильно скругленные углы */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07); /* Мягкая объемная тень */
+    width: 100%; /* Адаптивная ширина */
+    max-width: 420px; /* Максимальная ширина контейнера входа */
+    text-align: center; 
+    box-sizing: border-box;
 }
 
 .login-page .login-container h2 {
-    color: green !important;
-    margin-bottom: 20px;
+    font-size: 1.9em; /* Размер заголовка "Вход в систему" */
+    color: #37474f;
+    font-weight: 700;
+    margin-top: 0; 
+    margin-bottom: 35px; /* Увеличил отступ */
+}
+
+.login-page .login-container input[type="text"],
+.login-page .login-container input[type="password"] {
+    width: 100%;
+    padding: 16px 20px; /* Увеличил padding для более "воздушного" вида */
+    margin-bottom: 22px; /* Увеличил отступ между полями */
+    border: 1px solid #dfe4ea; /* Светлая рамка */
+    border-radius: 12px; /* Более скругленные углы */
+    box-sizing: border-box;
+    font-size: 1em;
+    color: #37474f;
+    background-color: #f8f9fa; /* Очень светлый фон */
+    box-shadow: 0 4px 8px rgba(55, 71, 79, 0.04); /* Легкая внутренняя тень */
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.login-page .login-container input[type="text"]:focus,
+.login-page .login-container input[type="password"]:focus {
+    border-color: #8e44ad; /* Фиолетовый при фокусе, как у кнопок */
+    background-color: #fff; /* Белый фон при фокусе */
+    box-shadow: 0 6px 12px rgba(142, 68, 173, 0.1), 0 0 0 3px rgba(142, 68, 173, 0.15); /* Тень при фокусе */
+    outline: none;
+}
+
+/* Стили для кнопки "Войти" - используем общий класс .button-primary */
+.login-page .login-container .button-primary { 
+    width: 100%; 
+    font-size: 1.15em; /* Чуть крупнее шрифт */
+    padding-top: 16px; /* Увеличил вертикальный padding */
+    padding-bottom: 16px;
+    margin-top: 15px; /* Отступ над кнопкой */
+}
+
+/* Стили для сообщения об ошибке на странице входа */
+.login-page .login-container p.error { 
+    padding: 15px 20px; 
+    margin-top: 25px; /* Увеличил отступ */
+    border-radius: 10px;
+    text-align: center; 
+    display: none; /* Изначально скрыто */
+    font-size: 0.95em;
+    border-width: 1px;
+    border-style: solid;
+    box-shadow: 0 4px 8px rgba(55, 71, 79, 0.04);
+    background-color: #fff5f5; /* Мягкий красный фон */
+    color: #c53030; /* Темно-красный текст */
+    border-color: #f7d9d9; /* Светло-красная рамка */
+}
+
+/* Общие стили для кнопок - убедитесь, что они есть в вашем CSS */
+/* Если их нет, добавьте этот блок */
+.button-primary { 
+    display: inline-block;
+    padding: 15px 30px; 
+    background-image: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); 
+    color: white !important;
+    text-decoration: none !important; 
+    border-radius: 10px; 
+    font-weight: 600;
+    font-size: 1em; 
+    box-shadow: 0 6px 20px rgba(155, 89, 182, 0.3); 
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+}
+.button-primary:hover {
+    background-image: linear-gradient(135deg, #8e44ad 0%, #9b59b6 100%);
+    box-shadow: 0 8px 25px rgba(155, 89, 182, 0.4);
+    transform: translateY(-3px);
+    color: white !important;
+}
+.button-primary:active {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(155, 89, 182, 0.3);
+}
+.button-primary:disabled {
+    background-image: linear-gradient(135deg, #c7a5d9 0%, #b989cc 100%);
+    box-shadow: 0 6px 20px rgba(199, 165, 217, 0.2);
+    cursor: not-allowed;
+    transform: translateY(0);
 }
