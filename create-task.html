@@ -141,83 +141,126 @@
         }
 
         document.getElementById('createTaskForm').addEventListener('submit', async function(event) {
-            event.preventDefault(); // Предотвращаем стандартную отправку формы
+    event.preventDefault(); 
 
-            const formMessageDiv = document.getElementById('formMessage');
-            formMessageDiv.style.display = 'none';
-            formMessageDiv.className = 'message'; // Сбрасываем классы success/error
+    const formMessageDiv = document.getElementById('formMessage');
+    formMessageDiv.style.display = 'none';
+    formMessageDiv.className = 'message'; 
 
-            const userCode = localStorage.getItem('userCode');
-            const summary = document.getElementById('summary').value;
-            const details = document.getElementById('details').value;
-            const configurationCode = document.getElementById('configuration').value;
-            const taskFile = document.getElementById('taskFile').files[0]; // Получаем файл
+    const userCode = localStorage.getItem('userCode');
+    const summary = document.getElementById('summary').value;
+    const details = document.getElementById('details').value;
+    const configurationCode = document.getElementById('configuration').value;
+    const taskFileInput = document.getElementById('taskFile');
+    const taskFile = taskFileInput.files[0]; 
 
-            if (!summary.trim()) {
-                formMessageDiv.textContent = 'Пожалуйста, укажите тему задачи.';
-                formMessageDiv.classList.add('error');
-                formMessageDiv.style.display = 'block';
-                return;
-            }
+    if (!summary.trim()) {
+        formMessageDiv.textContent = 'Пожалуйста, укажите тему задачи.';
+        formMessageDiv.classList.add('error');
+        formMessageDiv.style.display = 'block';
+        return;
+    }
 
-            // Создаем объект FormData для отправки данных, включая файл
-            const formData = new FormData();
-            formData.append('userCode', userCode);
-            formData.append('summary', summary);
-            formData.append('details', details);
-            if (configurationCode) { // Отправляем код конфигурации, только если он выбран
-                formData.append('configurationCode', configurationCode);
-            }
-            if (taskFile) {
-                formData.append('taskFile', taskFile, taskFile.name); // Третий параметр - имя файла
-            }
+    const submitButton = this.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    submitButton.textContent = 'Обработка...';
 
-            const submitButton = this.querySelector('button[type="submit"]');
-            submitButton.disabled = true;
-            submitButton.textContent = 'Создание...';
+    let attachedFileId = "";
+    let attachedFileName = "";
 
-            try {
-                // Убедись, что URL правильный
-                const response = await fetch('https://1c.c-r.kz/Registrator_test/hs/auth/tasks', {
-                    method: 'POST',
-                    body: formData // Отправляем FormData, заголовок Content-Type браузер установит сам
-                });
+    try {
+        // --- ЭТАП 1: Загрузка файла, если он выбран ---
+        if (taskFile) {
+            submitButton.textContent = 'Загрузка файла...';
+            const fileFormData = new FormData();
+            fileFormData.append('file', taskFile); // Имя 'file' здесь не так важно для 1С, так как она берет все тело
 
-                if (!response.ok) {
-                     let errorMsg = `Ошибка ${response.status}: ${response.statusText}`;
-                    try {
-                        const errorData = await response.json();
-                        if (errorData && errorData.message) {
-                            errorMsg = errorData.message;
-                        }
-                    } catch (e) { /* не JSON */ }
-                    throw new Error(errorMsg);
+            // Отправляем файл на /files/upload
+            // ВАЖНО: передаем имя файла в заголовке X-File-Name
+            const fileUploadResponse = await fetch('https://1c.c-r.kz/Registrator_test/hs/auth/files/upload', {
+                method: 'POST',
+                body: taskFile, // Отправляем сам объект File, браузер установит Content-Type (обычно application/octet-stream или тип файла)
+                headers: {
+                    // Этот заголовок будет прочитан в 1С для имени файла
+                    'X-File-Name': encodeURIComponent(taskFile.name) // Кодируем имя файла на всякий случай
                 }
+            });
 
-                const result = await response.json();
-
-                if (result.success) {
-                    formMessageDiv.textContent = `Задача №${result.taskNumber} успешно создана!`;
-                    formMessageDiv.classList.add('success');
-                    document.getElementById('createTaskForm').reset(); // Очищаем форму
-                    // Через 2 секунды перенаправляем на список задач
-                    setTimeout(() => {
-                       window.location.href = 'tasks.html';
-                    }, 2000);
-                } else {
-                    throw new Error(result.message || 'Неизвестная ошибка при создании задачи.');
-                }
-
-            } catch (error) {
-                console.error('Ошибка при создании задачи:', error);
-                formMessageDiv.textContent = 'Ошибка: ' + error.message;
-                formMessageDiv.classList.add('error');
-            } finally {
-                formMessageDiv.style.display = 'block';
-                submitButton.disabled = false;
-                submitButton.textContent = 'Создать задачу';
+            if (!fileUploadResponse.ok) {
+                let errorMsg = `Ошибка загрузки файла: ${fileUploadResponse.status}`;
+                try {
+                    const errorData = await fileUploadResponse.json();
+                    errorMsg = errorData.message || errorMsg;
+                } catch (e) { /* не JSON */ }
+                throw new Error(errorMsg);
             }
+
+            const fileResult = await fileUploadResponse.json();
+            if (fileResult.success) {
+                attachedFileId = fileResult.tempFileId;
+                attachedFileName = fileResult.fileName;
+                console.log('Файл успешно загружен:', fileResult);
+            } else {
+                throw new Error(fileResult.message || 'Не удалось загрузить файл.');
+            }
+        }
+
+        // --- ЭТАП 2: Создание задачи (с ID файла, если он был загружен) ---
+        submitButton.textContent = 'Создание задачи...';
+        const taskData = {
+            userCode: userCode,
+            summary: summary,
+            details: details,
+            configurationCode: configurationCode || "" // Отправляем пустую строку, если не выбрано
+        };
+
+        if (attachedFileId) {
+            taskData.attachedFileId = attachedFileId;
+            taskData.attachedFileName = attachedFileName;
+        }
+
+        // Отправляем JSON на /tasks
+        const taskCreateResponse = await fetch('https://1c.c-r.kz/Registrator_test/hs/auth/tasks', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(taskData)
         });
+
+        if (!taskCreateResponse.ok) {
+            let errorMsg = `Ошибка создания задачи: ${taskCreateResponse.status}`;
+            try {
+                const errorData = await taskCreateResponse.json();
+                errorMsg = errorData.message || errorMsg;
+            } catch (e) { /* не JSON */ }
+            throw new Error(errorMsg);
+        }
+
+        const taskResult = await taskCreateResponse.json();
+
+        if (taskResult.success) {
+            formMessageDiv.textContent = `Задача №${taskResult.taskNumber} успешно создана!`;
+            formMessageDiv.classList.add('success');
+            document.getElementById('createTaskForm').reset(); 
+            taskFileInput.value = ''; // Сбрасываем поле файла отдельно
+            setTimeout(() => {
+               window.location.href = 'tasks.html';
+            }, 2500);
+        } else {
+            throw new Error(taskResult.message || 'Неизвестная ошибка при создании задачи.');
+        }
+
+    } catch (error) {
+        console.error('Ошибка при создании задачи с файлом:', error);
+        formMessageDiv.textContent = 'Ошибка: ' + error.message;
+        formMessageDiv.classList.add('error');
+    } finally {
+        formMessageDiv.style.display = 'block';
+        submitButton.disabled = false;
+        submitButton.textContent = 'Создать задачу';
+    }
+});
     </script>
 </body>
 </html>
