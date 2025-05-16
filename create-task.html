@@ -180,33 +180,30 @@
         <h1>Создание новой задачи</h1>
         <form id="createTaskForm">
             <div class="form-group">
-                <label for="summary">Тема задачи (кратко):<span style="color:red;">*</span></label>
+                <label for="summary">Тема задачи (кратко)<span class="required-star">*</span></label>
                 <input type="text" id="summary" name="summary" required>
             </div>
 
             <div class="form-group">
-                <label for="configuration">Конфигурация:</label>
+                <label for="configuration">Конфигурация</label>
                 <select id="configuration" name="configurationCode">
-                    <option value="">-- Выберите конфигурацию (если необходимо) --</option>
+                    <option value="">-- Выберите конфигурацию --</option>
                     </select>
-                <small id="configInfo" style="display:none; margin-top: 5px;"></small>
-            </div>
+                <small id="configInfo" style="display:none;"></small> </div>
 
             <div class="form-group">
-                <label for="details">Детальное описание:</label>
+                <label for="details">Детальное описание</label>
                 <textarea id="details" name="details"></textarea>
             </div>
 
             <div class="form-group">
-                <label for="taskFile">Прикрепить файл (до 30МБ):</label>
+                <label for="taskFile">Прикрепить файл (до 30МБ)</label>
                 <input type="file" id="taskFile" name="taskFile">
             </div>
 
             <button type="submit" class="submit-button">Создать задачу</button>
         </form>
-        <div id="formMessage" class="message"></div>
-        <a href="tasks.html" class="back-link">К списку задач</a>
-    </div>
+        <div id="formMessage" class="message"></div> <a href="tasks.html" class="back-link">&larr; К списку задач</a> </div>
 
     <script>
         window.onload = function() {
