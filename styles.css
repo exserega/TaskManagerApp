@@ -476,65 +476,28 @@ body.task-details-page .container {
     color: #c53030; 
 }
 
-/* Стили для страницы входа index.html (если тоже хотите в общем стиле) */
+/* styles.css - ВРЕМЕННЫЙ ТЕСТ */
+
 body.login-page {
+    background-color: red !important; /* Яркий цвет для явной проверки */
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
-    padding: 20px; /* Убираем padding, если он у body, т.к. уже есть у .container */
-}
-.login-page .login-container { /* Переименовываем для специфичности */
-    background-color: white; 
-    padding: 40px 50px; /* Как у .container */
-    border-radius: 20px; /* Как у .container */
-    box-shadow: 0 10px 30px rgba(0,0,0,0.07); /* Как у .container */
-    width: 380px; /* Немного шире */
-    text-align: center; 
-}
-.login-page .login-container h2 {
-    margin-top: 0; /* Убираем верхний отступ у заголовка */
-    margin-bottom: 30px;
-    font-size: 1.8em;
-    color: #37474f;
-}
-.login-page .login-container input[type="text"],
-.login-page .login-container input[type="password"] {
-    /* Используем стили как у .form-group input */
-    width: 100%;
-    padding: 15px 20px;
-    margin-bottom: 20px; /* Отступ между полями */
-    border: 1px solid #dfe4ea;
-    border-radius: 12px;
-    box-sizing: border-box;
-    font-size: 1em;
-    color: #37474f;
-    background-color: #f8f9fa;
-    box-shadow: 0 4px 8px rgba(55, 71, 79, 0.04);
-}
-.login-page .login-container input[type="text"]:focus,
-.login-page .login-container input[type="password"]:focus {
-    border-color: #8e44ad;
-    background-color: #fff;
-    box-shadow: 0 6px 12px rgba(142, 68, 173, 0.1), 0 0 0 3px rgba(142, 68, 173, 0.15);
-    outline: none;
+    margin: 0;
+    padding: 20px;
 }
 
-.login-page .login-container button { 
-    /* Используем .button-primary */
-    width: 100%; 
-    /* padding: 15px; */ /* padding уже есть в .button-primary */
-    font-size: 1.1em;
-    margin-top: 10px; /* Отступ над кнопкой */
-}
-.login-page .login-container .error { /* Сообщение об ошибке на странице входа */
-    /* Используем стили .message.error */
-    margin-top: 20px;
-    padding: 15px;
+.login-page .login-container {
+    background-color: lightblue !important; /* Яркий цвет */
+    padding: 40px;
     border-radius: 10px;
-    background-color: #fff5f5; 
-    color: #c53030;
-    border: 1px solid #f7d9d9;
-    box-shadow: 0 4px 8px rgba(55, 71, 79, 0.04);
-    display: none; /* Изначально скрыто */
+    width: 350px;
+    text-align: center;
+    border: 2px solid black;
+}
+
+.login-page .login-container h2 {
+    color: green !important;
+    margin-bottom: 20px;
 }
