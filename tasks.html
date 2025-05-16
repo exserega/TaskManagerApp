@@ -176,11 +176,15 @@
                 listItem.innerHTML = taskHTML;
                 
                 listItem.onclick = function() {
-                    localStorage.setItem('currentTaskId', task.id);
-                    localStorage.setItem('currentTaskNumber', task.number);
-                    console.log("Выбрана задача:", task); 
-                    alert("Просмотр задачи " + task.number + " будет на следующей странице (пока не сделано)");
-                };
+    localStorage.setItem('currentTaskId', task.id); // GUID задачи
+    localStorage.setItem('currentTaskNumber', task.number); // Номер задачи (для отображения в заголовке task-details)
+    // localStorage.setItem('currentTaskSummary', task.summary); // Можно и тему сохранить, если нужно быстро показать
+    // localStorage.setItem('currentTaskStatus', task.status); // И статус
+    
+    console.log("Переход к деталям задачи:", task);
+    window.location.href = 'task-details.html'; // Перенаправляем на страницу деталей
+};
+
                 listItem.style.cursor = 'pointer';
                 taskListContainer.appendChild(listItem);
             });
