@@ -2,17 +2,17 @@
 
 /* --- Глобальные сбросы и основные стили --- */
 body {
-    font-family: 'Open Sans', sans-serif;
+    font-family: 'Open Sans', sans-serif; /* Убедитесь, что шрифт подключен в <head> ваших HTML */
     background-color: #eef1f5; /* Светлый серо-голубой фон */
     color: #37474f; /* Темно-сине-серый текст */
     line-height: 1.6; 
     margin: 0;
-    padding: 20px; /* Общий padding для body, если нужен, иначе можно убрать и задавать для .container */
+    padding: 20px; /* Общий padding для body */
 }
 
 /* --- Общий контейнер для контента страниц --- */
 .container {
-    max-width: 1000px; /* Или другое значение по умолчанию, можно переопределять на страницах */
+    max-width: 1000px; /* Общий для tasks, можно будет сузить для других страниц при необходимости */
     margin: 40px auto;
     background-color: #ffffff;
     padding: 40px 50px;
@@ -24,46 +24,14 @@ body {
 h1 { 
     color: #37474f;
     font-weight: 700;
-    text-align: center; /* Можно сделать общим, или переопределять */
-}
-
-/* Стили для tasks.html (список задач) */
-.tasks-page-container .main-header h1 { /* Более специфичный селектор для "Мои задачи" */
-    font-size: 2.8em; 
-    margin-bottom: 0;
-}
-.tasks-page-container .main-header {
     text-align: center;
-    margin-bottom: 45px;
 }
-
-/* Стили для create-task.html и task-details.html (заголовки поменьше) */
-.create-task-page-container h1,
-.task-details-page-container .page-header h1 {
-    font-size: 2.2em; /* Или 1.8em для task-details */
-    margin-bottom: 35px; /* Или другой отступ */
-}
-/* Если у task-details.html свой .page-header, его стили тоже сюда */
-.page-header {
-    background-color: #f8f9fa; 
-    padding: 20px 30px;
-    border-bottom: 1px solid #dfe4ea;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-.task-details-page-container .page-header h1 { /* Для заголовка внутри page-header */
-     font-size: 1.8em; 
-     margin: 0;
-     flex-grow: 1; 
-     text-align: left;
-}
-
 
 /* --- Верхняя панель (если используется на нескольких страницах) --- */
 #topBar { 
     display: flex; 
     justify-content: flex-end;
+    align-items: center; /* Добавлено для вертикального выравнивания */
     padding-bottom: 15px;
     margin-bottom: 30px;
     font-size: 0.95em;
@@ -74,65 +42,499 @@ h1 {
 .logout-link-top { color: #4527a0; font-weight: 600; text-decoration: none; }
 .logout-link-top:hover { text-decoration: underline; }
 
+/* ================================================================ */
+/* =================== СТИЛИ ДЛЯ TASKS.HTML ===================== */
+/* ================================================================ */
 
-/* --- Общие стили для кнопок (пример) --- */
-.button-primary { /* Общий класс для основных кнопок */
+/* Контейнер специфичный для страницы tasks.html, если нужно переопределить max-width */
+/* body.tasks-page .container { max-width: 1000px; } */
+
+.tasks-page .main-header { /* Используем класс на body для специфичности */
+    text-align: center;
+    margin-bottom: 45px;
+}
+
+.tasks-page .main-header h1 {
+    font-size: 2.8em; 
+    margin-bottom: 0; /* У h1 внутри .main-header */
+}
+
+/* Кнопка "Новая Задача +" */
+.tasks-page .create-task-button {
     display: inline-block;
-    padding: 18px 30px; 
+    padding: 18px 55px; 
     background-image: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); 
     color: white;
     text-decoration: none; 
     border-radius: 10px; 
+    font-size: 1.3em; 
     font-weight: 600;
     box-shadow: 0 6px 20px rgba(155, 89, 182, 0.3); 
     transition: all 0.3s ease;
+    margin-bottom: 30px;
     border: none;
-    cursor: pointer;
-    text-align: center;
 }
-.button-primary:hover {
+.tasks-page .create-task-button:hover {
     background-image: linear-gradient(135deg, #8e44ad 0%, #9b59b6 100%);
     box-shadow: 0 8px 25px rgba(155, 89, 182, 0.4);
-    transform: translateY(-3px);
+    transform: translateY(-3px) scale(1.02);
 }
-.button-primary:active {
+.tasks-page .create-task-button:active {
     transform: translateY(-1px);
     box-shadow: 0 3px 10px rgba(155, 89, 182, 0.3);
 }
-.button-primary:disabled {
-    background-image: linear-gradient(135deg, #c7a5d9 0%, #b989cc 100%);
-    box-shadow: 0 6px 20px rgba(199, 165, 217, 0.2);
-    cursor: not-allowed;
-    transform: translateY(0);
+
+/* Карточки задач */
+.task-item {
+    background-color: #fff;
+    border: none; 
+    padding: 25px; 
+    margin-bottom: 25px;
+    border-radius: 12px; 
+    box-shadow: 0 8px 16px rgba(55, 71, 79, 0.08); 
+    display: flex;
+    justify-content: space-between;
+    align-items: center; 
+    cursor: pointer;
+    transition: all 0.25s ease-in-out;
+}
+.task-item:hover {
+    box-shadow: 0 12px 22px rgba(55, 71, 79, 0.12);
+    transform: translateY(-5px) scale(1.01); 
+}
+.task-info h3 {
+    font-size: 1.5em; 
+    color: #263238;
+    font-weight: 600;
+    margin-top: 0; /* Сброс верхнего отступа у заголовка карточки */
+    margin-bottom: 12px;
+}
+.task-info p {
+    font-size: 1.1em; 
+    color: #546e7a;
+    margin-top: 0;
+    margin-bottom: 8px;
+}
+.task-status {
+    padding: 8px 20px;
+    border-radius: 10px;
+    font-size: 0.95em;
+    font-weight: 600;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
+/* Цвета для статусов */
+.status-new { background-color: #fff3cd; color: #856404; border-color: #ffeeba; }
+.status-in-progress { background-color: #cce5ff; color: #004085; border-color: #b8daff; }
+.status-completed { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
+.status-согласование-оценки { background-color: #ffe8cc; color: #995400; border-color: #ffdabb; }
+.status-default { background-color: #e2e3e5; color: #383d41; border-color: #d6d8db; }
+.status-ожидает-ответа-клиента { background-color: #e6ddeb; color: #521b8a; border-color: #d9c6ec; }
+
+/* Сообщения (loading, error, noTasks) на tasks.html */
+#loadingMessage, #errorMessage, #noTasksMessage { /* Эти ID используются в JS tasks.html */
+    text-align: center;
+    padding: 30px;
+    font-size: 1.25em; 
+    margin-top: 25px;
+    border-radius: 8px;
+}
+#errorMessage { /* Это для tasks.html, для create-task.html есть .message.error */
+    color: #721c24; 
+    border: 1px solid #f5c6cb;
+    background-color: #f8d7da; 
+}
+#noTasksMessage {
+    color: #004085;
+    background-color: #cce5ff;
+    border: 1px solid #b8daff;
 }
 
-/* Кнопка "Новая Задача +" на tasks.html (если ей нужен больший padding или font-size) */
-.create-task-button { /* Может наследовать от .button-primary и добавлять/переопределять */
-    padding: 18px 55px; 
-    font-size: 1.3em; 
-    margin-bottom: 30px;
+/* Ссылка "Выйти" внизу tasks.html (если есть) */
+.tasks-page .logout-link { /* Уточняем для tasks.html */
+    display: block;
+    margin-top: 30px;
+    text-align: center;
+    color: #007bff; /* Можно заменить на #4527a0 для единообразия с .logout-link-top */
+    font-size: 1em;
+}
+.tasks-page .logout-link:hover {
+    text-decoration: underline;
 }
 
-/* Кнопка "Создать задачу" на create-task.html */
-.submit-button { /* Может наследовать от .button-primary */
+
+/* ================================================================ */
+/* ================ СТИЛИ ДЛЯ CREATE-TASK.HTML ================== */
+/* ================================================================ */
+
+/* Контейнер специфичный для страницы create-task.html */
+/* body.create-task-page .container { max-width: 750px; } */
+
+.create-task-page h1 { /* Заголовок "Создание новой задачи" */
+    font-size: 2.4em;
+    margin-bottom: 40px;
+}
+
+.form-group {
+    margin-bottom: 28px;
+}
+.form-group label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 600;
+    font-size: 1em;
+    color: #4a5568; 
+}
+.form-group label .required-star {
+    color: #e53e3e;
+    margin-left: 3px;
+}
+
+.form-group input[type="text"],
+.form-group textarea,
+.form-group select,
+.form-group input[type="file"] {
+    width: 100%;
+    padding: 15px 20px;
+    border: 1px solid #dfe4ea;
+    border-radius: 12px;
+    box-sizing: border-box;
+    font-size: 1em;
+    color: #37474f;
+    background-color: #f8f9fa;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    box-shadow: 0 4px 8px rgba(55, 71, 79, 0.04);
+}
+.form-group input[type="text"]:focus,
+.form-group textarea:focus,
+.form-group select:focus,
+.form-group input[type="file"]:focus {
+    border-color: #8e44ad;
+    background-color: #fff;
+    box-shadow: 0 6px 12px rgba(142, 68, 173, 0.1), 0 0 0 3px rgba(142, 68, 173, 0.15);
+    outline: none;
+}
+.form-group textarea {
+    min-height: 150px; 
+    resize: vertical;
+}
+.form-group input[type="file"] {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    line-height: 1.5;
+}
+
+/* Кнопка "Создать задачу" - можно использовать общий .button-primary и добавить .submit-button для специфики */
+.submit-button.button-primary { /* Комбинируем классы */
     width: 100%;   
     font-size: 1.2em; 
     margin-top: 35px;
 }
 
-
-/* --- Стили для форм (create-task.html) --- */
-.form-group {
-    margin-bottom: 28px;
+/* Сообщения об ошибках/успехе на create-task.html и task-details.html */
+.message { /* Общий класс для сообщений */
+    padding: 18px 25px;
+    margin-top: 25px; /* Отступ сверху по умолчанию */
+    border-radius: 10px;
+    text-align: center; /* или left, если нужно */
+    display: none;
+    font-size: 0.95em;
+    border-width: 1px;
+    border-style: solid;
+    box-shadow: 0 4px 8px rgba(55, 71, 79, 0.04); /* Легкая тень как у полей */
 }
-/* ... и так далее для всех остальных стилей формы, которые я приводил ... */
-
-
-/* --- Стили для карточек задач (tasks.html) --- */
-.task-item {
-    /* ... ваши стили для .task-item ... */
+.message.success {
+    background-color: #e6fffa; 
+    color: #1a7f4f;
+    border-color: #b2f5ea;
 }
-/* ... и т.д. ... */
+.message.error {
+    background-color: #fff5f5; 
+    color: #c53030;
+    border-color: #f7d9d9;
+}
 
-/* --- Стили для деталей задачи и чата (task-details.html) --- */
-/* ... все стили, которые я предложил для task-details ... */
+/* Ссылка "Назад" на create-task.html и task-details.html */
+.back-link {
+    display: inline-block; 
+    text-align: center;
+    margin-top: 35px;
+    color: #5a67d8; 
+    font-weight: 600;
+    text-decoration: none;
+    padding: 8px 15px;
+    border-radius: 8px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+.back-link:hover {
+    background-color: #eef1f5; 
+    color: #434190;
+}
+.back-link i { /* Если используете иконку в ссылке назад */
+    margin-right: 5px;
+}
+
+
+/* Для информации о загрузке конфигураций на create-task.html */
+#configInfo {
+    font-size: 0.9em;
+    color: #546e7a;
+    margin-top: 8px;
+    padding-left: 5px;
+    display: block; 
+}
+
+
+/* ================================================================ */
+/* =============== СТИЛИ ДЛЯ TASK-DETAILS.HTML ================== */
+/* ================================================================ */
+
+/* Контейнер специфичный для страницы task-details.html */
+/* body.task-details-page .container { max-width: 850px; } */
+/* Если body.task-details-page имеет padding: 0, то для контейнера margin можно настроить */
+body.task-details-page {
+    padding: 0; /* Убираем padding у body, чтобы контейнер мог управлять отступами */
+}
+body.task-details-page .container {
+    margin: 0 auto; /* Центрируем, если body без padding */
+    min-height: 100vh; /* Занимает всю высоту */
+    border-radius: 0; /* Убираем скругление, если на весь экран */
+    box-shadow: none; /* Убираем тень, если на весь экран */
+    padding: 0; /* Внутренний padding тоже убираем, секции будут управлять своим */
+     max-width: none; /* Чтобы занимал всю ширину */
+}
+
+.task-details-page .page-header {
+    /* Стили для .page-header уже есть выше, они общие */
+    /* Можно добавить специфичные, если нужно */
+     border-radius: 20px 20px 0 0; /* Скруглить только верхние углы, если контейнер не на весь экран */
+}
+
+
+.task-chat-wrapper {
+    display: flex;
+    flex-direction: column; 
+    flex-grow: 1; 
+    /* overflow: hidden; */ /* Этот overflow лучше убрать, чтобы скролл работал в chat-messages */
+}
+
+.task-details-section {
+    padding: 25px 30px;
+    border-bottom: 1px solid #dfe4ea;
+    background-color: #fff; 
+}
+.task-details-section h2 {
+    font-size: 1.4em;
+    color: #263238;
+    margin-top: 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+.detail-item {
+    margin-bottom: 15px;
+    font-size: 0.95em;
+    display: flex; 
+    flex-wrap: wrap; 
+}
+.detail-item strong {
+    font-weight: 600;
+    color: #546e7a;
+    margin-right: 8px;
+    min-width: 130px; 
+    display: inline-block;
+}
+.detail-item span {
+     color: #37474f;
+     flex-basis: calc(100% - 140px); 
+}
+.task-status-detail { 
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 0.9em;
+    font-weight: 600;
+    white-space: nowrap;
+    display: inline-block; 
+    /* Цвета статусов уже определены выше (.status-new и т.д.) */
+}
+
+.attached-files-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.attached-files-list li { margin-bottom: 8px; }
+.attached-files-list a { color: #4527a0; text-decoration: none; font-weight: 500; }
+.attached-files-list a:hover { text-decoration: underline; }
+.attached-files-list i { margin-right: 8px; color: #8e44ad; }
+
+/* --- Стили для чата (WhatsApp-like) --- */
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1; 
+    background-color: #e5ddd5; 
+    overflow: hidden; 
+    position: relative; 
+}
+.chat-messages {
+    flex-grow: 1;
+    padding: 20px;
+    overflow-y: auto; 
+    display: flex;
+    flex-direction: column;
+}
+.message-bubble {
+    max-width: 70%;
+    padding: 10px 15px;
+    border-radius: 18px; 
+    margin-bottom: 12px; 
+    font-size: 0.95em;
+    line-height: 1.4;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.12); 
+    word-wrap: break-word; 
+}
+.message-bubble.sent { 
+    background-color: #dcf8c6; 
+    align-self: flex-end; 
+    border-bottom-right-radius: 5px; 
+}
+.message-bubble.received { 
+    background-color: #ffffff; 
+    align-self: flex-start; 
+    border-bottom-left-radius: 5px; 
+}
+.message-sender {
+    font-weight: 600;
+    font-size: 0.8em;
+    margin-bottom: 4px;
+    color: #546e7a; 
+    display: none; 
+}
+.message-content p { margin: 0; padding: 0; }
+.message-timestamp {
+    font-size: 0.75em;
+    color: #999; 
+    text-align: right;
+    margin-top: 5px;
+    display: block; 
+}
+
+.chat-input-area {
+    display: flex;
+    padding: 12px 18px; 
+    background-color: #f0f0f0; 
+    border-top: 1px solid #ddd;
+    align-items: center; 
+}
+.chat-input-area textarea {
+    flex-grow: 1;
+    border: 1px solid #ccc; 
+    padding: 12px 15px;
+    border-radius: 22px; 
+    resize: none;
+    font-size: 1em;
+    font-family: 'Open Sans', sans-serif;
+    min-height: 24px; 
+    max-height: 100px; 
+    overflow-y: auto; 
+    line-height: 1.4;
+    margin-right: 12px; 
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+}
+.chat-input-area textarea:focus {
+    outline: none;
+    border-color: #8e44ad; 
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.05), 0 0 0 2px rgba(142, 68, 173, 0.1);
+}
+.chat-send-button {
+    background-color: #8e44ad; 
+    color: white;
+    border: none;
+    border-radius: 50%; 
+    width: 48px;
+    height: 48px;
+    font-size: 1.4em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+.chat-send-button:hover { background-color: #773a92; }
+.chat-send-button:active { transform: scale(0.95); } 
+.chat-send-button:disabled { background-color: #c7a5d9; cursor: not-allowed; }
+
+/* Стили для спиннера загрузки, если нужен */
+.loading-spinner, .error-message-placeholder { 
+    text-align: center;
+    padding: 40px 20px;
+    font-size: 1.1em;
+    color: #546e7a;
+}
+.error-message-placeholder {
+    color: #c53030; 
+}
+
+/* Стили для страницы входа index.html (если тоже хотите в общем стиле) */
+body.login-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    padding: 20px; /* Убираем padding, если он у body, т.к. уже есть у .container */
+}
+.login-page .login-container { /* Переименовываем для специфичности */
+    background-color: white; 
+    padding: 40px 50px; /* Как у .container */
+    border-radius: 20px; /* Как у .container */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.07); /* Как у .container */
+    width: 380px; /* Немного шире */
+    text-align: center; 
+}
+.login-page .login-container h2 {
+    margin-top: 0; /* Убираем верхний отступ у заголовка */
+    margin-bottom: 30px;
+    font-size: 1.8em;
+    color: #37474f;
+}
+.login-page .login-container input[type="text"],
+.login-page .login-container input[type="password"] {
+    /* Используем стили как у .form-group input */
+    width: 100%;
+    padding: 15px 20px;
+    margin-bottom: 20px; /* Отступ между полями */
+    border: 1px solid #dfe4ea;
+    border-radius: 12px;
+    box-sizing: border-box;
+    font-size: 1em;
+    color: #37474f;
+    background-color: #f8f9fa;
+    box-shadow: 0 4px 8px rgba(55, 71, 79, 0.04);
+}
+.login-page .login-container input[type="text"]:focus,
+.login-page .login-container input[type="password"]:focus {
+    border-color: #8e44ad;
+    background-color: #fff;
+    box-shadow: 0 6px 12px rgba(142, 68, 173, 0.1), 0 0 0 3px rgba(142, 68, 173, 0.15);
+    outline: none;
+}
+
+.login-page .login-container button { 
+    /* Используем .button-primary */
+    width: 100%; 
+    /* padding: 15px; */ /* padding уже есть в .button-primary */
+    font-size: 1.1em;
+    margin-top: 10px; /* Отступ над кнопкой */
+}
+.login-page .login-container .error { /* Сообщение об ошибке на странице входа */
+    /* Используем стили .message.error */
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 10px;
+    background-color: #fff5f5; 
+    color: #c53030;
+    border: 1px solid #f7d9d9;
+    box-shadow: 0 4px 8px rgba(55, 71, 79, 0.04);
+    display: none; /* Изначально скрыто */
+}
