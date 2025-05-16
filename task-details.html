@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Детали задачи</title>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="styles.css"> 
+    <style>
+        /* Сюда можно временно вставить CSS из моего предыдущего ответа, если styles.css еще не обновлен */
+        /* Например, так: */
+        /* --- Общие стили, как на tasks.html и create-task.html --- */
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background-color: #eef1f5;
+            color: #37474f;
+            line-height: 1.6;
+            padding: 0; 
+            margin: 0;
+            display: flex; 
+            flex-direction: column; 
+            min-height: 100vh; 
+        }
+
+        .container {
+            max-width: 850px; 
+            width: 100%; 
+            margin: 20px auto; 
+            background-color: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; 
+        }
+        
+        .page-header {
+            background-color: #f8f9fa; 
+            padding: 20px 30px;
+            border-bottom: 1px solid #dfe4ea;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .page-header h1 {
+            font-size: 1.8em; 
+            color: #37474f;
+            font-weight: 600;
+            margin: 0;
+            flex-grow: 1; 
+            text-align: left;
+        }
+        
+        .back-link-header {
+            color: #4527a0;
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 0.95em;
+            padding: 8px 15px;
+            border-radius: 8px;
+            transition: background-color 0.2s ease;
+        }
+        .back-link-header:hover {
+            background-color: #e9e7f0;
+        }
+        .back-link-header i {
+            margin-right: 5px;
+        }
+
+        .task-chat-wrapper {
+            display: flex;
+            flex-direction: column; 
+            flex-grow: 1; 
+        }
+
+        .task-details-section {
+            padding: 25px 30px;
+            border-bottom: 1px solid #dfe4ea;
+            background-color: #fff; 
+        }
+
+        .task-details-section h2 {
+            font-size: 1.4em;
+            color: #263238;
+            margin-top: 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .detail-item {
+            margin-bottom: 15px;
+            font-size: 0.95em;
+            display: flex; /* Для выравнивания метки и значения */
+            flex-wrap: wrap; /* Для переноса, если значение длинное */
+        }
+        .detail-item strong {
+            font-weight: 600;
+            color: #546e7a;
+            margin-right: 8px;
+            min-width: 130px; /* Увеличил для лучшего вида */
+            display: inline-block;
+        }
+        .detail-item span {
+             color: #37474f;
+             flex-basis: calc(100% - 140px); /* Чтобы занимало оставшееся место */
+        }
+        
+        .task-status-detail { 
+            padding: 5px 12px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: 600;
+            white-space: nowrap;
+            display: inline-block; 
+        }
+        .status-new { background-color: #fff3cd; color: #856404; border:1px solid #ffeeba;}
+        .status-in-progress { background-color: #cce5ff; color: #004085; border:1px solid #b8daff;}
+        .status-completed { background-color: #d4edda; color: #155724; border:1px solid #c3e6cb;}
+        .status-согласование-оценки { background-color: #ffe8cc; color: #995400; border:1px solid #ffdabb;}
+        .status-default { background-color: #e2e3e5; color: #383d41; border:1px solid #d6d8db;}
+        .status-ожидает-ответа-клиента { background-color: #e6ddeb; color: #521b8a; border:1px solid #d9c6ec;}
+
+        .attached-files-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .attached-files-list li { margin-bottom: 8px; }
+        .attached-files-list a { color: #4527a0; text-decoration: none; font-weight: 500; }
+        .attached-files-list a:hover { text-decoration: underline; }
+        .attached-files-list i { margin-right: 8px; color: #8e44ad; }
+        
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1; 
+            background-color: #e5ddd5; 
+            overflow: hidden; 
+            position: relative; 
+        }
+
+        .chat-messages {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto; 
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 18px; 
+            margin-bottom: 12px; /* Чуть больше отступ */
+            font-size: 0.95em;
+            line-height: 1.4;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.12); /* Чуть заметнее тень */
+            word-wrap: break-word; 
+        }
+
+        .message-bubble.sent { 
+            background-color: #dcf8c6; 
+            align-self: flex-end; 
+            border-bottom-right-radius: 5px; 
+        }
+
+        .message-bubble.received { 
+            background-color: #ffffff; 
+            align-self: flex-start; 
+            border-bottom-left-radius: 5px; 
+        }
+        
+        .message-sender { /* Пока не используется активно, но стили есть */
+            font-weight: 600;
+            font-size: 0.8em;
+            margin-bottom: 4px;
+            color: #546e7a; 
+            display: none; 
+        }
+
+        .message-content p { margin: 0; padding: 0; }
+
+        .message-timestamp {
+            font-size: 0.75em;
+            color: #999; /* Сделал чуть темнее для читаемости */
+            text-align: right;
+            margin-top: 5px;
+            display: block; 
+        }
+
+        .chat-input-area {
+            display: flex;
+            padding: 12px 18px; /* Увеличил padding */
+            background-color: #f0f0f0; 
+            border-top: 1px solid #ddd;
+            align-items: center; /* Выравнивание по центру */
+        }
+
+        .chat-input-area textarea {
+            flex-grow: 1;
+            border: 1px solid #ccc; /* Добавил рамку для textarea */
+            padding: 12px 15px;
+            border-radius: 22px; 
+            resize: none;
+            font-size: 1em;
+            font-family: 'Open Sans', sans-serif;
+            min-height: 24px; 
+            max-height: 100px; 
+            overflow-y: auto; 
+            line-height: 1.4;
+            margin-right: 12px; /* Увеличил отступ */
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .chat-input-area textarea:focus {
+            outline: none;
+            border-color: #8e44ad; /* Фиолетовая рамка при фокусе */
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.05), 0 0 0 2px rgba(142, 68, 173, 0.1);
+        }
+
+        .chat-send-button {
+            background-color: #8e44ad; 
+            color: white;
+            border: none;
+            border-radius: 50%; 
+            width: 48px;
+            height: 48px;
+            font-size: 1.4em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+        .chat-send-button:hover { background-color: #773a92; } /* Темнее при наведении */
+        .chat-send-button:active { transform: scale(0.95); } /* Эффект нажатия */
+        .chat-send-button:disabled { background-color: #c7a5d9; cursor: not-allowed; }
+
+        .loading-spinner, .error-message-placeholder { /* Общий класс для заглушек */
+            text-align: center;
+            padding: 40px 20px;
+            font-size: 1.1em;
+            color: #546e7a;
+        }
+        .error-message-placeholder {
+            color: #c53030; /* Цвет для ошибок */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="page-header">
+            <h1 id="task-title">Загрузка данных задачи...</h1>
+            <a href="tasks.html" class="back-link-header"><i class="fas fa-arrow-left"></i> К списку задач</a>
+        </div>
+
+        <div class="task-chat-wrapper">
+            <div class="task-details-section">
+                <h2>Детали задачи</h2>
+                <div id="task-details-content">
+                    <div class="loading-spinner">Загрузка деталей...</div>
+                    </div>
+
+                <h2>Прикрепленные файлы</h2>
+                <ul class="attached-files-list" id="attached-files">
+                    <li><i class="fas fa-spinner fa-spin"></i> Загрузка списка файлов...</li>
+                    </ul>
+            </div>
+
+            <div class="chat-container">
+                <div class="chat-messages" id="chat-messages-area">
+                    <div class="message-bubble received">
+                        <div class="message-content"><p>Здравствуйте! Уточните, пожалуйста, номер документа, который не проводится.</p></div>
+                        <span class="message-timestamp">10:32</span>
+                    </div>
+                    <div class="message-bubble sent">
+                        <div class="message-content"><p>Добрый день! Документ РТУ00-00567 от 14.05.2025.</p></div>
+                        <span class="message-timestamp">10:35</span>
+                    </div>
+                     <div class="message-bubble received">
+                        <div class="message-content"><p>Спасибо, принял в работу. Постараюсь разобраться в ближайшее время.</p></div>
+                        <span class="message-timestamp">10:38</span>
+                    </div>
+                </div>
+                <div class="chat-input-area">
+                    <textarea id="chat-message-input" placeholder="Введите сообщение..." rows="1"></textarea>
+                    <button id="chat-send-button" class="chat-send-button" title="Отправить">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Скрипты будут добавлены на следующем этапе
+        document.addEventListener('DOMContentLoaded', () => {
+            const taskIdFromStorage = localStorage.getItem('currentTaskId');
+            const taskNumberFromStorage = localStorage.getItem('currentTaskNumber');
+
+            const taskTitleElement = document.getElementById('task-title');
+            
+            if (taskNumberFromStorage) {
+                taskTitleElement.textContent = `Задача №${taskNumberFromStorage}`;
+            } else if (taskIdFromStorage) {
+                taskTitleElement.textContent = `Задача (ID: ${taskIdFromStorage.substring(0,8)}...)`; // Показываем часть ID, если номера нет
+            } else {
+                taskTitleElement.textContent = 'Детали задачи';
+                document.getElementById('task-details-content').innerHTML = '<div class="error-message-placeholder">Ошибка: ID задачи не найден. Вернитесь к списку задач.</div>';
+                document.getElementById('chat-messages-area').innerHTML = ''; // Очищаем чат
+                 // Можно заблокировать поле ввода
+                document.getElementById('chat-message-input').disabled = true;
+                document.getElementById('chat-send-button').disabled = true;
+            }
+
+            // Динамическое изменение высоты textarea
+            const messageInput = document.getElementById('chat-message-input');
+            messageInput.addEventListener('input', function() {
+                this.style.height = 'auto'; // Сбрасываем высоту
+                this.style.height = (this.scrollHeight) + 'px'; // Устанавливаем по содержимому
+            });
+        });
+    </script>
+</body>
+</html>
