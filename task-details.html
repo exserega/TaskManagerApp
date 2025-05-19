@@ -269,44 +269,61 @@
     }
 
     function displayChatMessage(message) {
-        const chatMessagesAreaElement = document.getElementById('chat-messages-area');
-        if (!chatMessagesAreaElement) return;
+    const chatMessagesAreaElement = document.getElementById('chat-messages-area');
+    if (!chatMessagesAreaElement) return;
 
-        // Если первое сообщение и это "Загрузка...", очищаем
-        const firstChild = chatMessagesAreaElement.firstChild;
-        if (firstChild && firstChild.nodeType === Node.ELEMENT_NODE && firstChild.querySelector('i.fa-spinner')) {
-             chatMessagesAreaElement.innerHTML = '';
-        }
-
-        const messageDiv = document.createElement('div');
-        messageDiv.classList.add('message-bubble');
-        
-        if (message.isOwn) { 
-            messageDiv.classList.add('sent');
-        } else {
-            messageDiv.classList.add('received');
-        }
-
-        let formattedTimestamp = message.timestamp;
-        if (message.timestamp) {
-            try {
-                const dateObj = new Date(message.timestamp.replace('Т', ' '));
-                if (!isNaN(dateObj.getTime())) {
-                    formattedTimestamp = dateObj.toLocaleTimeString('ru-RU', {
-                        hour: '2-digit', minute: '2-digit'
-                    });
-                } else {
-                     console.warn("Не удалось распознать время сообщения:", message.timestamp);
-                }
-            } catch (e) { console.warn("Ошибка форматирования времени сообщения:", e); }
-        }
-        
-        messageDiv.innerHTML = `
-            <div class="message-content"><p>${(message.text || '').replace(/\n/g, '<br>')}</p></div>
-            <span class="message-timestamp">${formattedTimestamp || ''}</span>
-        `;
-        chatMessagesAreaElement.appendChild(messageDiv);
+    const firstChild = chatMessagesAreaElement.firstChild;
+    if (firstChild && firstChild.nodeType === Node.ELEMENT_NODE && firstChild.querySelector('i.fa-spinner')) {
+         chatMessagesAreaElement.innerHTML = '';
     }
+
+    const messageDiv = document.createElement('div');
+    messageDiv.classList.add('message-bubble');
+    
+    if (message.isOwn) { 
+        messageDiv.classList.add('sent');
+    } else {
+        messageDiv.classList.add('received');
+    }
+
+    let formattedTimestamp = '--:--'; // Значение по умолчанию, если что-то пойдет не так
+    console.log("Processing message timestamp:", message.timestamp); // <--- ОТЛАДКА 1: Что пришло?
+
+    if (message.timestamp) {
+        try {
+            const dateStringForJS = message.timestamp.replace('Т', ' ');
+            console.log("Date string for JS:", dateStringForJS); // <--- ОТЛАДКА 2: Строка после замены 'Т'
+
+            const dateObj = new Date(dateStringForJS);
+            console.log("Created dateObj:", dateObj, "Is Valid:", !isNaN(dateObj.getTime())); // <--- ОТЛАДКА 3: Сам объект Date и его валидность
+
+            if (!isNaN(dateObj.getTime())) { 
+                formattedTimestamp = dateObj.toLocaleTimeString('ru-RU', {
+                    hour: '2-digit', 
+                    minute: '2-digit'
+                    // Добавим hour12: false для явного 24-часового формата, если нужно
+                    // hour12: false 
+                });
+                console.log("Formatted timestamp:", formattedTimestamp); // <--- ОТЛАДКА 4: Результат форматирования
+            } else {
+                 console.warn("Не удалось распознать время сообщения (объект Date невалиден):", message.timestamp);
+                 formattedTimestamp = message.timestamp.split('Т')[1] || message.timestamp.split(' ')[1] || '--:--'; // Пытаемся взять хотя бы время из строки
+                 if (formattedTimestamp.length > 5) formattedTimestamp = formattedTimestamp.substring(0,5); // Оставляем ЧЧ:ММ
+            }
+        } catch (e) { 
+            console.warn("Ошибка при форматировании времени сообщения:", message.timestamp, e); 
+            formattedTimestamp = message.timestamp.split('Т')[1] || message.timestamp.split(' ')[1] || '--:--';
+            if (formattedTimestamp.length > 5) formattedTimestamp = formattedTimestamp.substring(0,5);
+        }
+    }
+    
+    messageDiv.innerHTML = `
+        <div class="message-content"><p>${(message.text || '').replace(/\n/g, '<br>')}</p></div>
+        <span class="message-timestamp">${formattedTimestamp}</span>
+    `;
+    chatMessagesAreaElement.appendChild(messageDiv);
+}
+
 </script>
 </body>
 </html>
