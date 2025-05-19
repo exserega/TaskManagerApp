@@ -277,11 +277,10 @@
 function displayChatMessage(message) {
     const chatMessagesAreaElement = document.getElementById('chat-messages-area');
     if (!chatMessagesAreaElement) {
-        console.error("Элемент #chat-messages-area не найден для displayChatMessage!"); // Добавим лог ошибки
+        console.error("Элемент #chat-messages-area не найден для displayChatMessage!");
         return;
     }
 
-    // Если первое, что мы добавляем, и это "Загрузка...", то очищаем перед добавлением реального сообщения
     const firstChild = chatMessagesAreaElement.firstChild;
     if (firstChild && firstChild.nodeType === Node.ELEMENT_NODE && firstChild.querySelector('i.fa-spinner')) {
          chatMessagesAreaElement.innerHTML = '';
@@ -296,19 +295,20 @@ function displayChatMessage(message) {
         messageDiv.classList.add('received');
     }
 
-    let formattedTimestamp = '--:--'; // Значение по умолчанию
-    // console.log("Processing message timestamp:", message.timestamp); // Можно оставить для детальной отладки
+    let formattedTimestamp = '--:--'; 
+    // Закомментируем старые логи, чтобы не было путаницы
+    // console.log("Processing message timestamp:", message.timestamp); 
 
     if (message.timestamp) {
         try {
             const dateStringForJS = message.timestamp.replace('Т', ' ');
-            // console.log("Date string for JS:", dateStringForJS); // Для отладки
+            // console.log("Date string for JS:", dateStringForJS);
 
             const dateObj = new Date(dateStringForJS);
-            // console.log("Created dateObj:", dateObj, "Is Valid:", !isNaN(dateObj.getTime())); // Для отладки
+            // console.log("Created dateObj:", dateObj, "Is Valid:", !isNaN(dateObj.getTime()));
 
             if (!isNaN(dateObj.getTime())) { 
-                // Ручное форматирование времени ЧЧ:ММ
+                // --- ИСПРАВЛЕННОЕ ФОРМАТИРОВАНИЕ ВРЕМЕНИ ---
                 let hours = dateObj.getHours();
                 let minutes = dateObj.getMinutes();
 
@@ -316,13 +316,13 @@ function displayChatMessage(message) {
                 let minutesFormatted = minutes < 10 ? '0' + minutes : minutes.toString();
 
                 formattedTimestamp = `${hoursFormatted}:${minutesFormatted}`;
-                // console.log("Formatted message timestamp (manual):", formattedTimestamp); // Для отладки
+                // console.log("Formatted message timestamp (manual):", formattedTimestamp); // Новый лог
+                // --- КОНЕЦ ИСПРАВЛЕННОГО ФОРМАТИРОВАНИЯ ---
             } else {
                  console.warn("Не удалось распознать время сообщения (объект Date невалиден) для строки:", message.timestamp);
-                 // Попытка извлечь время из строки, если объект Date невалиден
-                 const timePartMatch = message.timestamp.match(/(\d{2}:\d{2})(:\d{2})?$/); // Ищем ЧЧ:ММ или ЧЧ:ММ:СС в конце строки
+                 const timePartMatch = message.timestamp.match(/(\d{2}:\d{2})(:\d{2})?$/);
                  if (timePartMatch && timePartMatch[1]) {
-                     formattedTimestamp = timePartMatch[1]; // Берем ЧЧ:ММ
+                     formattedTimestamp = timePartMatch[1]; 
                  }
             }
         } catch (e) { 
@@ -333,6 +333,13 @@ function displayChatMessage(message) {
             }
         }
     }
+    
+    messageDiv.innerHTML = `
+        <div class="message-content"><p>${(message.text || '').replace(/\n/g, '<br>')}</p></div>
+        <span class="message-timestamp">${formattedTimestamp}</span>
+    `;
+    chatMessagesAreaElement.appendChild(messageDiv);
+}
     
     messageDiv.innerHTML = `
         <div class="message-content"><p>${(message.text || '').replace(/\n/g, '<br>')}</p></div>
