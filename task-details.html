@@ -274,106 +274,6 @@
     }
 
 
-Вы совершенно правы, что я снова дал неполный код, пропустив отладочные console.log. Приношу свои извинения! Это действительно затрудняет отладку для вас.
-
-Проблема: Время в сообщениях чата отображается как "00:00", хотя в логах видно, что dateObj создается с правильным временем (например, 00:00:01 или 00:00:10).
-
-Код, который вы предоставили (конец task-details.html):
-
-HTML
-
-<script>
-    // ... (весь ваш JavaScript до displayChatMessage)
-
-    function displayChatMessage(message) {
-        const chatMessagesAreaElement = document.getElementById('chat-messages-area');
-        if (!chatMessagesAreaElement) {
-            console.error("Элемент #chat-messages-area не найден для displayChatMessage!");
-            return;
-        }
-
-        const firstChild = chatMessagesAreaElement.firstChild;
-        if (firstChild && firstChild.nodeType === Node.ELEMENT_NODE && firstChild.querySelector('i.fa-spinner')) {
-             chatMessagesAreaElement.innerHTML = '';
-        }
-
-        const messageDiv = document.createElement('div');
-        messageDiv.classList.add('message-bubble');
-        
-        if (message.isOwn) { 
-            messageDiv.classList.add('sent');
-        } else {
-            messageDiv.classList.add('received');
-        }
-
-        let formattedTimestamp = '--:--'; 
-        // console.log("Processing message timestamp:", message.timestamp); // Я убрал этот лог в предыдущем ответе, возвращаем для ясности
-
-        if (message.timestamp) {
-            try {
-                const dateStringForJS = message.timestamp.replace('Т', ' ');
-                // console.log("Date string for JS:", dateStringForJS); // Возвращаем для ясности
-
-                const dateObj = new Date(dateStringForJS);
-                // console.log("Created dateObj:", dateObj, "Is Valid:", !isNaN(dateObj.getTime())); // Возвращаем для ясности
-
-                if (!isNaN(dateObj.getTime())) { 
-                    // --- ЗДЕСЬ БЫЛА ПРОБЛЕМА В МОЕМ ПРЕДЫДУЩЕМ ПРЕДЛОЖЕНИИ ---
-                    // Я предложил такой код:
-                    // formattedTimestamp = dateObj.toLocaleTimeString('ru-RU', { 
-                    //     hour: '2-digit', 
-                    //     minute: '2-digit'
-                    // });
-                    // console.log("Formatted timestamp:", formattedTimestamp); // Выводил "00:00"
-                    // --- НО МЫ ЕГО ЗАМЕНИЛИ НА РУЧНОЙ, КОТОРЫЙ ДОЛЖЕН РАБОТАТЬ ---
-
-                    // --- ПРАВИЛЬНЫЙ (РУЧНОЙ) КОД ФОРМАТИРОВАНИЯ ВРЕМЕНИ ---
-                    let hours = dateObj.getHours();
-                    let minutes = dateObj.getMinutes();
-
-                    let hoursFormatted = hours < 10 ? '0' + hours : hours.toString();
-                    let minutesFormatted = minutes < 10 ? '0' + minutes : minutes.toString();
-
-                    formattedTimestamp = `${hoursFormatted}:${minutesFormatted}`;
-                    // console.log("Formatted message timestamp (manual):", formattedTimestamp); // Для отладки
-                    // --- КОНЕЦ ПРАВИЛЬНОГО (РУЧНОГО) КОДА ФОРМАТИРОВАНИЯ ---
-                } else {
-                     console.warn("Не удалось распознать время сообщения (объект Date невалиден) для строки:", message.timestamp);
-                     const timePartMatch = message.timestamp.match(/(\d{2}:\d{2})(:\d{2})?$/);
-                     if (timePartMatch && timePartMatch[1]) {
-                         formattedTimestamp = timePartMatch[1]; 
-                     }
-                }
-            } catch (e) { 
-                console.warn("Ошибка при форматировании времени сообщения:", message.timestamp, e); 
-                const timePartMatch = message.timestamp.match(/(\d{2}:\d{2})(:\d{2})?$/);
-                if (timePartMatch && timePartMatch[1]) {
-                    formattedTimestamp = timePartMatch[1];
-                }
-            }
-        }
-        
-        messageDiv.innerHTML = `
-            <div class="message-content"><p>${(message.text || '').replace(/\n/g, '<br>')}</p></div>
-            <span class="message-timestamp">${formattedTimestamp}</span>
-        `;
-        chatMessagesAreaElement.appendChild(messageDiv);
-    } 
-</script>
-</body>
-</html>
-Логи, которые вы предоставили, показывали, что проблема была именно в toLocaleTimeString.
-task-details.html:312 Formatted timestamp: 00:00
-
-Вы сказали, что код, который я дал, уже вставлен, но время так и не корректно отображается (00:00 везде). И логи, которые вы приводите в конце (Formatted timestamp (manual): 13:49 и потом снова Formatted timestamp: 00:00), немного сбивают с толку, так как Formatted timestamp (manual): 13:49 относится к функции displayTaskDetails (для даты самой задачи), а не к displayChatMessage.
-
-Давайте убедимся, что в функции displayChatMessage используется ИМЕННО ручное форматирование и добавим ключевые логи обратно.
-
-Полный, окончательный вариант функции displayChatMessage с логированием:
-Пожалуйста, полностью замените вашу текущую функцию displayChatMessage на эту:
-
-JavaScript
-
 function displayChatMessage(message) {
     const chatMessagesAreaElement = document.getElementById('chat-messages-area');
     if (!chatMessagesAreaElement) {
@@ -445,8 +345,9 @@ function displayChatMessage(message) {
         <span class="message-timestamp">${formattedTimestamp}</span>
     `;
     chatMessagesAreaElement.appendChild(messageDiv);
-} 
-
+}
 </script>
 </body>
 </html>
+
+
