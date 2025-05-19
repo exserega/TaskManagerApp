@@ -435,6 +435,146 @@ if (chatSendButton && chatMessageInput) {
     });
 }
 
+
+let chatUpdateIntervalId = null; // Переменная для хранения ID интервала обновления чата
+    const CHAT_UPDATE_INTERVAL = 15000; // Интервал обновления в миллисекундах (15 секунд)
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const taskId = localStorage.getItem('currentTaskId');
+        // ... (остальной ваш код в DOMContentLoaded до вызова loadChatMessages) ...
+
+        try {
+            // ... (загрузка деталей задачи) ...
+            const response = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/task/${taskId}`);
+            // ... (обработка ответа деталей задачи) ...
+
+            if (result.success && result.task) {
+                displayTaskDetails(result.task);
+                await loadChatMessages(taskId); // Дожидаемся первой загрузки сообщений
+
+                // === ЗАПУСК ПЕРИОДИЧЕСКОГО ОБНОВЛЕНИЯ ЧАТА ===
+                if (chatUpdateIntervalId) { // Если уже был запущен (маловероятно здесь, но на всякий случай)
+                    clearInterval(chatUpdateIntervalId);
+                }
+                chatUpdateIntervalId = setInterval(() => {
+                    console.log("Периодическое обновление чата для задачи:", taskId);
+                    loadChatMessages(taskId, true); // Передаем флаг, что это фоновое обновление
+                }, CHAT_UPDATE_INTERVAL);
+                // ===========================================
+
+            } else {
+                throw new Error(result.message || 'Получены некорректные данные о задаче от сервера.');
+            }
+        } catch (error) {
+            // ... (обработка ошибок) ...
+            // Если произошла ошибка при начальной загрузке, интервал не запускаем
+        }
+        // ... (остальной код в DOMContentLoaded, например, для textarea) ...
+    });
+
+    // Модифицируем loadChatMessages, чтобы она не показывала "Загрузка сообщений..." при фоновом обновлении
+    async function loadChatMessages(taskId, isBackgroundUpdate = false) {
+        const chatMessagesAreaElement = document.getElementById('chat-messages-area');
+        if (!chatMessagesAreaElement) {
+            console.error("Элемент #chat-messages-area не найден для отображения сообщений!");
+            return;
+        }
+
+        const userCode = localStorage.getItem('userCode');
+        // console.log("loadChatMessages: userCode из localStorage:", userCode); 
+
+        if (!userCode && !isBackgroundUpdate) { // Показываем предупреждение только при первой загрузке
+            console.warn("UserCode не найден в localStorage, заголовок X-User-Code не будет отправлен. Поле isOwn для сообщений чата будет определено как 'не мое'.");
+        }
+
+        // Показываем сообщение о загрузке только при первой загрузке, а не при фоновом обновлении
+        if (!isBackgroundUpdate) {
+            chatMessagesAreaElement.innerHTML = '<div><i class="fas fa-spinner fa-spin"></i> Загрузка сообщений...</div>';
+        }
+
+        let currentMessageCount = chatMessagesAreaElement.querySelectorAll('.message-bubble').length;
+        if (isBackgroundUpdate && chatMessagesAreaElement.firstChild && chatMessagesAreaElement.firstChild.textContent === 'В этом чате пока нет сообщений.') {
+            currentMessageCount = 0; // Если было "нет сообщений", считаем, что их 0
+        }
+
+
+        try {
+            const headers = {};
+            if (userCode) {
+                headers['X-User-Code'] = userCode;
+            }
+            // console.log("loadChatMessages: Отправляемые заголовки:", headers);
+
+            const response = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/chat/${taskId}/messages`, {
+                method: 'GET',
+                headers: headers
+            });
+
+            if (!response.ok) {
+                // При фоновом обновлении можно не показывать ошибку так агрессивно, а просто логировать
+                let errorMsg = `Ошибка ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    errorMsg = errorData.message ? `${errorData.message} (статус ${response.status})` : errorMsg;
+                } catch (e) { 
+                    errorMsg = `Ошибка ${response.status}: ${response.statusText}`;
+                }
+                if (!isBackgroundUpdate) {
+                    throw new Error(`Не удалось загрузить сообщения чата. ${errorMsg}`);
+                } else {
+                    console.warn(`Фоновое обновление чата: ${errorMsg}`);
+                    return; // Прерываем фоновое обновление при ошибке
+                }
+            }
+
+            const result = await response.json();
+
+            if (result.success && result.messages) {
+                // Если это не фоновое обновление или если количество сообщений изменилось, перерисовываем
+                // (простая проверка, можно улучшить, сравнивая ID последних сообщений)
+                if (!isBackgroundUpdate || result.messages.length !== currentMessageCount) {
+                    chatMessagesAreaElement.innerHTML = ''; 
+                    if (result.messages.length === 0) {
+                        const noMessagesDiv = document.createElement('div');
+                        noMessagesDiv.style.textAlign = 'center';
+                        noMessagesDiv.style.color = '#6c757d';
+                        noMessagesDiv.style.padding = '20px';
+                        noMessagesDiv.textContent = 'В этом чате пока нет сообщений.';
+                        chatMessagesAreaElement.appendChild(noMessagesDiv);
+                    } else {
+                        result.messages.forEach(message => {
+                            displayChatMessage(message);
+                        });
+                        chatMessagesAreaElement.scrollTop = chatMessagesAreaElement.scrollHeight; 
+                    }
+                }
+            } else {
+                if (!isBackgroundUpdate) {
+                    throw new Error(result.message || 'Получены некорректные данные сообщений от сервера.');
+                } else {
+                     console.warn(`Фоновое обновление чата: ${result.message || 'Получены некорректные данные сообщений от сервера.'}`);
+                }
+            }
+        } catch (error) {
+            console.error('Ошибка при загрузке сообщений чата:', error);
+            if (chatMessagesAreaElement && !isBackgroundUpdate) { // Показываем ошибку только при первой загрузке
+                chatMessagesAreaElement.innerHTML = `<div class="error-message-placeholder" style="text-align:center;">Ошибка загрузки сообщений: ${error.message}</div>`;
+            }
+        }
+    }
+
+    // Функция displayTaskDetails остается без изменений
+    // Функция displayChatMessage остается без изменений
+
+    // Остановка интервала при уходе со страницы (хорошая практика)
+    window.addEventListener('beforeunload', () => {
+        if (chatUpdateIntervalId) {
+            clearInterval(chatUpdateIntervalId);
+            console.log("Интервал обновления чата остановлен.");
+        }
+    });
+
+
 </script>
 </body>
 </html>
