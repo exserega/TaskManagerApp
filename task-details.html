@@ -346,6 +346,95 @@ function displayChatMessage(message) {
     `;
     chatMessagesAreaElement.appendChild(messageDiv);
 }
+
+
+async function sendChatMessage(taskId, userCode, messageText) {
+    const chatSendButtonElement = document.getElementById('chat-send-button');
+    const originalButtonContent = chatSendButtonElement.innerHTML; // Сохраняем исходное содержимое кнопки
+    chatSendButtonElement.disabled = true;
+    chatSendButtonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; // Показываем спиннер
+
+    try {
+        const payload = {
+            userCode: userCode,
+            text: messageText
+        };
+
+        const response = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/chat/${taskId}/sendmessage`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+                // 'X-User-Code' здесь не нужен, так как userCode уже в теле payload
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            let errorMsg = `Ошибка ${response.status}`;
+            try {
+                const errorData = await response.json();
+                errorMsg = errorData.message ? `${errorData.message} (статус ${response.status})` : errorMsg;
+            } catch (e) { 
+                errorMsg = `Ошибка ${response.status}: ${response.statusText}`;
+            }
+            throw new Error(`Не удалось отправить сообщение. ${errorMsg}`);
+        }
+
+        const result = await response.json();
+
+        if (result.success && result.sentMessage) {
+            displayChatMessage(result.sentMessage); // Отображаем отправленное сообщение
+            document.getElementById('chat-message-input').value = ''; // Очищаем поле ввода
+            document.getElementById('chat-message-input').style.height = 'auto'; // Сбрасываем высоту textarea
+
+            // Прокрутка к последнему сообщению
+            const chatMessagesAreaElement = document.getElementById('chat-messages-area');
+            if(chatMessagesAreaElement) chatMessagesAreaElement.scrollTop = chatMessagesAreaElement.scrollHeight;
+
+            return true; // Успех
+        } else {
+            throw new Error(result.message || 'Ошибка при отправке сообщения (ответ сервера).');
+        }
+
+    } catch (error) {
+        console.error('Ошибка отправки сообщения в чат:', error);
+        alert(`Не удалось отправить сообщение: ${error.message}`); // Показываем alert пользователю
+        return false; // Неудача
+    } finally {
+        chatSendButtonElement.disabled = false;
+        chatSendButtonElement.innerHTML = originalButtonContent; // Возвращаем иконку отправки
+    }
+}
+
+// Обработчик для кнопки отправки сообщения
+const chatSendButton = document.getElementById('chat-send-button');
+const chatMessageInput = document.getElementById('chat-message-input');
+
+if (chatSendButton && chatMessageInput) {
+    chatSendButton.addEventListener('click', async () => {
+        const messageText = chatMessageInput.value.trim();
+        const taskId = localStorage.getItem('currentTaskId');
+        const userCode = localStorage.getItem('userCode');
+
+        if (messageText && taskId && userCode) {
+            await sendChatMessage(taskId, userCode, messageText);
+        } else if (!messageText) {
+            // Можно добавить какое-то уведомление, что сообщение пустое
+            chatMessageInput.focus();
+        } else {
+            alert("Ошибка: не удалось определить ID задачи или код пользователя для отправки сообщения.");
+        }
+    });
+
+    // Отправка по Enter (опционально)
+    chatMessageInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) { // Отправка по Enter, если не нажат Shift (для новой строки)
+            e.preventDefault(); // Предотвращаем стандартный ввод новой строки
+            chatSendButton.click(); // Имитируем клик по кнопке отправки
+        }
+    });
+}
+
 </script>
 </body>
 </html>
