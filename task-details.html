@@ -147,10 +147,11 @@
             taskTitleElement.textContent = `Задача №${task.number}`;
         }
 
-        let formattedDate = task.date; // Дата должна приходить в формате, который new Date() сможет распознать, например ISO 8601
-        if (task.date) {
-            try {
-                const dateObj = new Date(task.date);
+       let formattedDate = task.date;
+if (task.date) {
+    try {
+        const dateStringForJS = task.date.replace('Т', ' '); // ЗАМЕНА 'Т' НА ПРОБЕЛ
+        const dateObj = new Date(dateStringForJS); // НОВАЯ СТРОКА
                 if (!isNaN(dateObj.getTime())) {
                     formattedDate = dateObj.toLocaleString('ru-RU', {
                         year: 'numeric', month: 'long', day: 'numeric',
