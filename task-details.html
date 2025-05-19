@@ -273,10 +273,22 @@
         }
     }
 
-    function displayChatMessage(message) {
-    const chatMessagesAreaElement = document.getElementById('chat-messages-area');
-    if (!chatMessagesAreaElement) return;
+    Вы абсолютно правы! Прошу прощения за то, что снова использовал сокращенный вариант. Это моя привычка стараться не повторять уже написанный код, но для вас это неудобно.
 
+Давайте я предоставлю полный код функции displayChatMessage с исправлением для форматирования времени, без каких-либо сокращений или комментариев типа "// ... (код остается без изменений) ...".
+
+Вот как должна выглядеть вся функция displayChatMessage в вашем файле task-details.html внутри тега <script>:
+
+JavaScript
+
+function displayChatMessage(message) {
+    const chatMessagesAreaElement = document.getElementById('chat-messages-area');
+    if (!chatMessagesAreaElement) {
+        console.error("Элемент #chat-messages-area не найден для displayChatMessage!"); // Добавим лог ошибки
+        return;
+    }
+
+    // Если первое, что мы добавляем, и это "Загрузка...", то очищаем перед добавлением реального сообщения
     const firstChild = chatMessagesAreaElement.firstChild;
     if (firstChild && firstChild.nodeType === Node.ELEMENT_NODE && firstChild.querySelector('i.fa-spinner')) {
          chatMessagesAreaElement.innerHTML = '';
@@ -291,34 +303,41 @@
         messageDiv.classList.add('received');
     }
 
-    let formattedTimestamp = '--:--'; // Значение по умолчанию, если что-то пойдет не так
-    console.log("Processing message timestamp:", message.timestamp); // <--- ОТЛАДКА 1: Что пришло?
+    let formattedTimestamp = '--:--'; // Значение по умолчанию
+    // console.log("Processing message timestamp:", message.timestamp); // Можно оставить для детальной отладки
 
     if (message.timestamp) {
         try {
             const dateStringForJS = message.timestamp.replace('Т', ' ');
-            console.log("Date string for JS:", dateStringForJS); // <--- ОТЛАДКА 2: Строка после замены 'Т'
+            // console.log("Date string for JS:", dateStringForJS); // Для отладки
 
             const dateObj = new Date(dateStringForJS);
-            console.log("Created dateObj:", dateObj, "Is Valid:", !isNaN(dateObj.getTime())); // <--- ОТЛАДКА 3: Сам объект Date и его валидность
+            // console.log("Created dateObj:", dateObj, "Is Valid:", !isNaN(dateObj.getTime())); // Для отладки
 
             if (!isNaN(dateObj.getTime())) { 
-                formattedTimestamp = dateObj.toLocaleTimeString('ru-RU', {
-                    hour: '2-digit', 
-                    minute: '2-digit'
-                    // Добавим hour12: false для явного 24-часового формата, если нужно
-                    // hour12: false 
-                });
-                console.log("Formatted timestamp:", formattedTimestamp); // <--- ОТЛАДКА 4: Результат форматирования
+                // Ручное форматирование времени ЧЧ:ММ
+                let hours = dateObj.getHours();
+                let minutes = dateObj.getMinutes();
+
+                let hoursFormatted = hours < 10 ? '0' + hours : hours.toString();
+                let minutesFormatted = minutes < 10 ? '0' + minutes : minutes.toString();
+
+                formattedTimestamp = `${hoursFormatted}:${minutesFormatted}`;
+                // console.log("Formatted message timestamp (manual):", formattedTimestamp); // Для отладки
             } else {
-                 console.warn("Не удалось распознать время сообщения (объект Date невалиден):", message.timestamp);
-                 formattedTimestamp = message.timestamp.split('Т')[1] || message.timestamp.split(' ')[1] || '--:--'; // Пытаемся взять хотя бы время из строки
-                 if (formattedTimestamp.length > 5) formattedTimestamp = formattedTimestamp.substring(0,5); // Оставляем ЧЧ:ММ
+                 console.warn("Не удалось распознать время сообщения (объект Date невалиден) для строки:", message.timestamp);
+                 // Попытка извлечь время из строки, если объект Date невалиден
+                 const timePartMatch = message.timestamp.match(/(\d{2}:\d{2})(:\d{2})?$/); // Ищем ЧЧ:ММ или ЧЧ:ММ:СС в конце строки
+                 if (timePartMatch && timePartMatch[1]) {
+                     formattedTimestamp = timePartMatch[1]; // Берем ЧЧ:ММ
+                 }
             }
         } catch (e) { 
             console.warn("Ошибка при форматировании времени сообщения:", message.timestamp, e); 
-            formattedTimestamp = message.timestamp.split('Т')[1] || message.timestamp.split(' ')[1] || '--:--';
-            if (formattedTimestamp.length > 5) formattedTimestamp = formattedTimestamp.substring(0,5);
+            const timePartMatch = message.timestamp.match(/(\d{2}:\d{2})(:\d{2})?$/);
+            if (timePartMatch && timePartMatch[1]) {
+                formattedTimestamp = timePartMatch[1];
+            }
         }
     }
     
