@@ -149,12 +149,17 @@
             try {
                 const dateStringForJS = task.date.replace('Т', ' ');
                 const dateObj = new Date(dateStringForJS);
-                if (!isNaN(dateObj.getTime())) {
-                    formattedDate = dateObj.toLocaleString('ru-RU', {
-                        year: 'numeric', month: 'long', day: 'numeric',
-                        hour: '2-digit', minute: '2-digit'
-                    });
-                } else {
+              if (!isNaN(dateObj.getTime())) { 
+    let hours = dateObj.getHours();
+    let minutes = dateObj.getMinutes();
+
+    // Добавляем ведущий ноль, если нужно
+    let hoursFormatted = hours < 10 ? '0' + hours : hours.toString();
+    let minutesFormatted = minutes < 10 ? '0' + minutes : minutes.toString();
+
+    formattedTimestamp = `${hoursFormatted}:${minutesFormatted}`;
+    console.log("Formatted timestamp (manual):", formattedTimestamp); // <--- НОВЫЙ ОТЛАДОЧНЫЙ ВЫВОД
+} else {
                     console.warn("Не удалось распознать дату задачи:", task.date);
                     formattedDate = task.date;
                 }
