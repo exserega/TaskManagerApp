@@ -202,76 +202,85 @@
 
 
     // === ФУНКЦИИ ДЛЯ ЧАТА ===
-    async function loadChatMessages(taskId) {
-        const chatMessagesAreaElement = document.getElementById('chat-messages-area');
-        if (!chatMessagesAreaElement) {
-            console.error("Элемент #chat-messages-area не найден для отображения сообщений!");
-            return;
+    async function loadChatMessages(taskId, isBackgroundUpdate = false) {
+    const chatMessagesAreaElement = document.getElementById('chat-messages-area');
+    if (!chatMessagesAreaElement) {
+        console.error("loadChatMessages: Элемент #chat-messages-area не найден!");
+        return;
+    }
+
+    const userCode = localStorage.getItem('userCode'); 
+    
+    if (isBackgroundUpdate) {
+        console.log(`ФОНОВОЕ ОБНОВЛЕНИЕ ЧАТА (isBackgroundUpdate = true) для taskId: ${taskId}`);
+    } else {
+        console.log(`ПЕРВИЧНАЯ ЗАГРУЗКА ЧАТА (isBackgroundUpdate = false) для taskId: ${taskId}`);
+        chatMessagesAreaElement.innerHTML = '<div><i class="fas fa-spinner fa-spin"></i> Загрузка сообщений...</div>';
+    }
+
+    let currentMessageCount = chatMessagesAreaElement.querySelectorAll('.message-bubble').length;
+    const firstChildText = chatMessagesAreaElement.firstChild ? chatMessagesAreaElement.firstChild.textContent : "";
+    
+    if (firstChildText === 'В этом чате пока нет сообщений.' || (firstChildText.includes("Загрузка сообщений") && isBackgroundUpdate)) {
+        currentMessageCount = 0; 
+    }
+    console.log(`loadChatMessages: Перед запросом. isBackground: ${isBackgroundUpdate}, currentMessageCount (на клиенте): ${currentMessageCount}`);
+
+
+    try {
+        const headers = {};
+        if (userCode) { headers['X-User-Code'] = userCode; }
+
+        const response = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/chat/${taskId}/messages`, {
+            method: 'GET', headers: headers
+        });
+
+        if (!response.ok) {
+            let errorMsg = `Ошибка ${response.status}`;
+            try { const errorData = await response.json(); errorMsg = errorData.message ? `${errorData.message} (${response.status})` : errorMsg; }
+            catch (e) { errorMsg = `Ошибка ${response.status}: ${response.statusText}`; }
+            
+            if (!isBackgroundUpdate) throw new Error(`Не удалось загрузить сообщения чата. ${errorMsg}`);
+            else { console.warn(`Фоновое обновление чата ОШИБКА: ${errorMsg}`); return; }
         }
 
-        const userCode = localStorage.getItem('userCode'); // Получаем userCode текущего клиента
-        console.log("loadChatMessages: userCode из localStorage:", userCode); // <--- ОТЛАДОЧНЫЙ ВЫВОД
+        const result = await response.json();
 
-        if (!userCode) {
-            console.warn("UserCode не найден в localStorage, заголовок X-User-Code не будет отправлен. Поле isOwn для сообщений чата будет определено как 'не мое'.");
-        }
-
-        // Очищаем предыдущие сообщения или заглушку "загрузка"
-        chatMessagesAreaElement.innerHTML = '<div><i class="fas fa-spinner fa-spin"></i> Загрузка сообщений...</div>'; 
-
-        try {
-            const headers = {
-                // 'Content-Type': 'application/json' // Для GET-запроса обычно не нужен
-            };
-            if (userCode) {
-                headers['X-User-Code'] = userCode; // Добавляем заголовок, если userCode есть
-            }
-            console.log("loadChatMessages: Отправляемые заголовки:", headers); // <--- ОТЛАДОЧНЫЙ ВЫВОД
-
-            const response = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/chat/${taskId}/messages`, {
-                method: 'GET',
-                headers: headers
-            });
-
-            if (!response.ok) {
-                let errorMsg = `Ошибка ${response.status}`;
-                try {
-                    const errorData = await response.json();
-                    errorMsg = errorData.message ? `${errorData.message} (статус ${response.status})` : errorMsg;
-                } catch (e) { 
-                    errorMsg = `Ошибка ${response.status}: ${response.statusText}`;
-                }
-                throw new Error(`Не удалось загрузить сообщения чата. ${errorMsg}`);
-            }
-
-            const result = await response.json();
-
-            if (result.success && result.messages) {
+        if (result.success && result.messages) {
+            console.log(`loadChatMessages: Ответ от сервера. isBackground: ${isBackgroundUpdate}, Сообщений с сервера: ${result.messages.length}, Было на клиенте: ${currentMessageCount}`);
+            
+            if (!isBackgroundUpdate || result.messages.length !== currentMessageCount) {
+                console.log(`loadChatMessages: ТРЕБУЕТСЯ ПЕРЕРИСОВКА ЧАТА.`);
                 chatMessagesAreaElement.innerHTML = ''; 
                 if (result.messages.length === 0) {
                     const noMessagesDiv = document.createElement('div');
-                    noMessagesDiv.style.textAlign = 'center';
-                    noMessagesDiv.style.color = '#6c757d';
-                    noMessagesDiv.style.padding = '20px';
-                    noMessagesDiv.textContent = 'В этом чате пока нет сообщений.';
+                    noMessagesDiv.style.textAlign = 'center'; noMessagesDiv.style.color = '#6c757d';
+                    noMessagesDiv.style.padding = '20px'; noMessagesDiv.textContent = 'В этом чате пока нет сообщений.';
                     chatMessagesAreaElement.appendChild(noMessagesDiv);
                 } else {
                     result.messages.forEach(message => {
-                        displayChatMessage(message);
+                        displayChatMessage(message); // Эта функция у вас уже исправлена для времени
                     });
-                    chatMessagesAreaElement.scrollTop = chatMessagesAreaElement.scrollHeight; 
+                    // Прокручиваем только если это первая загрузка или если реально добавились новые сообщения
+                    if (!isBackgroundUpdate || result.messages.length > currentMessageCount) {
+                         chatMessagesAreaElement.scrollTop = chatMessagesAreaElement.scrollHeight; 
+                    }
                 }
             } else {
-                throw new Error(result.message || 'Получены некорректные данные сообщений от сервера.');
+                 console.log(`loadChatMessages: Перерисовка чата НЕ ТРЕБУЕТСЯ (количество сообщений не изменилось).`);
             }
-
-        } catch (error) {
-            console.error('Ошибка при загрузке сообщений чата:', error);
-            if (chatMessagesAreaElement) {
-                chatMessagesAreaElement.innerHTML = `<div class="error-message-placeholder" style="text-align:center;">Ошибка загрузки сообщений: ${error.message}</div>`;
-            }
+        } else {
+            const errorText = result.message || 'Получены некорректные данные сообщений от сервера.';
+            if (!isBackgroundUpdate) throw new Error(errorText);
+            else console.warn(`Фоновое обновление чата: ${errorText}`);
+        }
+    } catch (error) {
+        console.error('Ошибка при загрузке сообщений чата:', error.message);
+        if (chatMessagesAreaElement && !isBackgroundUpdate) {
+            chatMessagesAreaElement.innerHTML = `<div class="error-message-placeholder" style="text-align:center;">Ошибка загрузки сообщений: ${error.message}</div>`;
         }
     }
+}
 
 
 function displayChatMessage(message) {
