@@ -58,117 +58,43 @@
     </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-        const taskId = localStorage.getItem('currentTaskId');
-        const taskNumberFromStorage = localStorage.getItem('currentTaskNumber');
+    // Переменные и константы (определите их здесь ОДИН РАЗ)
+    let chatUpdateIntervalId = null;
+    const CHAT_UPDATE_INTERVAL = 15000; // 15 секунд
 
-        const taskTitleElement = document.getElementById('task-title');
-        const taskDetailsContentElement = document.getElementById('task-details-content');
-        const attachedFilesListElement = document.getElementById('attached-files');
-        
-        const chatMessageInputElement = document.getElementById('chat-message-input');
-        const chatSendButtonElement = document.getElementById('chat-send-button');
-
-        // Установка заголовка страницы
-        if (taskNumberFromStorage) {
-            taskTitleElement.textContent = `Задача №${taskNumberFromStorage}`;
-        } else if (taskId) {
-            taskTitleElement.textContent = `Задача (ID: ${taskId.substring(0,8)}...)`;
-        } else {
-            taskTitleElement.textContent = 'Детали задачи';
-            if(taskDetailsContentElement) taskDetailsContentElement.innerHTML = '<div class="error-message-placeholder">Ошибка: ID задачи не найден. Вернитесь к списку задач.</div>';
-            if(attachedFilesListElement) attachedFilesListElement.innerHTML = '<li>Не удалось загрузить файлы.</li>';
-            if(chatMessageInputElement) chatMessageInputElement.disabled = true;
-            if(chatSendButtonElement) chatSendButtonElement.disabled = true;
-            return;
-        }
-
-        if (!taskId) { 
-            if(taskDetailsContentElement) taskDetailsContentElement.innerHTML = '<div class="error-message-placeholder">Ошибка: ID задачи не определен.</div>';
-            if(attachedFilesListElement) attachedFilesListElement.innerHTML = '<li>Не удалось загрузить файлы.</li>';
-            if(chatMessageInputElement) chatMessageInputElement.disabled = true;
-            if(chatSendButtonElement) chatSendButtonElement.disabled = true;
-            return;
-        }
-
-        if(taskDetailsContentElement) taskDetailsContentElement.innerHTML = '<div class="loading-spinner">Загрузка деталей задачи...</div>';
-        if(attachedFilesListElement) attachedFilesListElement.innerHTML = '<li><i class="fas fa-spinner fa-spin"></i> Загрузка списка файлов...</li>';
-
-        try {
-            const response = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/task/${taskId}`); 
-            
-            if (!response.ok) {
-                let errorMsg = `Ошибка ${response.status}`;
-                try {
-                    const errorData = await response.json();
-                    errorMsg = errorData.message ? `${errorData.message} (статус ${response.status})` : errorMsg;
-                } catch (e) { 
-                    errorMsg = `Ошибка ${response.status}: ${response.statusText}`;
-                }
-                throw new Error(`Не удалось загрузить данные задачи. ${errorMsg}`);
-            }
-
-            const result = await response.json();
-
-            if (result.success && result.task) {
-                displayTaskDetails(result.task);
-                // === ВЫЗОВ ЗАГРУЗКИ СООБЩЕНИЙ ЧАТА ===
-                loadChatMessages(taskId); // <--- УБЕДИТЕСЬ, ЧТО ЭТА СТРОКА РАСКОММЕНТИРОВАНА И ВЫЗЫВАЕТСЯ
-            } else {
-                throw new Error(result.message || 'Получены некорректные данные о задаче от сервера.');
-            }
-
-        } catch (error) {
-            console.error('Ошибка при загрузке деталей задачи:', error);
-            if(taskDetailsContentElement) taskDetailsContentElement.innerHTML = `<div class="error-message-placeholder">Ошибка при загрузке деталей: ${error.message}</div>`;
-            if(attachedFilesListElement) attachedFilesListElement.innerHTML = '<li>Ошибка загрузки списка файлов.</li>';
-        }
-
-        if (chatMessageInputElement) {
-            chatMessageInputElement.addEventListener('input', function() {
-                this.style.height = 'auto';
-                this.style.height = (this.scrollHeight) + 'px';
-            });
-        }
-    });
+    // Функции displayTaskDetails, displayChatMessage, sendChatMessage (определите их здесь ОДИН РАЗ)
+    // Я не привожу их код повторно, чтобы сэкономить место, используйте ваши существующие версии
 
     function displayTaskDetails(task) {
-        // ... (ваш код displayTaskDetails без изменений) ...
-        // Убедитесь, что этот код работает и детали отображаются.
-        // Я его не повторяю здесь для краткости.
         const taskDetailsContentElement = document.getElementById('task-details-content');
         const attachedFilesListElement = document.getElementById('attached-files');
-        const taskTitleElement = document.getElementById('task-title'); 
-        
+        const taskTitleElement = document.getElementById('task-title');
+
         if (task.number && taskTitleElement) {
             taskTitleElement.textContent = `Задача №${task.number}`;
         }
 
-        let formattedDate = task.date;
+        let formattedDate = task.date; // Используйте ваш работающий код форматирования даты
         if (task.date) {
             try {
-                const dateStringForJS = task.date.replace('Т', ' ');
-                const dateObj = new Date(dateStringForJS);
-              if (!isNaN(dateObj.getTime())) { 
-    let hours = dateObj.getHours();
-    let minutes = dateObj.getMinutes();
-
-    // Добавляем ведущий ноль, если нужно
-    let hoursFormatted = hours < 10 ? '0' + hours : hours.toString();
-    let minutesFormatted = minutes < 10 ? '0' + minutes : minutes.toString();
-
-    formattedTimestamp = `${hoursFormatted}:${minutesFormatted}`;
-    console.log("Formatted timestamp (manual):", formattedTimestamp); // <--- НОВЫЙ ОТЛАДОЧНЫЙ ВЫВОД
-} else {
-                    console.warn("Не удалось распознать дату задачи:", task.date);
-                    formattedDate = task.date;
+                // Ваш код форматирования task.date (примерно)
+                const dateObj = new Date(task.date.replace('Т', ' '));
+                if (!isNaN(dateObj.getTime())) {
+                    const day = dateObj.getDate().toString().padStart(2, '0');
+                    const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+                    const year = dateObj.getFullYear();
+                    const hours = dateObj.getHours().toString().padStart(2, '0');
+                    const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+                    formattedDate = `${day}.${month}.${year} ${hours}:${minutes}`;
+                } else {
+                    formattedDate = task.date; // Или как вы обрабатываете неверную дату
                 }
-            } catch (e) { 
-                console.error("Ошибка форматирования даты задачи:", e); 
+            } catch (e) {
                 formattedDate = task.date;
             }
         }
-        
+
+
         let statusClass = 'status-default';
         if (task.status) {
             const statusNormalized = String(task.status).toLowerCase().replace(/\s+/g, '-');
@@ -192,296 +118,109 @@
         if (task.files && task.files.length > 0) {
             let filesHTML = '';
             task.files.forEach(file => {
-                filesHTML += `<li><a href="#" data-file-guid="${file.file_guid || ''}" class="task-file-link" title="Файл: ${file.name}"><i class="fas fa-paperclip"></i> ${file.name}</a></li>`;
+                // ВАЖНО: file.file_guid - это у вас НомерСтроки ТЧ. Для скачивания нужен ID задачи и этот номер строки.
+                // Ссылка для скачивания должна вести на специальный эндпоинт, например /downloadfile/{taskId}/{file_guid}
+                // Пока просто отображаем, как у вас было:
+                filesHTML += `<li><a href="#" data-task-id="${task.id}" data-file-row-id="${file.file_guid}" class="task-file-link" title="Файл: ${file.name}"><i class="fas fa-paperclip"></i> ${file.name}</a></li>`;
             });
             if(attachedFilesListElement) attachedFilesListElement.innerHTML = filesHTML;
+            // Тут можно добавить обработчики кликов на .task-file-link для скачивания, если еще нет
         } else {
             if(attachedFilesListElement) attachedFilesListElement.innerHTML = '<li>Прикрепленных файлов нет.</li>';
         }
     }
 
-
-    // === ФУНКЦИИ ДЛЯ ЧАТА ===
-    async function loadChatMessages(taskId, isBackgroundUpdate = false) {
-    const chatMessagesAreaElement = document.getElementById('chat-messages-area');
-    if (!chatMessagesAreaElement) {
-        console.error("loadChatMessages: Элемент #chat-messages-area не найден!");
-        return;
-    }
-
-    const userCode = localStorage.getItem('userCode'); 
-    
-    if (isBackgroundUpdate) {
-        console.log(`ФОНОВОЕ ОБНОВЛЕНИЕ ЧАТА (isBackgroundUpdate = true) для taskId: ${taskId}`);
-    } else {
-        console.log(`ПЕРВИЧНАЯ ЗАГРУЗКА ЧАТА (isBackgroundUpdate = false) для taskId: ${taskId}`);
-        chatMessagesAreaElement.innerHTML = '<div><i class="fas fa-spinner fa-spin"></i> Загрузка сообщений...</div>';
-    }
-
-    let currentMessageCount = chatMessagesAreaElement.querySelectorAll('.message-bubble').length;
-    const firstChildText = chatMessagesAreaElement.firstChild ? chatMessagesAreaElement.firstChild.textContent : "";
-    
-    if (firstChildText === 'В этом чате пока нет сообщений.' || (firstChildText.includes("Загрузка сообщений") && isBackgroundUpdate)) {
-        currentMessageCount = 0; 
-    }
-    console.log(`loadChatMessages: Перед запросом. isBackground: ${isBackgroundUpdate}, currentMessageCount (на клиенте): ${currentMessageCount}`);
-
-
-    try {
-        const headers = {};
-        if (userCode) { headers['X-User-Code'] = userCode; }
-
-        const response = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/chat/${taskId}/messages`, {
-            method: 'GET', headers: headers
-        });
-
-        if (!response.ok) {
-            let errorMsg = `Ошибка ${response.status}`;
-            try { const errorData = await response.json(); errorMsg = errorData.message ? `${errorData.message} (${response.status})` : errorMsg; }
-            catch (e) { errorMsg = `Ошибка ${response.status}: ${response.statusText}`; }
-            
-            if (!isBackgroundUpdate) throw new Error(`Не удалось загрузить сообщения чата. ${errorMsg}`);
-            else { console.warn(`Фоновое обновление чата ОШИБКА: ${errorMsg}`); return; }
+    function displayChatMessage(message) {
+        const chatMessagesAreaElement = document.getElementById('chat-messages-area');
+        if (!chatMessagesAreaElement) {
+            console.error("displayChatMessage: Элемент #chat-messages-area не найден!");
+            return;
         }
 
-        const result = await response.json();
+        const firstChild = chatMessagesAreaElement.firstChild;
+        // Очистка плейсхолдеров "Загрузка..." или "Нет сообщений..."
+        if (firstChild && firstChild.nodeType === Node.ELEMENT_NODE &&
+            (firstChild.querySelector('i.fa-spinner') || firstChild.textContent === 'В этом чате пока нет сообщений.')) {
+            chatMessagesAreaElement.innerHTML = '';
+        }
 
-        if (result.success && result.messages) {
-            console.log(`loadChatMessages: Ответ от сервера. isBackground: ${isBackgroundUpdate}, Сообщений с сервера: ${result.messages.length}, Было на клиенте: ${currentMessageCount}`);
-            
-            if (!isBackgroundUpdate || result.messages.length !== currentMessageCount) {
-                console.log(`loadChatMessages: ТРЕБУЕТСЯ ПЕРЕРИСОВКА ЧАТА.`);
-                chatMessagesAreaElement.innerHTML = ''; 
-                if (result.messages.length === 0) {
-                    const noMessagesDiv = document.createElement('div');
-                    noMessagesDiv.style.textAlign = 'center'; noMessagesDiv.style.color = '#6c757d';
-                    noMessagesDiv.style.padding = '20px'; noMessagesDiv.textContent = 'В этом чате пока нет сообщений.';
-                    chatMessagesAreaElement.appendChild(noMessagesDiv);
-                } else {
-                    result.messages.forEach(message => {
-                        displayChatMessage(message); // Эта функция у вас уже исправлена для времени
-                    });
-                    // Прокручиваем только если это первая загрузка или если реально добавились новые сообщения
-                    if (!isBackgroundUpdate || result.messages.length > currentMessageCount) {
-                         chatMessagesAreaElement.scrollTop = chatMessagesAreaElement.scrollHeight; 
-                    }
-                }
-            } else {
-                 console.log(`loadChatMessages: Перерисовка чата НЕ ТРЕБУЕТСЯ (количество сообщений не изменилось).`);
-            }
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message-bubble');
+
+        if (message.isOwn) {
+            messageDiv.classList.add('sent');
         } else {
-            const errorText = result.message || 'Получены некорректные данные сообщений от сервера.';
-            if (!isBackgroundUpdate) throw new Error(errorText);
-            else console.warn(`Фоновое обновление чата: ${errorText}`);
+            messageDiv.classList.add('received');
         }
-    } catch (error) {
-        console.error('Ошибка при загрузке сообщений чата:', error.message);
-        if (chatMessagesAreaElement && !isBackgroundUpdate) {
-            chatMessagesAreaElement.innerHTML = `<div class="error-message-placeholder" style="text-align:center;">Ошибка загрузки сообщений: ${error.message}</div>`;
-        }
-    }
-}
 
-
-function displayChatMessage(message) {
-    const chatMessagesAreaElement = document.getElementById('chat-messages-area');
-    if (!chatMessagesAreaElement) {
-        console.error("displayChatMessage: Элемент #chat-messages-area не найден!");
-        return;
-    }
-
-    const firstChild = chatMessagesAreaElement.firstChild;
-    if (firstChild && firstChild.nodeType === Node.ELEMENT_NODE && firstChild.querySelector('i.fa-spinner')) {
-         chatMessagesAreaElement.innerHTML = '';
-    }
-
-    const messageDiv = document.createElement('div');
-    messageDiv.classList.add('message-bubble');
-    
-    if (message.isOwn) { 
-        messageDiv.classList.add('sent');
-    } else {
-        messageDiv.classList.add('received');
-    }
-
-    let formattedTimestamp = '--:--'; // Значение по умолчанию
-    
-    console.log(`displayChatMessage: Обработка сообщения ID ${message.messageId}, timestamp из JSON: ${message.timestamp}`);
-
-    if (message.timestamp) {
-        try {
-            const dateStringForJS = message.timestamp.replace('Т', ' ');
-            console.log(`displayChatMessage: [${message.messageId}] Строка для new Date(): ${dateStringForJS}`);
-
-            const dateObj = new Date(dateStringForJS);
-            console.log(`displayChatMessage: [${message.messageId}] Создан dateObj: ${dateObj.toString()}, Валидность: ${!isNaN(dateObj.getTime())}`);
-
-            if (!isNaN(dateObj.getTime())) { 
-                let hours = dateObj.getHours();
-                let minutes = dateObj.getMinutes();
-
-                let hoursFormatted = hours < 10 ? '0' + hours : hours.toString();
-                let minutesFormatted = minutes < 10 ? '0' + minutes : minutes.toString();
-
-                formattedTimestamp = `${hoursFormatted}:${minutesFormatted}`;
-                console.log(`displayChatMessage: [${message.messageId}] Ручное форматирование: ${formattedTimestamp}`);
-            } else {
-                 console.warn(`displayChatMessage: [${message.messageId}] Не удалось распознать время (объект Date невалиден) для строки: ${message.timestamp}`);
-                 const timePartMatch = message.timestamp.match(/(\d{2}:\d{2})(:\d{2})?$/);
-                 if (timePartMatch && timePartMatch[1]) {
-                     formattedTimestamp = timePartMatch[1]; 
-                     console.log(`displayChatMessage: [${message.messageId}] Время извлечено регулярным выражением: ${formattedTimestamp}`);
-                 } else {
-                     console.warn(`displayChatMessage: [${message.messageId}] Не удалось извлечь время регулярным выражением из: ${message.timestamp}`);
-                 }
-            }
-        } catch (e) { 
-            console.warn(`displayChatMessage: [${message.messageId}] Исключение при форматировании времени для '${message.timestamp}':`, e); 
-            const timePartMatch = message.timestamp.match(/(\d{2}:\d{2})(:\d{2})?$/);
-            if (timePartMatch && timePartMatch[1]) {
-                formattedTimestamp = timePartMatch[1];
-                console.log(`displayChatMessage: [${message.messageId}] Время извлечено регулярным выражением (в catch): ${formattedTimestamp}`);
-            } else {
-                console.warn(`displayChatMessage: [${message.messageId}] Не удалось извлечь время регулярным выражением (в catch) из: ${message.timestamp}`);
-            }
-        }
-    } else {
-        console.warn(`displayChatMessage: [${message.messageId}] Отсутствует message.timestamp`);
-    }
-    
-    messageDiv.innerHTML = `
-        <div class="message-content"><p>${(message.text || '').replace(/\n/g, '<br>')}</p></div>
-        <span class="message-timestamp">${formattedTimestamp}</span>
-    `;
-    chatMessagesAreaElement.appendChild(messageDiv);
-}
-
-
-async function sendChatMessage(taskId, userCode, messageText) {
-    const chatSendButtonElement = document.getElementById('chat-send-button');
-    const originalButtonContent = chatSendButtonElement.innerHTML; // Сохраняем исходное содержимое кнопки
-    chatSendButtonElement.disabled = true;
-    chatSendButtonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; // Показываем спиннер
-
-    try {
-        const payload = {
-            userCode: userCode,
-            text: messageText
-        };
-
-        const response = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/chat/${taskId}/sendmessage`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-                // 'X-User-Code' здесь не нужен, так как userCode уже в теле payload
-            },
-            body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-            let errorMsg = `Ошибка ${response.status}`;
+        let formattedTimestamp = '--:--';
+        if (message.timestamp) {
             try {
-                const errorData = await response.json();
-                errorMsg = errorData.message ? `${errorData.message} (статус ${response.status})` : errorMsg;
-            } catch (e) { 
-                errorMsg = `Ошибка ${response.status}: ${response.statusText}`;
+                const dateStringForJS = message.timestamp.replace('Т', ' ');
+                const dateObj = new Date(dateStringForJS);
+                if (!isNaN(dateObj.getTime())) {
+                    let hours = dateObj.getHours().toString().padStart(2, '0');
+                    let minutes = dateObj.getMinutes().toString().padStart(2, '0');
+                    formattedTimestamp = `${hours}:${minutes}`;
+                } else {
+                    const timePartMatch = message.timestamp.match(/(\d{2}:\d{2})(:\d{2})?$/);
+                    if (timePartMatch && timePartMatch[1]) formattedTimestamp = timePartMatch[1];
+                }
+            } catch (e) {
+                const timePartMatch = message.timestamp.match(/(\d{2}:\d{2})(:\d{2})?$/);
+                if (timePartMatch && timePartMatch[1]) formattedTimestamp = timePartMatch[1];
             }
-            throw new Error(`Не удалось отправить сообщение. ${errorMsg}`);
         }
 
-        const result = await response.json();
-
-        if (result.success && result.sentMessage) {
-            displayChatMessage(result.sentMessage); // Отображаем отправленное сообщение
-            document.getElementById('chat-message-input').value = ''; // Очищаем поле ввода
-            document.getElementById('chat-message-input').style.height = 'auto'; // Сбрасываем высоту textarea
-
-            // Прокрутка к последнему сообщению
-            const chatMessagesAreaElement = document.getElementById('chat-messages-area');
-            if(chatMessagesAreaElement) chatMessagesAreaElement.scrollTop = chatMessagesAreaElement.scrollHeight;
-
-            return true; // Успех
-        } else {
-            throw new Error(result.message || 'Ошибка при отправке сообщения (ответ сервера).');
-        }
-
-    } catch (error) {
-        console.error('Ошибка отправки сообщения в чат:', error);
-        alert(`Не удалось отправить сообщение: ${error.message}`); // Показываем alert пользователю
-        return false; // Неудача
-    } finally {
-        chatSendButtonElement.disabled = false;
-        chatSendButtonElement.innerHTML = originalButtonContent; // Возвращаем иконку отправки
+        messageDiv.innerHTML = `
+            <div class="message-content"><p>${(message.text || '').replace(/\n/g, '<br>')}</p></div>
+            <span class="message-timestamp">${formattedTimestamp}</span>
+        `;
+        chatMessagesAreaElement.appendChild(messageDiv);
     }
-}
 
-// Обработчик для кнопки отправки сообщения
-const chatSendButton = document.getElementById('chat-send-button');
-const chatMessageInput = document.getElementById('chat-message-input');
-
-if (chatSendButton && chatMessageInput) {
-    chatSendButton.addEventListener('click', async () => {
-        const messageText = chatMessageInput.value.trim();
-        const taskId = localStorage.getItem('currentTaskId');
-        const userCode = localStorage.getItem('userCode');
-
-        if (messageText && taskId && userCode) {
-            await sendChatMessage(taskId, userCode, messageText);
-        } else if (!messageText) {
-            // Можно добавить какое-то уведомление, что сообщение пустое
-            chatMessageInput.focus();
-        } else {
-            alert("Ошибка: не удалось определить ID задачи или код пользователя для отправки сообщения.");
-        }
-    });
-
-    // Отправка по Enter (опционально)
-    chatMessageInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) { // Отправка по Enter, если не нажат Shift (для новой строки)
-            e.preventDefault(); // Предотвращаем стандартный ввод новой строки
-            chatSendButton.click(); // Имитируем клик по кнопке отправки
-        }
-    });
-}
-
-
-let chatUpdateIntervalId = null; // Переменная для хранения ID интервала обновления чата
-    const CHAT_UPDATE_INTERVAL = 15000; // Интервал обновления в миллисекундах (15 секунд)
-
-    document.addEventListener('DOMContentLoaded', async () => {
-        const taskId = localStorage.getItem('currentTaskId');
-        // ... (остальной ваш код в DOMContentLoaded до вызова loadChatMessages) ...
+    async function sendChatMessage(taskId, userCode, messageText) {
+        const chatSendButtonElement = document.getElementById('chat-send-button');
+        const originalButtonContent = chatSendButtonElement.innerHTML;
+        chatSendButtonElement.disabled = true;
+        chatSendButtonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
         try {
-            // ... (загрузка деталей задачи) ...
-            const response = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/task/${taskId}`);
-            // ... (обработка ответа деталей задачи) ...
+            const payload = { userCode: userCode, text: messageText };
+            const response = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/chat/${taskId}/sendmessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
 
-            if (result.success && result.task) {
-                displayTaskDetails(result.task);
-                await loadChatMessages(taskId); // Дожидаемся первой загрузки сообщений
+            if (!response.ok) {
+                let errorMsg = `Ошибка ${response.status}`;
+                try { const errorData = await response.json(); errorMsg = errorData.message ? `${errorData.message} (статус ${response.status})` : errorMsg; }
+                catch (e) { errorMsg = `Ошибка ${response.status}: ${response.statusText}`; }
+                throw new Error(`Не удалось отправить сообщение. ${errorMsg}`);
+            }
 
-                // === ЗАПУСК ПЕРИОДИЧЕСКОГО ОБНОВЛЕНИЯ ЧАТА ===
-                if (chatUpdateIntervalId) { // Если уже был запущен (маловероятно здесь, но на всякий случай)
-                    clearInterval(chatUpdateIntervalId);
-                }
-                chatUpdateIntervalId = setInterval(() => {
-                    console.log("Периодическое обновление чата для задачи:", taskId);
-                    loadChatMessages(taskId, true); // Передаем флаг, что это фоновое обновление
-                }, CHAT_UPDATE_INTERVAL);
-                // ===========================================
-
+            const result = await response.json();
+            if (result.success && result.sentMessage) {
+                displayChatMessage(result.sentMessage);
+                document.getElementById('chat-message-input').value = '';
+                document.getElementById('chat-message-input').style.height = 'auto';
+                const chatMessagesAreaElement = document.getElementById('chat-messages-area');
+                if(chatMessagesAreaElement) chatMessagesAreaElement.scrollTop = chatMessagesAreaElement.scrollHeight;
+                return true;
             } else {
-                throw new Error(result.message || 'Получены некорректные данные о задаче от сервера.');
+                throw new Error(result.message || 'Ошибка при отправке сообщения (ответ сервера).');
             }
         } catch (error) {
-            // ... (обработка ошибок) ...
-            // Если произошла ошибка при начальной загрузке, интервал не запускаем
+            console.error('Ошибка отправки сообщения в чат:', error);
+            alert(`Не удалось отправить сообщение: ${error.message}`);
+            return false;
+        } finally {
+            chatSendButtonElement.disabled = false;
+            chatSendButtonElement.innerHTML = originalButtonContent;
         }
-        // ... (остальной код в DOMContentLoaded, например, для textarea) ...
-    });
+    }
 
-    // Модифицируем loadChatMessages, чтобы она не показывала "Загрузка сообщений..." при фоновом обновлении
     async function loadChatMessages(taskId, isBackgroundUpdate = false) {
         const chatMessagesAreaElement = document.getElementById('chat-messages-area');
         if (!chatMessagesAreaElement) {
@@ -490,100 +229,175 @@ let chatUpdateIntervalId = null; // Переменная для хранения
         }
 
         const userCode = localStorage.getItem('userCode');
-        // console.log("loadChatMessages: userCode из localStorage:", userCode); 
 
-        if (!userCode && !isBackgroundUpdate) { // Показываем предупреждение только при первой загрузке
-            console.warn("UserCode не найден в localStorage, заголовок X-User-Code не будет отправлен. Поле isOwn для сообщений чата будет определено как 'не мое'.");
-        }
-
-        // Показываем сообщение о загрузке только при первой загрузке, а не при фоновом обновлении
         if (!isBackgroundUpdate) {
             chatMessagesAreaElement.innerHTML = '<div><i class="fas fa-spinner fa-spin"></i> Загрузка сообщений...</div>';
         }
 
         let currentMessageCount = chatMessagesAreaElement.querySelectorAll('.message-bubble').length;
-        if (isBackgroundUpdate && chatMessagesAreaElement.firstChild && chatMessagesAreaElement.firstChild.textContent === 'В этом чате пока нет сообщений.') {
-            currentMessageCount = 0; // Если было "нет сообщений", считаем, что их 0
+        // Если при фоновом обновлении в чате все еще "Загрузка..." или "Нет сообщений", считаем, что текущее кол-во 0
+        if (isBackgroundUpdate && chatMessagesAreaElement.firstChild &&
+           (chatMessagesAreaElement.firstChild.textContent === 'В этом чате пока нет сообщений.' ||
+            (chatMessagesAreaElement.firstChild.querySelector && chatMessagesAreaElement.firstChild.querySelector('i.fa-spinner'))
+           )) {
+            currentMessageCount = 0;
         }
-
+        console.log(`loadChatMessages: Перед запросом. isBackground: ${isBackgroundUpdate}, currentMessageCount (на клиенте): ${currentMessageCount}`);
 
         try {
             const headers = {};
-            if (userCode) {
-                headers['X-User-Code'] = userCode;
-            }
-            // console.log("loadChatMessages: Отправляемые заголовки:", headers);
+            if (userCode) { headers['X-User-Code'] = userCode; }
 
             const response = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/chat/${taskId}/messages`, {
-                method: 'GET',
-                headers: headers
+                method: 'GET', headers: headers
             });
 
             if (!response.ok) {
-                // При фоновом обновлении можно не показывать ошибку так агрессивно, а просто логировать
                 let errorMsg = `Ошибка ${response.status}`;
-                try {
-                    const errorData = await response.json();
-                    errorMsg = errorData.message ? `${errorData.message} (статус ${response.status})` : errorMsg;
-                } catch (e) { 
-                    errorMsg = `Ошибка ${response.status}: ${response.statusText}`;
-                }
-                if (!isBackgroundUpdate) {
-                    throw new Error(`Не удалось загрузить сообщения чата. ${errorMsg}`);
-                } else {
-                    console.warn(`Фоновое обновление чата: ${errorMsg}`);
-                    return; // Прерываем фоновое обновление при ошибке
-                }
+                try { const errorData = await response.json(); errorMsg = errorData.message ? `${errorData.message} (${response.status})` : errorMsg; }
+                catch (e) { errorMsg = `Ошибка ${response.status}: ${response.statusText}`; }
+
+                if (!isBackgroundUpdate) throw new Error(`Не удалось загрузить сообщения чата. ${errorMsg}`);
+                else { console.warn(`Фоновое обновление чата ОШИБКА: ${errorMsg}`); return; }
             }
 
             const result = await response.json();
+            console.log(`loadChatMessages: Ответ от сервера. isBackground: ${isBackgroundUpdate}, Сообщений с сервера: ${result.messages ? result.messages.length : 'undefined'}, Было на клиенте: ${currentMessageCount}`);
 
             if (result.success && result.messages) {
-                // Если это не фоновое обновление или если количество сообщений изменилось, перерисовываем
-                // (простая проверка, можно улучшить, сравнивая ID последних сообщений)
                 if (!isBackgroundUpdate || result.messages.length !== currentMessageCount) {
-                    chatMessagesAreaElement.innerHTML = ''; 
+                    console.log(`loadChatMessages: ТРЕБУЕТСЯ ПЕРЕРИСОВКА ЧАТА.`);
+                    chatMessagesAreaElement.innerHTML = '';
                     if (result.messages.length === 0) {
                         const noMessagesDiv = document.createElement('div');
-                        noMessagesDiv.style.textAlign = 'center';
-                        noMessagesDiv.style.color = '#6c757d';
-                        noMessagesDiv.style.padding = '20px';
-                        noMessagesDiv.textContent = 'В этом чате пока нет сообщений.';
+                        noMessagesDiv.style.textAlign = 'center'; noMessagesDiv.style.color = '#6c757d';
+                        noMessagesDiv.style.padding = '20px'; noMessagesDiv.textContent = 'В этом чате пока нет сообщений.';
                         chatMessagesAreaElement.appendChild(noMessagesDiv);
                     } else {
-                        result.messages.forEach(message => {
-                            displayChatMessage(message);
-                        });
-                        chatMessagesAreaElement.scrollTop = chatMessagesAreaElement.scrollHeight; 
+                        result.messages.forEach(message => displayChatMessage(message));
+                        // Прокручиваем только если это первая загрузка или если РЕАЛЬНО добавились новые сообщения
+                        // и чат не был пуст перед этим (чтобы не было лишней прокрутки, если он только что стал непустым)
+                        if (!isBackgroundUpdate || (result.messages.length > currentMessageCount && currentMessageCount > 0) ) {
+                           chatMessagesAreaElement.scrollTop = chatMessagesAreaElement.scrollHeight;
+                        } else if (result.messages.length > 0 && currentMessageCount === 0) { // Если чат стал непустым
+                           chatMessagesAreaElement.scrollTop = chatMessagesAreaElement.scrollHeight;
+                        }
                     }
+                } else {
+                     console.log(`loadChatMessages: Перерисовка чата НЕ ТРЕБУЕТСЯ (количество сообщений не изменилось).`);
                 }
             } else {
-                if (!isBackgroundUpdate) {
-                    throw new Error(result.message || 'Получены некорректные данные сообщений от сервера.');
-                } else {
-                     console.warn(`Фоновое обновление чата: ${result.message || 'Получены некорректные данные сообщений от сервера.'}`);
-                }
+                const errorText = result.message || 'Получены некорректные данные сообщений от сервера.';
+                if (!isBackgroundUpdate) throw new Error(errorText);
+                else console.warn(`Фоновое обновление чата: ${errorText}`);
             }
         } catch (error) {
-            console.error('Ошибка при загрузке сообщений чата:', error);
-            if (chatMessagesAreaElement && !isBackgroundUpdate) { // Показываем ошибку только при первой загрузке
+            console.error('Ошибка при загрузке сообщений чата:', error.message);
+            if (chatMessagesAreaElement && !isBackgroundUpdate) {
                 chatMessagesAreaElement.innerHTML = `<div class="error-message-placeholder" style="text-align:center;">Ошибка загрузки сообщений: ${error.message}</div>`;
             }
         }
     }
 
-    // Функция displayTaskDetails остается без изменений
-    // Функция displayChatMessage остается без изменений
+    // ЕДИНЫЙ ОБРАБОТЧИК DOMContentLoaded
+    document.addEventListener('DOMContentLoaded', async () => {
+        const taskId = localStorage.getItem('currentTaskId');
+        const taskNumberFromStorage = localStorage.getItem('currentTaskNumber');
+        const userCode = localStorage.getItem('userCode'); // Получаем userCode для отправки сообщений
 
-    // Остановка интервала при уходе со страницы (хорошая практика)
+        const taskTitleElement = document.getElementById('task-title');
+        const taskDetailsContentElement = document.getElementById('task-details-content');
+        const attachedFilesListElement = document.getElementById('attached-files');
+        const chatMessageInputElement = document.getElementById('chat-message-input');
+        const chatSendButtonElement = document.getElementById('chat-send-button');
+
+        if (taskNumberFromStorage) {
+            taskTitleElement.textContent = `Задача №${taskNumberFromStorage}`;
+        } else if (taskId) {
+            taskTitleElement.textContent = `Задача (ID: ${taskId.substring(0,8)}...)`;
+        } else {
+            taskTitleElement.textContent = 'Детали задачи';
+            if(taskDetailsContentElement) taskDetailsContentElement.innerHTML = '<div class="error-message-placeholder">Ошибка: ID задачи не найден. Вернитесь к списку задач.</div>';
+            if(attachedFilesListElement) attachedFilesListElement.innerHTML = '<li>Не удалось загрузить файлы.</li>';
+            if(chatMessageInputElement) chatMessageInputElement.disabled = true;
+            if(chatSendButtonElement) chatSendButtonElement.disabled = true;
+            return;
+        }
+
+        if (!taskId) {
+            // ... обработка отсутствия taskId ...
+            return;
+        }
+
+        // Загрузка деталей задачи
+        if(taskDetailsContentElement) taskDetailsContentElement.innerHTML = '<div class="loading-spinner">Загрузка деталей задачи...</div>';
+        if(attachedFilesListElement) attachedFilesListElement.innerHTML = '<li><i class="fas fa-spinner fa-spin"></i> Загрузка списка файлов...</li>';
+
+        try {
+            const response = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/task/${taskId}`);
+            if (!response.ok) {
+                let errorMsg = `Ошибка ${response.status}`;
+                try { const errorData = await response.json(); errorMsg = errorData.message ? `${errorData.message} (статус ${response.status})` : errorMsg; }
+                catch (e) { errorMsg = `Ошибка ${response.status}: ${response.statusText}`; }
+                throw new Error(`Не удалось загрузить данные задачи. ${errorMsg}`);
+            }
+            const result = await response.json();
+
+            if (result.success && result.task) {
+                displayTaskDetails(result.task);
+                await loadChatMessages(taskId); // Первоначальная загрузка чата
+
+                if (chatUpdateIntervalId) clearInterval(chatUpdateIntervalId); // Очищаем предыдущий, если был
+                chatUpdateIntervalId = setInterval(() => {
+                    console.log("Периодическое обновление чата для задачи:", taskId);
+                    loadChatMessages(taskId, true);
+                }, CHAT_UPDATE_INTERVAL);
+
+            } else {
+                throw new Error(result.message || 'Получены некорректные данные о задаче от сервера.');
+            }
+        } catch (error) {
+            console.error('Ошибка при загрузке деталей задачи:', error);
+            if(taskDetailsContentElement) taskDetailsContentElement.innerHTML = `<div class="error-message-placeholder">Ошибка при загрузке деталей: ${error.message}</div>`;
+            if(attachedFilesListElement) attachedFilesListElement.innerHTML = '<li>Ошибка загрузки списка файлов.</li>';
+        }
+
+        // Обработчики для поля ввода и кнопки отправки чата
+        if (chatMessageInputElement) {
+            chatMessageInputElement.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+        }
+
+        if (chatSendButtonElement && chatMessageInputElement) {
+            chatSendButtonElement.addEventListener('click', async () => {
+                const messageText = chatMessageInputElement.value.trim();
+                if (messageText && taskId && userCode) {
+                    await sendChatMessage(taskId, userCode, messageText);
+                } else if (!messageText) {
+                    chatMessageInputElement.focus();
+                } else {
+                    alert("Ошибка: не удалось определить ID задачи или код пользователя для отправки сообщения.");
+                }
+            });
+
+            chatMessageInputElement.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    chatSendButtonElement.click();
+                }
+            });
+        }
+    });
+
+    // Остановка интервала при уходе со страницы
     window.addEventListener('beforeunload', () => {
         if (chatUpdateIntervalId) {
             clearInterval(chatUpdateIntervalId);
             console.log("Интервал обновления чата остановлен.");
         }
     });
-
-
 </script>
 </body>
 </html>
