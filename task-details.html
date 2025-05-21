@@ -222,47 +222,119 @@ if (chatRemoveSelectedFileButton) {
         chatMessagesAreaElement.appendChild(messageDiv);
     }
 
-    async function sendChatMessage(taskId, userCode, messageText) {
-        const chatSendButtonElement = document.getElementById('chat-send-button');
-        const originalButtonContent = chatSendButtonElement.innerHTML;
-        chatSendButtonElement.disabled = true;
-        chatSendButtonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    // Модифицируем существующую функцию sendChatMessage
+async function sendChatMessage(taskId, userCode, messageText, fileToSend) { // Добавили fileToSend
+    const chatSendButtonElement = document.getElementById('chat-send-button');
+    const originalButtonContent = chatSendButtonElement.innerHTML;
+    chatSendButtonElement.disabled = true;
+    chatSendButtonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
-        try {
-            const payload = { userCode: userCode, text: messageText };
-            const response = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/chat/${taskId}/sendmessage`, {
+    let tempFileId = "";
+    let originalFileName = "";
+
+    try {
+        // --- ЭТАП 1: Загрузка файла, если он есть ---
+        if (fileToSend) {
+            chatSendButtonElement.innerHTML = '<i class="fas fa-upload"></i> Загрузка файла...';
+            console.log("Отправка файла на /chat/uploadfile:", fileToSend.name);
+
+            const fileUploadResponse = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/chat/uploadfile`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: fileToSend,
+                headers: {
+                    'X-File-Name': encodeURIComponent(fileToSend.name)
+                    // Content-Type браузер установит сам для File объекта
+                }
             });
 
-            if (!response.ok) {
-                let errorMsg = `Ошибка ${response.status}`;
-                try { const errorData = await response.json(); errorMsg = errorData.message ? `${errorData.message} (статус ${response.status})` : errorMsg; }
-                catch (e) { errorMsg = `Ошибка ${response.status}: ${response.statusText}`; }
-                throw new Error(`Не удалось отправить сообщение. ${errorMsg}`);
+            if (!fileUploadResponse.ok) {
+                let errorMsg = `Ошибка загрузки файла: ${fileUploadResponse.status}`;
+                try { const errorData = await fileUploadResponse.json(); errorMsg = errorData.message || errorMsg; }
+                catch (e) { /* не JSON */ }
+                throw new Error(errorMsg);
             }
 
-            const result = await response.json();
-            if (result.success && result.sentMessage) {
-                displayChatMessage(result.sentMessage);
-                document.getElementById('chat-message-input').value = '';
-                document.getElementById('chat-message-input').style.height = 'auto';
-                const chatMessagesAreaElement = document.getElementById('chat-messages-area');
-                if(chatMessagesAreaElement) chatMessagesAreaElement.scrollTop = chatMessagesAreaElement.scrollHeight;
-                return true;
+            const fileResult = await fileUploadResponse.json();
+            if (fileResult.success && fileResult.tempFileId) {
+                tempFileId = fileResult.tempFileId;
+                originalFileName = fileResult.fileName; // Имя файла, которое вернул сервер
+                console.log('Файл для чата успешно загружен во временное хранилище:', fileResult);
             } else {
-                throw new Error(result.message || 'Ошибка при отправке сообщения (ответ сервера).');
+                throw new Error(fileResult.message || 'Не удалось загрузить файл для чата.');
             }
-        } catch (error) {
-            console.error('Ошибка отправки сообщения в чат:', error);
-            alert(`Не удалось отправить сообщение: ${error.message}`);
-            return false;
-        } finally {
-            chatSendButtonElement.disabled = false;
-            chatSendButtonElement.innerHTML = originalButtonContent;
         }
+
+        // --- ЭТАП 2: Отправка сообщения (с текстом и/или ID файла) ---
+        chatSendButtonElement.innerHTML = '<i class="fas fa-paper-plane"></i> Отправка...';
+
+        // Сообщение может быть без текста, если есть файл.
+        // Сервер 1С уже имеет проверку: (ПустаяСтрока(ТекстНовогоСообщения) И ПустаяСтрока(AttachedFileIdИзJSON))
+        if (!messageText && !tempFileId) {
+            console.log("Нет ни текста, ни файла для отправки.");
+            // Можно показать alert или просто не отправлять
+            // Но серверная проверка это поймает, если что.
+            // Для UI лучше добавить проверку здесь тоже.
+            if (!messageText && !fileToSend) { // Если изначально не было ни текста, ни файла
+                 alert("Введите текст сообщения или прикрепите файл.");
+                 throw new Error("Пустое сообщение и нет файла."); // Прерываем, чтобы не было ошибки 400 от сервера
+            }
+        }
+
+        const payload = {
+            userCode: userCode,
+            text: messageText
+        };
+
+        if (tempFileId) {
+            payload.attachedFileId = tempFileId;
+            payload.attachedFileName = originalFileName; // Используем имя, которое вернул сервер загрузки файла
+        }
+
+        const response = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/chat/${taskId}/sendmessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            let errorMsg = `Ошибка ${response.status}`;
+            try { const errorData = await response.json(); errorMsg = errorData.message ? `${errorData.message} (статус ${response.status})` : errorMsg; }
+            catch (e) { errorMsg = `Ошибка ${response.status}: ${response.statusText}`; }
+            throw new Error(`Не удалось отправить сообщение. ${errorMsg}`);
+        }
+
+        const result = await response.json();
+
+        if (result.success && result.sentMessage) {
+            displayChatMessage(result.sentMessage); // Отображаем отправленное сообщение (здесь нужна доработка для отображения файла)
+            document.getElementById('chat-message-input').value = '';
+            document.getElementById('chat-message-input').style.height = 'auto';
+
+            // Сбрасываем выбранный файл после успешной отправки
+            currentSelectedFile = null;
+            chatFileInput.value = '';
+            if (chatSelectedFileInfoDiv) chatSelectedFileInfoDiv.style.display = 'none';
+            if (selectedFileNameSpan) selectedFileNameSpan.textContent = '';
+
+
+            const chatMessagesAreaElement = document.getElementById('chat-messages-area');
+            if(chatMessagesAreaElement) chatMessagesAreaElement.scrollTop = chatMessagesAreaElement.scrollHeight;
+            return true;
+        } else {
+            throw new Error(result.message || 'Ошибка при отправке сообщения (ответ сервера).');
+        }
+    } catch (error) {
+        console.error('Ошибка отправки сообщения в чат с файлом:', error);
+        // Не показываем alert здесь, если он уже был (например, "Пустое сообщение")
+        if (error.message !== "Пустое сообщение и нет файла.") {
+            alert(`Не удалось отправить сообщение: ${error.message}`);
+        }
+        return false;
+    } finally {
+        chatSendButtonElement.disabled = false;
+        chatSendButtonElement.innerHTML = originalButtonContent;
     }
+}
 
     async function loadChatMessages(taskId, isBackgroundUpdate = false) {
         const chatMessagesAreaElement = document.getElementById('chat-messages-area');
