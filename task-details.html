@@ -67,6 +67,41 @@
 
 <script>
     // Переменные и константы (определите их здесь ОДИН РАЗ)
+
+
+const chatAttachFileButton = document.getElementById('chat-attach-file-button');
+const chatFileInput = document.getElementById('chat-file-input');
+const chatSelectedFileInfoDiv = document.getElementById('chat-selected-file-info');
+const selectedFileNameSpan = document.getElementById('selected-file-name');
+const chatRemoveSelectedFileButton = document.getElementById('chat-remove-selected-file');
+
+let currentSelectedFile = null; // Переменная для хранения выбранного файла
+
+if (chatAttachFileButton && chatFileInput) {
+    chatAttachFileButton.addEventListener('click', () => {
+        chatFileInput.click(); // Открываем диалог выбора файла
+    });
+
+    chatFileInput.addEventListener('change', function(event) {
+        currentSelectedFile = event.target.files[0];
+        if (currentSelectedFile) {
+            selectedFileNameSpan.textContent = currentSelectedFile.name;
+            chatSelectedFileInfoDiv.style.display = 'block';
+        } else {
+            chatSelectedFileInfoDiv.style.display = 'none';
+        }
+    });
+}
+
+if (chatRemoveSelectedFileButton) {
+    chatRemoveSelectedFileButton.addEventListener('click', () => {
+        currentSelectedFile = null;
+        chatFileInput.value = ''; // Сбрасываем значение input type="file"
+        chatSelectedFileInfoDiv.style.display = 'none';
+        selectedFileNameSpan.textContent = '';
+    });
+}
+
     let chatUpdateIntervalId = null;
     const CHAT_UPDATE_INTERVAL = 15000; // 15 секунд
 
