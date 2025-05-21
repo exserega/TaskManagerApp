@@ -48,11 +48,19 @@
                     </div>
                 </div>
                 <div class="chat-input-area">
-                    <textarea id="chat-message-input" placeholder="Введите сообщение..." rows="1"></textarea>
-                    <button id="chat-send-button" class="chat-send-button" title="Отправить">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
-                </div>
+    <button id="chat-attach-file-button" class="chat-attach-button" title="Прикрепить файл">
+        <i class="fas fa-paperclip"></i>
+    </button>
+    <input type="file" id="chat-file-input" style="display: none;">
+    <textarea id="chat-message-input" placeholder="Введите сообщение..." rows="1"></textarea>
+    <button id="chat-send-button" class="chat-send-button" title="Отправить">
+        <i class="fas fa-paper-plane"></i>
+    </button>
+</div>
+<div id="chat-selected-file-info" class="selected-file-info" style="display: none;">
+    Выбран файл: <span id="selected-file-name"></span>
+    <button id="chat-remove-selected-file" class="remove-file-button" title="Удалить файл">&times;</button>
+</div>
             </div>
         </div>
     </div>
