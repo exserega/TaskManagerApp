@@ -494,6 +494,47 @@ body.task-details-page .container {
     color: #c53030; 
 }
 
+.chat-input-area {
+    /* ... ваши существующие стили ... */
+    align-items: flex-end; /* Для лучшего выравнивания кнопки и textarea по высоте */
+}
+
+.chat-attach-button {
+    background: none;
+    border: none;
+    color: #546e7a; /* Цвет иконки */
+    font-size: 1.4em; /* Размер иконки */
+    padding: 8px 12px; /* Отступы как у кнопки отправки, но можно меньше */
+    cursor: pointer;
+    margin-right: 5px; /* Небольшой отступ справа */
+    align-self: center; /* Выравнивание по центру, если textarea разной высоты */
+}
+.chat-attach-button:hover {
+    color: #8e44ad; /* Цвет при наведении, как у кнопки отправки */
+}
+
+.selected-file-info {
+    font-size: 0.85em;
+    padding: 5px 15px; /* Отступы как у chat-input-area по бокам */
+    color: #555;
+    background-color: #f0f2f5; /* Такой же фон, как у chat-input-area */
+    border-top: 1px solid #e0e0e0; /* Тонкая линия сверху */
+}
+
+.selected-file-info .remove-file-button {
+    background: none;
+    border: none;
+    color: #999;
+    font-size: 1.2em;
+    cursor: pointer;
+    margin-left: 10px;
+    padding: 0 5px;
+    font-weight: bold;
+}
+.selected-file-info .remove-file-button:hover {
+    color: #e53935; /* Красный при наведении */
+}
+
 /* styles.css */
 
 /* Убедитесь, что эти общие стили есть в самом начале файла, если они еще не там */
