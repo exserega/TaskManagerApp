@@ -123,72 +123,83 @@
         }
 
         function displayTasks(tasks) {
-            const taskListContainer = document.getElementById('taskListContainer');
-            if (!taskListContainer) {
-                console.error("Элемент #taskListContainer не найден для отображения задач!");
-                return;
-            }
-            taskListContainer.innerHTML = ''; 
+    const taskListContainer = document.getElementById('taskListContainer');
+    if (!taskListContainer) {
+        console.error("Элемент #taskListContainer не найден для отображения задач!");
+        return;
+    }
+    taskListContainer.innerHTML = ''; 
 
-            tasks.forEach(task => {
-                const listItem = document.createElement('li');
-                listItem.className = 'task-item';
+    tasks.forEach(task => {
+        const listItem = document.createElement('li');
+        listItem.className = 'task-item';
 
-                let statusClass = 'status-default';
-                if (task.status) {
-                    const statusNormalized = String(task.status).toLowerCase().replace(/\s+/g, '-');
-                    if (statusNormalized.includes('новая')) statusClass = 'status-new';
-                    else if (statusNormalized.includes('в-работе') || statusNormalized.includes('в работе')) statusClass = 'status-in-progress';
-                    else if (statusNormalized.includes('выполнена') || statusNormalized.includes('завершена')) statusClass = 'status-completed';
-                    else if (statusNormalized.includes('согласование-оценки')) statusClass = 'status-согласование-оценки';
-                    else if (statusNormalized.includes('ожидает-ответа-клиента')) statusClass = 'status-ожидает-ответа-клиента';
-                }
-                
-                let formattedDate = task.date;
-                if (task.date) {
-                    try {
-                        let dateObj = new Date(task.date);
-                        if (isNaN(dateObj.getTime())) {
-                            dateObj = new Date(task.date.replace('Т', ' '));
-                        }
-                        if (!isNaN(dateObj.getTime())) {
-                            formattedDate = dateObj.toLocaleString('ru-RU', {
-                                year: 'numeric', month: 'long', day: 'numeric',
-                                hour: '2-digit', minute: '2-digit'
-                            });
-                        } else {
-                            formattedDate = "Некорректная дата";
-                        }
-                    } catch (e) { 
-                        formattedDate = task.date + " (ошибка формата)";
-                        console.error("Ошибка форматирования даты:", e, " для значения:", task.date);
-                    }
-                } else {
-                    formattedDate = 'не указана';
-                }
-
-                let taskHTML = '<div class="task-info">';
-                taskHTML += '<h3>' + (task.summary || 'Без темы') + ' (№' + (task.number || 'б/н') + ')</h3>';
-                taskHTML += '<p>Дата: ' + formattedDate + '</p>';
-               
-                taskHTML += '</div>'; 
-                taskHTML += '<span class="task-status ' + statusClass + '">' + (task.status || 'Статус не определен') + '</span>';
-                listItem.innerHTML = taskHTML;
-                
-                listItem.onclick = function() {
-    localStorage.setItem('currentTaskId', task.id); // GUID задачи
-    localStorage.setItem('currentTaskNumber', task.number); // Номер задачи (для отображения в заголовке task-details)
-    // localStorage.setItem('currentTaskSummary', task.summary); // Можно и тему сохранить, если нужно быстро показать
-    // localStorage.setItem('currentTaskStatus', task.status); // И статус
-    
-    console.log("Переход к деталям задачи:", task);
-    window.location.href = 'task-details.html'; // Перенаправляем на страницу деталей
-};
-
-                listItem.style.cursor = 'pointer';
-                taskListContainer.appendChild(listItem);
-            });
+        // *** НАЧАЛО: Логика для индикатора новых сообщений ***
+        if (task.hasUnreadByEmployee) {
+            listItem.classList.add('has-unread-messages'); // Добавляем класс для стилизации
         }
+        // *** КОНЕЦ: Логика для индикатора новых сообщений ***
+
+        let statusClass = 'status-default';
+        if (task.status) {
+            const statusNormalized = String(task.status).toLowerCase().replace(/\s+/g, '-');
+            if (statusNormalized.includes('новая')) statusClass = 'status-new';
+            else if (statusNormalized.includes('в-работе') || statusNormalized.includes('в работе')) statusClass = 'status-in-progress';
+            else if (statusNormalized.includes('выполнена') || statusNormalized.includes('завершена')) statusClass = 'status-completed';
+            // ... другие ваши статусы ...
+        }
+        
+        let formattedDate = task.date;
+        if (task.date) {
+            try {
+                let dateObj = new Date(task.date);
+                if (isNaN(dateObj.getTime())) { // Попытка исправить дату, если 'Т' мешает
+                    dateObj = new Date(task.date.replace('Т', ' '));
+                }
+                if (!isNaN(dateObj.getTime())) {
+                    formattedDate = dateObj.toLocaleString('ru-RU', {
+                        year: 'numeric', month: 'long', day: 'numeric',
+                        hour: '2-digit', minute: '2-digit'
+                    });
+                } else {
+                    formattedDate = "Некорректная дата";
+                }
+            } catch (e) { 
+                formattedDate = task.date + " (ошибка формата)";
+                console.error("Ошибка форматирования даты:", e, " для значения:", task.date);
+            }
+        } else {
+            formattedDate = 'не указана';
+        }
+
+        let taskHTML = '<div class="task-info">';
+        taskHTML += '<h3>' + (task.summary || 'Без темы') + ' (№' + (task.number || 'б/н') + ')</h3>';
+        taskHTML += '<p>Дата: ' + formattedDate + '</p>';
+        taskHTML += '</div>'; 
+
+        // *** НАЧАЛО: Добавляем сам элемент индикатора (например, кружок) ***
+        // Он будет виден только если есть класс 'has-unread-messages' и соответствующие CSS-стили
+        taskHTML += '<div class="unread-indicator-container">'; // Контейнер для позиционирования
+        taskHTML += '  <span class="unread-indicator"></span>'; 
+        taskHTML += '</div>';
+        // *** КОНЕЦ: Добавляем элемент индикатора ***
+        
+        taskHTML += '<span class="task-status ' + statusClass + '">' + (task.status || 'Статус не определен') + '</span>';
+        listItem.innerHTML = taskHTML;
+        
+        listItem.onclick = function() {
+            localStorage.setItem('currentTaskId', task.id);
+            localStorage.setItem('currentTaskNumber', task.number);
+            // Если вы хотите сбрасывать флаг непрочитанных при клике (до перехода), 
+            // то здесь нужно было бы делать API-запрос на пометку прочитанными.
+            // Но обычно это делается при открытии чата на task-details.html.
+            window.location.href = 'task-details.html';
+        };
+
+        listItem.style.cursor = 'pointer';
+        taskListContainer.appendChild(listItem);
+    });
+}
 
         function logout() {
             localStorage.removeItem('userName');
