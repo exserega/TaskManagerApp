@@ -74,9 +74,12 @@
     let currentSelectedFile = null; // Переменная для хранения выбранного файла
 
     // Функция отображения деталей задачи
-    function displayTaskDetails(task) {
+   // Вставьте эту новую функцию или обновите существующую displayTaskDetails
+
+function displayTaskDetails(task) {
     const taskDetailsContentElement = document.getElementById('task-details-content');
-    const attachedFilesListElement = document.getElementById('attached-files'); // Убедитесь, что этот ID есть в HTML
+    // Для списка файлов теперь работаем с контейнером
+    const attachedFilesListElement = document.getElementById('attached-files'); 
     const taskTitleElement = document.getElementById('task-title');
 
     if (task.number && taskTitleElement) {
@@ -86,25 +89,22 @@
     let formattedDate = task.date;
     if (task.date) {
         try {
-            // Пытаемся создать дату, заменяя 'Т' на пробел для лучшей совместимости с new Date()
             const dateStringForJS = task.date.replace('Т', ' ');
             const dateObj = new Date(dateStringForJS);
-
-            if (!isNaN(dateObj.getTime())) { // Проверяем, что дата валидна
+            if (!isNaN(dateObj.getTime())) {
                 const day = dateObj.getDate().toString().padStart(2, '0');
-                const month = (dateObj.getMonth() + 1).toString().padStart(2, '0'); // Месяцы в JS с 0
+                const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
                 const year = dateObj.getFullYear();
                 const hours = dateObj.getHours().toString().padStart(2, '0');
                 const minutes = dateObj.getMinutes().toString().padStart(2, '0');
                 formattedDate = `${day}.${month}.${year} ${hours}:${minutes}`;
             } else {
-                // Если new Date() не смогла распознать, оставляем как есть или форматируем по-другому
                 console.warn("displayTaskDetails: Не удалось распознать дату задачи:", task.date);
-                formattedDate = task.date; // Можно добавить (некорректный формат)
+                formattedDate = task.date;
             }
         } catch (e) {
             console.error("displayTaskDetails: Исключение при форматировании даты задачи:", e);
-            formattedDate = task.date; // Оставляем как есть в случае ошибки
+            formattedDate = task.date;
         }
     }
 
@@ -114,9 +114,7 @@
         if (statusNormalized.includes('новая')) statusClass = 'status-new';
         else if (statusNormalized.includes('в-работе') || statusNormalized.includes('в работе')) statusClass = 'status-in-progress';
         else if (statusNormalized.includes('выполнена') || statusNormalized.includes('завершена')) statusClass = 'status-completed';
-        // Добавьте другие ваши статусы по аналогии, если нужно
-        // else if (statusNormalized.includes('согласование-оценки')) statusClass = 'status-согласование-оценки';
-        // else if (statusNormalized.includes('ожидает-ответа-клиента')) statusClass = 'status-ожидает-ответа-клиента';
+        // Добавьте другие статусы по аналогии
     }
 
     let detailsHTML = `
@@ -132,15 +130,11 @@
     }
 
     // Отображение файлов, прикрепленных к ЗАДАЧЕ (из ТЧ "Файлы")
-    if (attachedFilesListElement) { // Проверяем, что элемент для списка файлов существует
+    if (attachedFilesListElement) {
         if (task.files && task.files.length > 0) {
             let filesHTML = '';
             task.files.forEach(file => {
-                // task.id - это GUID задачи (например, "b710a7bc-3232-11f0-a6bb-0050560081e2")
-                // file.file_guid - это НомерСтроки ТЧ (например, "1", "2")
-                // Формируем URL для нового эндпоинта скачивания файла задачи
                 const downloadTaskFileUrl = `https://1c.c-r.kz/Registrator_test/hs/auth/taskfile/${task.id}/${file.file_guid}`;
-
                 filesHTML += `<li>
                                 <a href="${downloadTaskFileUrl}" target="_blank" class="task-file-link" title="Скачать файл ${file.name}">
                                     <i class="fas fa-paperclip"></i> ${file.name}
@@ -148,78 +142,58 @@
                               </li>`;
             });
             attachedFilesListElement.innerHTML = filesHTML;
+            // Вызываем новую функцию для настройки сворачиваемого списка
+            setupExpandableFileList(task.files.length);
         } else {
             attachedFilesListElement.innerHTML = '<li>Прикрепленных файлов нет.</li>';
+            const toggleButton = document.getElementById('toggle-files-btn');
+            if (toggleButton) toggleButton.style.display = 'none'; // Скрываем кнопку, если файлов нет
         }
     } else {
         console.warn("Элемент #attached-files не найден на странице для отображения файлов задачи.");
     }
 }
 
-   function displayChatMessage(message) {
-    const chatMessagesAreaElement = document.getElementById('chat-messages-area');
-    if (!chatMessagesAreaElement) {
-        console.error("displayChatMessage: Элемент #chat-messages-area не найден!");
+// НОВАЯ ФУНКЦИЯ для управления сворачиваемым списком файлов
+function setupExpandableFileList(totalFiles) {
+    const filesList = document.getElementById('attached-files');
+    const toggleButton = document.getElementById('toggle-files-btn');
+    const filesToShowByDefault = 3;
+
+    if (!filesList || !toggleButton) return;
+
+    const allFileItems = filesList.querySelectorAll('li');
+
+    if (totalFiles <= filesToShowByDefault) {
+        toggleButton.style.display = 'none'; // Кнопка не нужна, если файлов мало
+        allFileItems.forEach(item => item.classList.remove('hidden-file')); // Показываем все на всякий случай
         return;
     }
 
-    const firstChild = chatMessagesAreaElement.firstChild;
-    if (firstChild && firstChild.nodeType === Node.ELEMENT_NODE &&
-        (firstChild.querySelector('i.fa-spinner') || firstChild.textContent === 'В этом чате пока нет сообщений.')) {
-        chatMessagesAreaElement.innerHTML = '';
-    }
+    // Показываем кнопку и настраиваем начальное состояние
+    toggleButton.style.display = 'inline-block';
+    let isExpanded = false;
 
-    const messageDiv = document.createElement('div');
-    messageDiv.classList.add('message-bubble');
-
-    if (message.isOwn) {
-        messageDiv.classList.add('sent');
-    } else {
-        messageDiv.classList.add('received');
-    }
-
-    let formattedTimestamp = '--:--';
-    if (message.timestamp) {
-        try {
-            const dateStringForJS = message.timestamp.replace('Т', ' ');
-            const dateObj = new Date(dateStringForJS);
-            if (!isNaN(dateObj.getTime())) {
-                let hours = dateObj.getHours().toString().padStart(2, '0');
-                let minutes = dateObj.getMinutes().toString().padStart(2, '0');
-                formattedTimestamp = `${hours}:${minutes}`;
+    function updateFileListVisibility() {
+        allFileItems.forEach((item, index) => {
+            if (isExpanded || index < filesToShowByDefault) {
+                item.classList.remove('hidden-file');
             } else {
-                const timePartMatch = message.timestamp.match(/(\d{2}:\d{2})(:\d{2})?$/);
-                if (timePartMatch && timePartMatch[1]) {
-                    formattedTimestamp = timePartMatch[1];
-                }
+                item.classList.add('hidden-file');
             }
-        } catch (e) {
-            const timePartMatch = message.timestamp.match(/(\d{2}:\d{2})(:\d{2})?$/);
-            if (timePartMatch && timePartMatch[1]) {
-                formattedTimestamp = timePartMatch[1];
-            }
-        }
+        });
+        toggleButton.textContent = isExpanded ? 'Скрыть лишние' : `Показать все (${totalFiles})`;
     }
 
-    let fileHTML = '';
-    // Эта проверка теперь должна срабатывать и при загрузке существующих сообщений,
-    // так как сервер 1С теперь должен возвращать fileInfo для них
-    if (message.fileInfo && message.fileInfo.fileName && message.fileInfo.fileId) {
-        const downloadUrl = `https://1c.c-r.kz/Registrator_test/hs/auth/chat/downloadfile/${message.fileInfo.fileId}`; // message.fileInfo.fileId - это GUID сообщения
-        fileHTML = `<div class="message-attachment">
-                        <i class="fas fa-file-alt"></i> 
-                        <a href="${downloadUrl}" target="_blank" title="Скачать ${message.fileInfo.fileName}">${message.fileInfo.fileName}</a>
-                    </div>`;
+    toggleButton.removeEventListener('click', toggleButtonClickHandler); // Удаляем старый обработчик, если есть
+    toggleButton.addEventListener('click', toggleButtonClickHandler);
+    
+    function toggleButtonClickHandler() { // Именованная функция для возможности удаления
+        isExpanded = !isExpanded;
+        updateFileListVisibility();
     }
 
-    messageDiv.innerHTML = `
-        <div class="message-content">
-            <p>${(message.text || '').replace(/\n/g, '<br>')}</p>
-            ${fileHTML} 
-        </div>
-        <span class="message-timestamp">${formattedTimestamp}</span>
-    `;
-    chatMessagesAreaElement.appendChild(messageDiv);
+    updateFileListVisibility(); // Первоначальная установка видимости
 }
 
     // Функция загрузки сообщений чата
