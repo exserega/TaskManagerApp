@@ -154,65 +154,71 @@
     }
 }
 
-    // Функция отображения сообщения в чате
-    function displayChatMessage(message) {
-        const chatMessagesAreaElement = document.getElementById('chat-messages-area');
-        if (!chatMessagesAreaElement) {
-            console.error("displayChatMessage: Элемент #chat-messages-area не найден!");
-            return;
-        }
+   function displayChatMessage(message) {
+    const chatMessagesAreaElement = document.getElementById('chat-messages-area');
+    if (!chatMessagesAreaElement) {
+        console.error("displayChatMessage: Элемент #chat-messages-area не найден!");
+        return;
+    }
 
-        const firstChild = chatMessagesAreaElement.firstChild;
-        if (firstChild && firstChild.nodeType === Node.ELEMENT_NODE &&
-            (firstChild.querySelector('i.fa-spinner') || firstChild.textContent === 'В этом чате пока нет сообщений.')) {
-            chatMessagesAreaElement.innerHTML = '';
-        }
+    const firstChild = chatMessagesAreaElement.firstChild;
+    if (firstChild && firstChild.nodeType === Node.ELEMENT_NODE &&
+        (firstChild.querySelector('i.fa-spinner') || firstChild.textContent === 'В этом чате пока нет сообщений.')) {
+        chatMessagesAreaElement.innerHTML = '';
+    }
 
-        const messageDiv = document.createElement('div');
-        messageDiv.classList.add('message-bubble');
+    const messageDiv = document.createElement('div');
+    messageDiv.classList.add('message-bubble');
 
-        if (message.isOwn) {
-            messageDiv.classList.add('sent');
-        } else {
-            messageDiv.classList.add('received');
-        }
+    if (message.isOwn) {
+        messageDiv.classList.add('sent');
+    } else {
+        messageDiv.classList.add('received');
+    }
 
-        let formattedTimestamp = '--:--';
-        if (message.timestamp) {
-            try {
-                const dateStringForJS = message.timestamp.replace('Т', ' ');
-                const dateObj = new Date(dateStringForJS);
-                if (!isNaN(dateObj.getTime())) {
-                    let hours = dateObj.getHours().toString().padStart(2, '0');
-                    let minutes = dateObj.getMinutes().toString().padStart(2, '0');
-                    formattedTimestamp = `${hours}:${minutes}`;
-                } else {
-                    const timePartMatch = message.timestamp.match(/(\d{2}:\d{2})(:\d{2})?$/);
-                    if (timePartMatch && timePartMatch[1]) formattedTimestamp = timePartMatch[1];
-                }
-            } catch (e) {
+    let formattedTimestamp = '--:--';
+    if (message.timestamp) {
+        try {
+            const dateStringForJS = message.timestamp.replace('Т', ' ');
+            const dateObj = new Date(dateStringForJS);
+            if (!isNaN(dateObj.getTime())) {
+                let hours = dateObj.getHours().toString().padStart(2, '0');
+                let minutes = dateObj.getMinutes().toString().padStart(2, '0');
+                formattedTimestamp = `${hours}:${minutes}`;
+            } else {
                 const timePartMatch = message.timestamp.match(/(\d{2}:\d{2})(:\d{2})?$/);
-                if (timePartMatch && timePartMatch[1]) formattedTimestamp = timePartMatch[1];
+                if (timePartMatch && timePartMatch[1]) {
+                    formattedTimestamp = timePartMatch[1];
+                }
+            }
+        } catch (e) {
+            const timePartMatch = message.timestamp.match(/(\d{2}:\d{2})(:\d{2})?$/);
+            if (timePartMatch && timePartMatch[1]) {
+                formattedTimestamp = timePartMatch[1];
             }
         }
-
-        let fileHTML = '';
-        if (message.fileInfo && message.fileInfo.fileName) {
-            // TODO: Сделать ссылкой на скачивание, используя message.fileInfo.fileId или другие данные
-            fileHTML = `<div class="message-attachment">
-                            <i class="fas fa-file-alt"></i> ${message.fileInfo.fileName}
-                        </div>`;
-        }
-
-        messageDiv.innerHTML = `
-            <div class="message-content">
-                <p>${(message.text || '').replace(/\n/g, '<br>')}</p>
-                ${fileHTML}
-            </div>
-            <span class="message-timestamp">${formattedTimestamp}</span>
-        `;
-        chatMessagesAreaElement.appendChild(messageDiv);
     }
+
+    let fileHTML = '';
+    // Эта проверка теперь должна срабатывать и при загрузке существующих сообщений,
+    // так как сервер 1С теперь должен возвращать fileInfo для них
+    if (message.fileInfo && message.fileInfo.fileName && message.fileInfo.fileId) {
+        const downloadUrl = `https://1c.c-r.kz/Registrator_test/hs/auth/chat/downloadfile/${message.fileInfo.fileId}`; // message.fileInfo.fileId - это GUID сообщения
+        fileHTML = `<div class="message-attachment">
+                        <i class="fas fa-file-alt"></i> 
+                        <a href="${downloadUrl}" target="_blank" title="Скачать ${message.fileInfo.fileName}">${message.fileInfo.fileName}</a>
+                    </div>`;
+    }
+
+    messageDiv.innerHTML = `
+        <div class="message-content">
+            <p>${(message.text || '').replace(/\n/g, '<br>')}</p>
+            ${fileHTML} 
+        </div>
+        <span class="message-timestamp">${formattedTimestamp}</span>
+    `;
+    chatMessagesAreaElement.appendChild(messageDiv);
+}
 
     // Функция загрузки сообщений чата
     async function loadChatMessages(taskId, isBackgroundUpdate = false) {
