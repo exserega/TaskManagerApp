@@ -97,6 +97,7 @@ h1 {
     align-items: center; 
     cursor: pointer;
     transition: all 0.25s ease-in-out;
+position: relative;
 }
 .task-item:hover {
     box-shadow: 0 12px 22px rgba(55, 71, 79, 0.12);
@@ -160,6 +161,47 @@ h1 {
 }
 .tasks-page .logout-link:hover {
     text-decoration: underline;
+}
+
+/* Стили для контейнера индикатора и самого индикатора */
+.unread-indicator-container {
+    /* Этот контейнер может помочь с позиционированием, если индикатор не просто часть потока */
+    /* Например, если вы хотите его абсолютно спозиционировать относительно task-item */
+    /* Для простого варианта (кружок перед статусом или после информации) он может быть не нужен, 
+       и .unread-indicator можно вставить прямо в .task-item */
+    margin-right: 15px; /* Отступ от статуса, если индикатор рядом с ним */
+    display: flex; /* Для выравнивания кружка по центру, если нужно */
+    align-items: center;
+}
+
+.unread-indicator {
+    display: none; /* По умолчанию скрыт */
+    width: 12px;   /* Размер кружка */
+    height: 12px;
+    background-color: #8e44ad; /* Фиолетовый цвет (или ваш цвет для уведомлений, напр. красный #e53935) */
+    border-radius: 50%; /* Делает его круглым */
+    /* Можно добавить анимацию пульсации для привлечения внимания */
+    /* box-shadow: 0 0 0 0 rgba(142, 68, 173, 0.7); */
+    /* animation: pulse-purple 1.5s infinite; */
+}
+
+.task-item.has-unread-messages .unread-indicator {
+    display: inline-block; /* Показываем индикатор, если есть класс */
+}
+
+@keyframes pulse-purple {
+    0% {
+        transform: scale(0.9);
+        box-shadow: 0 0 0 0 rgba(142, 68, 173, 0.5);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 10px rgba(142, 68, 173, 0);
+    }
+    100% {
+        transform: scale(0.9);
+        box-shadow: 0 0 0 0 rgba(142, 68, 173, 0);
+    }
 }
 
 
