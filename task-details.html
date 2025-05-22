@@ -20,17 +20,19 @@
         </div>
 
         <div class="task-chat-wrapper">
-            <div class="task-details-section">
+           <div class="task-details-section">
                 <h2>Детали задачи</h2>
                 <div id="task-details-content">
-                    <div class="loading-spinner">Загрузка деталей...</div>
-                </div>
+                    </div>
 
                 <h2>Прикрепленные файлы</h2>
-                <ul class="attached-files-list" id="attached-files">
-                    <li><i class="fas fa-spinner fa-spin"></i> Загрузка списка файлов...</li>
-                </ul>
-            </div>
+                <div class="expandable-file-list-container">
+                    <ul class="attached-files-list" id="attached-files">
+                        <li><i class="fas fa-spinner fa-spin"></i> Загрузка списка файлов...</li>
+                    </ul>
+                    <button id="toggle-files-btn" class="toggle-files-button" style="display:none;">Показать все</button>
+                </div>
+                 </div>
 
             <div class="chat-container">
                 <div class="chat-messages" id="chat-messages-area">
