@@ -27,186 +27,201 @@
             </ul>
         <div id="noTasksMessage" style="display: none;">У вас пока нет задач.</div>
 
-        </div> <script>
-        window.onload = function() {
-            const userName = localStorage.getItem('userName');
-            const userCode = localStorage.getItem('userCode');
-            // const userId = localStorage.getItem('userId'); // GUID, если нужен
+        </div> 
 
-            const userNameDisplaySpan = document.getElementById('userNameDisplay'); // Теперь должен найтись
-            const loadingMessageDiv = document.getElementById('loadingMessage');
-            const errorMessageDiv = document.getElementById('errorMessage');
-            const taskListContainer = document.getElementById('taskListContainer');
-            const noTasksMessageDiv = document.getElementById('noTasksMessage');
+<script>
+    let tasksUpdateIntervalId = null; // ID для нашего интервала обновления
+    const TASKS_UPDATE_INTERVAL = 20000; // Интервал обновления в миллисекундах (например, 20 секунд)
 
-            if (userNameDisplaySpan && userName && userCode) { // Добавил проверку userNameDisplaySpan на null
-                userNameDisplaySpan.innerHTML = `Пользователь: <strong>${userName}</strong>`;
-            } else if (!userName || !userCode) { // Если нет данных пользователя
-                // Можно добавить вывод в консоль, если userNameDisplaySpan не найден, для отладки
-                if (!userNameDisplaySpan) {
-                    console.error("Элемент #userNameDisplay не найден на странице!");
-                }
-                console.log("Данные пользователя не найдены в localStorage, перенаправление на index.html");
-                window.location.href = 'index.html'; 
-                return;
-            }
+    window.onload = function() {
+        const userName = localStorage.getItem('userName');
+        const userCode = localStorage.getItem('userCode');
+        
+        const userNameDisplaySpan = document.getElementById('userNameDisplay');
+        const errorMessageDiv = document.getElementById('errorMessage'); // Убедимся, что он есть
 
-            // Если userCode есть, но userNameDisplaySpan не был найден ранее (хотя не должен при правильном HTML),
-            // то тоже проблема, но loadTasks можно попробовать вызвать.
-            // Основная проверка на userCode для загрузки задач:
-            if (!userCode) { 
-                if(errorMessageDiv) { // Проверяем, что errorMessageDiv существует
-                    errorMessageDiv.textContent = 'Код пользователя не найден. Пожалуйста, войдите снова.';
-                    errorMessageDiv.style.display = 'block';
-                }
-                return;
-            }
-            loadTasks(userCode);
-        };
+        if (userNameDisplaySpan && userName) {
+            userNameDisplaySpan.innerHTML = `Пользователь: <strong>${userName}</strong>`;
+        }
 
-        // Функции loadTasks(userCode), displayTasks(tasks), logout() остаются БЕЗ ИЗМЕНЕНИЙ 
-        // (используй те версии, которые мы отладили в предыдущих шагах, где задачи отображались корректно)
+        if (!userCode) {
+            console.log("Код пользователя не найден в localStorage, перенаправление на index.html");
+            if (tasksUpdateIntervalId) clearInterval(tasksUpdateIntervalId); // Очищаем интервал на всякий случай
+            window.location.href = 'index.html'; 
+            return;
+        }
+        
+        loadTasks(userCode, false); // Первоначальная загрузка (не фоновая)
 
-        async function loadTasks(userCode) {
-            const loadingMessageDiv = document.getElementById('loadingMessage');
-            const errorMessageDiv = document.getElementById('errorMessage');
-            const taskListContainer = document.getElementById('taskListContainer');
-            const noTasksMessageDiv = document.getElementById('noTasksMessage');
+        // Запускаем интервальное обновление
+        if (tasksUpdateIntervalId) clearInterval(tasksUpdateIntervalId); // Очищаем старый, если был
+        tasksUpdateIntervalId = setInterval(() => {
+            console.log("Выполняется фоновое обновление списка задач...");
+            loadTasks(userCode, true); // Фоновое обновление
+        }, TASKS_UPDATE_INTERVAL);
+    };
 
-            // Проверяем, что все элементы существуют, прежде чем использовать их
+    async function loadTasks(userCode, isPollingUpdate = false) {
+        const loadingMessageDiv = document.getElementById('loadingMessage');
+        const errorMessageDiv = document.getElementById('errorMessage');
+        const taskListContainer = document.getElementById('taskListContainer');
+        const noTasksMessageDiv = document.getElementById('noTasksMessage');
+
+        if (!isPollingUpdate) { // Показываем основной индикатор загрузки только при первой загрузке
             if (loadingMessageDiv) loadingMessageDiv.style.display = 'block';
-            if (errorMessageDiv) errorMessageDiv.style.display = 'none';
-            if (taskListContainer) taskListContainer.innerHTML = ''; 
             if (noTasksMessageDiv) noTasksMessageDiv.style.display = 'none';
+            if (taskListContainer) taskListContainer.innerHTML = ''; // Очищаем список только при полной перезагрузке
+        }
+        if (errorMessageDiv) errorMessageDiv.style.display = 'none';
 
-            const apiUrl = `https://1c.c-r.kz/Registrator_test/hs/auth/taskslist/${userCode}`;
-            console.log('Запрашиваем задачи по URL:', apiUrl);
 
-            try {
-                const response = await fetch(apiUrl, { method: 'GET' });
+        const apiUrl = `https://1c.c-r.kz/Registrator_test/hs/auth/taskslist/${userCode}`;
+        if (!isPollingUpdate) console.log('Запрашиваем задачи по URL:', apiUrl);
 
-                if (loadingMessageDiv) loadingMessageDiv.style.display = 'none';
+        try {
+            const response = await fetch(apiUrl, { method: 'GET' });
 
-                if (!response.ok) {
-                    let errorMsg = `Ошибка загрузки задач: ${response.status} ${response.statusText}`;
-                    try {
-                        const errorData = await response.json();
-                        if (errorData && errorData.message) {
-                            errorMsg += ` - ${errorData.message}`;
-                        }
-                    } catch (e) { /* Не удалось распарсить */ }
-                    if (errorMessageDiv) {
-                        errorMessageDiv.textContent = errorMsg;
-                        errorMessageDiv.style.display = 'block';
+            if (!isPollingUpdate && loadingMessageDiv) {
+                loadingMessageDiv.style.display = 'none';
+            }
+
+            if (!response.ok) {
+                let errorMsg = `Ошибка загрузки задач: ${response.status} ${response.statusText}`;
+                try {
+                    const errorData = await response.json();
+                    if (errorData && errorData.message) {
+                        errorMsg += ` - ${errorData.message}`;
                     }
-                    console.error('Ошибка ответа сервера:', response);
-                    return;
+                } catch (e) { /* Не удалось распарсить JSON ошибки */ }
+                
+                if (!isPollingUpdate && errorMessageDiv) { // Показываем большую ошибку только если это не фоновое обновление
+                    errorMessageDiv.textContent = errorMsg;
+                    errorMessageDiv.style.display = 'block';
+                } else if (isPollingUpdate) { // Для фонового обновления просто логируем
+                    console.warn('Ошибка фонового обновления списка задач:', errorMsg);
                 }
+                console.error('Ошибка ответа сервера:', response);
+                return; // Прерываем, если ошибка
+            }
 
-                const tasks = await response.json();
-                console.log('Получены задачи:', tasks);
+            const tasks = await response.json();
+            if (!isPollingUpdate) console.log('Получены задачи:', tasks);
 
-                if (tasks && tasks.length > 0) {
-                    displayTasks(tasks);
+            if (tasks) { // Сервер может вернуть пустой массив или null/undefined при ошибках парсинга JSON на его стороне
+                if (tasks.length > 0) {
+                    if (noTasksMessageDiv) noTasksMessageDiv.style.display = 'none';
+                    displayTasks(tasks); // displayTasks теперь должна аккуратно обновлять список
                 } else {
+                     if (taskListContainer) taskListContainer.innerHTML = ''; // Очищаем, если задач нет
                     if (noTasksMessageDiv) noTasksMessageDiv.style.display = 'block';
                 }
-
-            } catch (error) {
-                if (loadingMessageDiv) loadingMessageDiv.style.display = 'none';
-                if (errorMessageDiv) {
-                    errorMessageDiv.textContent = 'Сетевая ошибка или ошибка при выполнении запроса: ' + error.message;
+            } else {
+                 // Если tasks === null или undefined, это может быть проблемой ответа сервера
+                if (!isPollingUpdate && errorMessageDiv) {
+                    errorMessageDiv.textContent = "Получен некорректный ответ от сервера (нет данных о задачах).";
                     errorMessageDiv.style.display = 'block';
+                } else if (isPollingUpdate) {
+                    console.warn('Фоновое обновление: получен некорректный ответ от сервера (нет данных о задачах).');
                 }
-                console.error('Сетевая ошибка:', error);
             }
-        }
 
-        function displayTasks(tasks) {
-    const taskListContainer = document.getElementById('taskListContainer');
-    if (!taskListContainer) {
-        console.error("Элемент #taskListContainer не найден для отображения задач!");
-        return;
+        } catch (error) {
+            if (!isPollingUpdate && loadingMessageDiv) {
+                loadingMessageDiv.style.display = 'none';
+            }
+            if (!isPollingUpdate && errorMessageDiv) { // Показываем большую ошибку только если это не фоновое обновление
+                errorMessageDiv.textContent = 'Сетевая ошибка или ошибка при выполнении запроса: ' + error.message;
+                errorMessageDiv.style.display = 'block';
+            } else if (isPollingUpdate) { // Для фонового обновления просто логируем
+                console.warn('Сетевая ошибка при фоновом обновлении списка задач:', error.message);
+            }
+            console.error('Сетевая ошибка или ошибка выполнения:', error);
+        }
     }
-    taskListContainer.innerHTML = ''; 
 
-    tasks.forEach(task => {
-        const listItem = document.createElement('li');
-        listItem.className = 'task-item';
-
-        // *** НАЧАЛО: Логика для индикатора новых сообщений ***
-        if (task.hasUnreadByEmployee) {
-            listItem.classList.add('has-unread-messages'); // Добавляем класс для стилизации
+    function displayTasks(tasks) {
+        const taskListContainer = document.getElementById('taskListContainer');
+        if (!taskListContainer) {
+            console.error("Элемент #taskListContainer не найден для отображения задач!");
+            return;
         }
-        // *** КОНЕЦ: Логика для индикатора новых сообщений ***
+        taskListContainer.innerHTML = ''; // Всегда очищаем перед полной перерисовкой
 
-        let statusClass = 'status-default';
-        if (task.status) {
-            const statusNormalized = String(task.status).toLowerCase().replace(/\s+/g, '-');
-            if (statusNormalized.includes('новая')) statusClass = 'status-new';
-            else if (statusNormalized.includes('в-работе') || statusNormalized.includes('в работе')) statusClass = 'status-in-progress';
-            else if (statusNormalized.includes('выполнена') || statusNormalized.includes('завершена')) statusClass = 'status-completed';
-            // ... другие ваши статусы ...
-        }
-        
-        let formattedDate = task.date;
-        if (task.date) {
-            try {
-                let dateObj = new Date(task.date);
-                if (isNaN(dateObj.getTime())) { // Попытка исправить дату, если 'Т' мешает
-                    dateObj = new Date(task.date.replace('Т', ' '));
-                }
-                if (!isNaN(dateObj.getTime())) {
-                    formattedDate = dateObj.toLocaleString('ru-RU', {
-                        year: 'numeric', month: 'long', day: 'numeric',
-                        hour: '2-digit', minute: '2-digit'
-                    });
-                } else {
-                    formattedDate = "Некорректная дата";
-                }
-            } catch (e) { 
-                formattedDate = task.date + " (ошибка формата)";
-                console.error("Ошибка форматирования даты:", e, " для значения:", task.date);
+        tasks.forEach(task => {
+            const listItem = document.createElement('li');
+            listItem.className = 'task-item';
+
+            if (task.hasUnreadByEmployee) {
+                listItem.classList.add('has-unread-messages');
             }
-        } else {
-            formattedDate = 'не указана';
+
+            let statusClass = 'status-default';
+            if (task.status) {
+                const statusNormalized = String(task.status).toLowerCase().replace(/\s+/g, '-');
+                if (statusNormalized.includes('новая')) statusClass = 'status-new';
+                else if (statusNormalized.includes('в-работе') || statusNormalized.includes('в работе')) statusClass = 'status-in-progress';
+                else if (statusNormalized.includes('выполнена') || statusNormalized.includes('завершена')) statusClass = 'status-completed';
+            }
+            
+            let formattedDate = task.date;
+            if (task.date) {
+                try {
+                    let dateObj = new Date(task.date);
+                    if (isNaN(dateObj.getTime())) {
+                        dateObj = new Date(task.date.replace('Т', ' '));
+                    }
+                    if (!isNaN(dateObj.getTime())) {
+                        formattedDate = dateObj.toLocaleString('ru-RU', {
+                            year: 'numeric', month: 'long', day: 'numeric',
+                            hour: '2-digit', minute: '2-digit'
+                        });
+                    } else {
+                        formattedDate = "Некорректная дата";
+                    }
+                } catch (e) { 
+                    formattedDate = task.date + " (ошибка формата)";
+                }
+            } else {
+                formattedDate = 'не указана';
+            }
+
+            let taskHTML = '<div class="task-info">';
+            taskHTML += '<h3>' + (task.summary || 'Без темы') + ' (№' + (task.number || 'б/н') + ')</h3>';
+            taskHTML += '<p>Дата: ' + formattedDate + '</p>';
+            taskHTML += '</div>'; 
+            taskHTML += '<div class="unread-indicator-container">';
+            taskHTML += '  <span class="unread-indicator"></span>'; 
+            taskHTML += '</div>';
+            taskHTML += '<span class="task-status ' + statusClass + '">' + (task.status || 'Статус не определен') + '</span>';
+            listItem.innerHTML = taskHTML;
+            
+            listItem.onclick = function() {
+                if (tasksUpdateIntervalId) clearInterval(tasksUpdateIntervalId); // Остановка обновления tasks.html
+                localStorage.setItem('currentTaskId', task.id);
+                localStorage.setItem('currentTaskNumber', task.number);
+                window.location.href = 'task-details.html';
+            };
+
+            listItem.style.cursor = 'pointer';
+            taskListContainer.appendChild(listItem);
+        });
+    }
+
+    function logout() {
+        if (tasksUpdateIntervalId) clearInterval(tasksUpdateIntervalId); // Остановка обновления
+        localStorage.removeItem('userName');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userCode');
+        // window.location.href = 'index.html'; // Это уже есть в HTML как href ссылки
+    }
+
+    // Очистка интервала при уходе со страницы
+    window.addEventListener('beforeunload', () => {
+        if (tasksUpdateIntervalId) {
+            clearInterval(tasksUpdateIntervalId);
+            console.log("Интервал обновления списка задач остановлен.");
         }
-
-        let taskHTML = '<div class="task-info">';
-        taskHTML += '<h3>' + (task.summary || 'Без темы') + ' (№' + (task.number || 'б/н') + ')</h3>';
-        taskHTML += '<p>Дата: ' + formattedDate + '</p>';
-        taskHTML += '</div>'; 
-
-        // *** НАЧАЛО: Добавляем сам элемент индикатора (например, кружок) ***
-        // Он будет виден только если есть класс 'has-unread-messages' и соответствующие CSS-стили
-        taskHTML += '<div class="unread-indicator-container">'; // Контейнер для позиционирования
-        taskHTML += '  <span class="unread-indicator"></span>'; 
-        taskHTML += '</div>';
-        // *** КОНЕЦ: Добавляем элемент индикатора ***
-        
-        taskHTML += '<span class="task-status ' + statusClass + '">' + (task.status || 'Статус не определен') + '</span>';
-        listItem.innerHTML = taskHTML;
-        
-        listItem.onclick = function() {
-            localStorage.setItem('currentTaskId', task.id);
-            localStorage.setItem('currentTaskNumber', task.number);
-            // Если вы хотите сбрасывать флаг непрочитанных при клике (до перехода), 
-            // то здесь нужно было бы делать API-запрос на пометку прочитанными.
-            // Но обычно это делается при открытии чата на task-details.html.
-            window.location.href = 'task-details.html';
-        };
-
-        listItem.style.cursor = 'pointer';
-        taskListContainer.appendChild(listItem);
     });
-}
-
-        function logout() {
-            localStorage.removeItem('userName');
-            localStorage.removeItem('userId');
-            localStorage.removeItem('userCode');
-            // window.location.href = 'index.html'; // Уже есть в самой ссылке
-        }
-    </script>
+</script>
 </body>
 </html>
