@@ -443,6 +443,12 @@
         const selectedFileNameSpan = document.getElementById('selected-file-name');
         const chatRemoveSelectedFileButton = document.getElementById('chat-remove-selected-file');
 
+        if (!userCode) { // Базовая проверка на наличие userCode, если его нет, нет смысла продолжать
+            alert("Ошибка: Код пользователя не найден. Пожалуйста, войдите снова.");
+            window.location.href = 'index.html';
+            return;
+        }
+
         if (taskNumberFromStorage) {
             taskTitleElement.textContent = `Задача №${taskNumberFromStorage}`;
         } else if (taskId) {
@@ -472,8 +478,8 @@
             }
             const result = await response.json();
             if (result.success && result.task) {
-                displayTaskDetails(result.task);
-                await loadChatMessages(taskId); // Первоначальная загрузка чата
+                displayTaskDetails(result.task); // Предполагается, что эта функция определена выше
+                await loadChatMessages(taskId);   // Предполагается, что эта функция определена выше
                 if (chatUpdateIntervalId) clearInterval(chatUpdateIntervalId);
                 chatUpdateIntervalId = setInterval(() => {
                     loadChatMessages(taskId, true); // Фоновое обновление
@@ -487,20 +493,30 @@
             if(document.getElementById('attached-files')) document.getElementById('attached-files').innerHTML = '<li>Ошибка загрузки файлов.</li>';
         }
 
+        // Настройка авто-высоты для textarea и ОТПРАВКА ПО ENTER
         if (chatMessageInputElement) {
             chatMessageInputElement.addEventListener('input', function() {
                 this.style.height = 'auto';
                 this.style.height = (this.scrollHeight) + 'px';
             });
-             // Отправка по Enter (опционально, можно убрать если не нужно)
+            
+            // *** НАЧАЛО ДОБАВЛЕННОГО КОДА ДЛЯ ENTER ***
             chatMessageInputElement.addEventListener('keypress', function(event) {
+                // Проверяем, что нажат Enter и НЕ нажат Shift
                 if (event.key === 'Enter' && !event.shiftKey) {
-                    event.preventDefault(); // Предотвратить перенос строки
-                    chatSendButtonElement.click(); // Имитировать клик по кнопке отправки
+                    event.preventDefault(); // Предотвращаем стандартное действие (перенос строки)
+                    
+                    // Имитируем клик по кнопке отправки сообщения
+                    if (chatSendButtonElement) { // Убедимся, что кнопка найдена
+                        chatSendButtonElement.click();
+                    }
                 }
+                // Если нажат Shift+Enter, стандартное поведение (перенос строки) сохранится
             });
+            // *** КОНЕЦ ДОБАВЛЕННОГО КОДА ДЛЯ ENTER ***
         }
 
+        // Обработчики для прикрепления/удаления файла в чате
         if (chatAttachFileButton && chatFileInput) {
             chatAttachFileButton.addEventListener('click', () => chatFileInput.click());
             chatFileInput.addEventListener('change', function(event) {
@@ -516,26 +532,31 @@
         if (chatRemoveSelectedFileButton) {
             chatRemoveSelectedFileButton.addEventListener('click', () => {
                 currentSelectedFile = null;
-                if(chatFileInput) chatFileInput.value = '';
+                if(chatFileInput) chatFileInput.value = ''; // Сбрасываем значение input file
                 if(chatSelectedFileInfoDiv) chatSelectedFileInfoDiv.style.display = 'none';
                 if(selectedFileNameSpan) selectedFileNameSpan.textContent = '';
             });
         }
 
+        // Обработчик для кнопки отправки сообщения (КЛИК)
         if (chatSendButtonElement && chatMessageInputElement) {
             chatSendButtonElement.addEventListener('click', async () => {
                 const messageText = chatMessageInputElement.value.trim();
+                // userCode и taskId уже определены в начале DOMContentLoaded
                 if (!messageText && !currentSelectedFile) {
-                    // alert("Введите текст сообщения или прикрепите файл."); // Можно заменить на более мягкое уведомление
+                    // Можно добавить более мягкое уведомление вместо alert, если нужно
+                    // alert("Введите текст сообщения или прикрепите файл."); 
                     chatMessageInputElement.focus();
                     return;
                 }
-                if (taskId && userCode) {
+                if (taskId && userCode) { // userCode должен быть доступен
+                    // Вызываем sendChatMessage, которая теперь тоже должна быть определена выше
                     const success = await sendChatMessage(taskId, userCode, messageText, currentSelectedFile);
-                    if (success) { // Если сообщение успешно отправлено
-                        chatMessageInputElement.value = ''; // Очищаем поле ввода текста
-                        chatMessageInputElement.style.height = 'auto'; // Сбрасываем высоту textarea
-                        // currentSelectedFile и связанные поля уже очищаются в sendChatMessage
+                    if (success) { // Если сообщение успешно отправлено (sendChatMessage вернет true)
+                        // Поля currentSelectedFile и связанные с ним элементы UI уже очищаются внутри sendChatMessage
+                        // Дополнительно очищаем поле ввода текста и сбрасываем его высоту
+                        chatMessageInputElement.value = ''; 
+                        chatMessageInputElement.style.height = 'auto'; 
                     }
                 } else {
                     alert("Ошибка: не удалось определить ID задачи или код пользователя для отправки сообщения.");
