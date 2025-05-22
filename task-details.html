@@ -73,68 +73,86 @@
 
     // Функция отображения деталей задачи
     function displayTaskDetails(task) {
-        const taskDetailsContentElement = document.getElementById('task-details-content');
-        const attachedFilesListElement = document.getElementById('attached-files');
-        const taskTitleElement = document.getElementById('task-title');
+    const taskDetailsContentElement = document.getElementById('task-details-content');
+    const attachedFilesListElement = document.getElementById('attached-files'); // Убедитесь, что этот ID есть в HTML
+    const taskTitleElement = document.getElementById('task-title');
 
-        if (task.number && taskTitleElement) {
-            taskTitleElement.textContent = `Задача №${task.number}`;
-        }
+    if (task.number && taskTitleElement) {
+        taskTitleElement.textContent = `Задача №${task.number}`;
+    }
 
-        let formattedDate = task.date;
-        if (task.date) {
-            try {
-                const dateStringForJS = task.date.replace('Т', ' ');
-                const dateObj = new Date(dateStringForJS);
-                if (!isNaN(dateObj.getTime())) {
-                    const day = dateObj.getDate().toString().padStart(2, '0');
-                    const month = (dateObj.getMonth() + 1).toString().padStart(2, '0'); // Месяцы в JS с 0
-                    const year = dateObj.getFullYear();
-                    const hours = dateObj.getHours().toString().padStart(2, '0');
-                    const minutes = dateObj.getMinutes().toString().padStart(2, '0');
-                    formattedDate = `${day}.${month}.${year} ${hours}:${minutes}`;
-                } else {
-                    formattedDate = task.date;
-                }
-            } catch (e) {
-                console.error("Ошибка форматирования даты задачи:", e);
-                formattedDate = task.date;
+    let formattedDate = task.date;
+    if (task.date) {
+        try {
+            // Пытаемся создать дату, заменяя 'Т' на пробел для лучшей совместимости с new Date()
+            const dateStringForJS = task.date.replace('Т', ' ');
+            const dateObj = new Date(dateStringForJS);
+
+            if (!isNaN(dateObj.getTime())) { // Проверяем, что дата валидна
+                const day = dateObj.getDate().toString().padStart(2, '0');
+                const month = (dateObj.getMonth() + 1).toString().padStart(2, '0'); // Месяцы в JS с 0
+                const year = dateObj.getFullYear();
+                const hours = dateObj.getHours().toString().padStart(2, '0');
+                const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+                formattedDate = `${day}.${month}.${year} ${hours}:${minutes}`;
+            } else {
+                // Если new Date() не смогла распознать, оставляем как есть или форматируем по-другому
+                console.warn("displayTaskDetails: Не удалось распознать дату задачи:", task.date);
+                formattedDate = task.date; // Можно добавить (некорректный формат)
             }
+        } catch (e) {
+            console.error("displayTaskDetails: Исключение при форматировании даты задачи:", e);
+            formattedDate = task.date; // Оставляем как есть в случае ошибки
         }
+    }
 
-        let statusClass = 'status-default';
-        if (task.status) {
-            const statusNormalized = String(task.status).toLowerCase().replace(/\s+/g, '-');
-            if (statusNormalized.includes('новая')) statusClass = 'status-new';
-            else if (statusNormalized.includes('в-работе') || statusNormalized.includes('в работе')) statusClass = 'status-in-progress';
-            else if (statusNormalized.includes('выполнена') || statusNormalized.includes('завершена')) statusClass = 'status-completed';
-            // Добавьте другие статусы по аналогии, если нужно
-        }
+    let statusClass = 'status-default';
+    if (task.status) {
+        const statusNormalized = String(task.status).toLowerCase().replace(/\s+/g, '-');
+        if (statusNormalized.includes('новая')) statusClass = 'status-new';
+        else if (statusNormalized.includes('в-работе') || statusNormalized.includes('в работе')) statusClass = 'status-in-progress';
+        else if (statusNormalized.includes('выполнена') || statusNormalized.includes('завершена')) statusClass = 'status-completed';
+        // Добавьте другие ваши статусы по аналогии, если нужно
+        // else if (statusNormalized.includes('согласование-оценки')) statusClass = 'status-согласование-оценки';
+        // else if (statusNormalized.includes('ожидает-ответа-клиента')) statusClass = 'status-ожидает-ответа-клиента';
+    }
 
-        let detailsHTML = `
-            <div class="detail-item"><strong>Номер:</strong> <span>${task.number || 'не указан'}</span></div>
-            <div class="detail-item"><strong>Дата:</strong> <span>${formattedDate || 'не указана'}</span></div>
-            <div class="detail-item"><strong>Статус:</strong> <span class="task-status-detail ${statusClass}">${task.status || 'не определен'}</span></div>
-            ${task.configurationName ? `<div class="detail-item"><strong>Конфигурация:</strong> <span>${task.configurationName}</span></div>` : ''}
-            <div class="detail-item"><strong>Тема:</strong> <span>${task.summary || 'без темы'}</span></div>
-            <div class="detail-item"><strong>Описание:</strong><br><span>${(task.details || 'нет описания').replace(/\n/g, '<br>')}</span></div>
-        `;
-        if(taskDetailsContentElement) taskDetailsContentElement.innerHTML = detailsHTML;
+    let detailsHTML = `
+        <div class="detail-item"><strong>Номер:</strong> <span>${task.number || 'не указан'}</span></div>
+        <div class="detail-item"><strong>Дата:</strong> <span>${formattedDate || 'не указана'}</span></div>
+        <div class="detail-item"><strong>Статус:</strong> <span class="task-status-detail ${statusClass}">${task.status || 'не определен'}</span></div>
+        ${task.configurationName ? `<div class="detail-item"><strong>Конфигурация:</strong> <span>${task.configurationName}</span></div>` : ''}
+        <div class="detail-item"><strong>Тема:</strong> <span>${task.summary || 'без темы'}</span></div>
+        <div class="detail-item"><strong>Описание:</strong><br><span>${(task.details || 'нет описания').replace(/\n/g, '<br>')}</span></div>
+    `;
+    if(taskDetailsContentElement) {
+        taskDetailsContentElement.innerHTML = detailsHTML;
+    }
 
+    // Отображение файлов, прикрепленных к ЗАДАЧЕ (из ТЧ "Файлы")
+    if (attachedFilesListElement) { // Проверяем, что элемент для списка файлов существует
         if (task.files && task.files.length > 0) {
             let filesHTML = '';
             task.files.forEach(file => {
-                // file.file_guid - это НомерСтроки ТЧ. Для скачивания нужен ID задачи и этот номер строки.
-                // Ссылка для скачивания должна вести на эндпоинт типа /downloadtaskfile/{taskId}/{file_row_id}
-                // Пока просто отображаем как ссылку-плейсхолдер
-                filesHTML += `<li><a href="#" data-task-id="${task.id}" data-file-row-id="${file.file_guid}" class="task-file-link" title="Файл: ${file.name}"><i class="fas fa-paperclip"></i> ${file.name}</a></li>`;
+                // task.id - это GUID задачи (например, "b710a7bc-3232-11f0-a6bb-0050560081e2")
+                // file.file_guid - это НомерСтроки ТЧ (например, "1", "2")
+                // Формируем URL для нового эндпоинта скачивания файла задачи
+                const downloadTaskFileUrl = `https://1c.c-r.kz/Registrator_test/hs/auth/taskfile/${task.id}/${file.file_guid}`;
+
+                filesHTML += `<li>
+                                <a href="${downloadTaskFileUrl}" target="_blank" class="task-file-link" title="Скачать файл ${file.name}">
+                                    <i class="fas fa-paperclip"></i> ${file.name}
+                                </a>
+                              </li>`;
             });
-            if(attachedFilesListElement) attachedFilesListElement.innerHTML = filesHTML;
-            // TODO: Добавить обработчики кликов на .task-file-link для скачивания файлов задачи
+            attachedFilesListElement.innerHTML = filesHTML;
         } else {
-            if(attachedFilesListElement) attachedFilesListElement.innerHTML = '<li>Прикрепленных файлов нет.</li>';
+            attachedFilesListElement.innerHTML = '<li>Прикрепленных файлов нет.</li>';
         }
+    } else {
+        console.warn("Элемент #attached-files не найден на странице для отображения файлов задачи.");
     }
+}
 
     // Функция отображения сообщения в чате
     function displayChatMessage(message) {
