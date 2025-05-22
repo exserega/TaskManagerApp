@@ -267,86 +267,149 @@
         updateFileListVisibility(); // Первоначальная установка
     }
 
-    // ФУНКЦИЯ ЗАГРУЗКИ СООБЩЕНИЙ ЧАТА
-    async function loadChatMessages(taskId, isBackgroundUpdate = false) {
-        const chatMessagesAreaElement = document.getElementById('chat-messages-area');
-        if (!chatMessagesAreaElement) {
-            console.error("loadChatMessages: Элемент #chat-messages-area не найден!");
-            return;
-        }
-        const userCode = localStorage.getItem('userCode');
+  async function loadChatMessages(taskId, isBackgroundUpdate = false) {
+    const chatMessagesAreaElement = document.getElementById('chat-messages-area');
+    if (!chatMessagesAreaElement) {
+        console.error("loadChatMessages: Элемент #chat-messages-area не найден!");
+        return;
+    }
+    const userCode = localStorage.getItem('userCode'); // Нужен для X-User-Code и для вызова markAsRead
 
-        if (!isBackgroundUpdate && chatMessagesAreaElement.innerHTML.trim() === '') { // Показываем спиннер только если область пуста
+    // Показываем спиннер только при первой загрузке (не фоновой) и если область сообщений действительно пуста или содержит только старый спиннер/ошибку
+    if (!isBackgroundUpdate) {
+        const currentContent = chatMessagesAreaElement.innerHTML.trim();
+        if (currentContent === '' || 
+            chatMessagesAreaElement.querySelector('i.fa-spinner') || 
+            chatMessagesAreaElement.querySelector('.error-message-placeholder') ||
+            currentContent === 'В этом чате пока нет сообщений.') {
             chatMessagesAreaElement.innerHTML = '<div><i class="fas fa-spinner fa-spin"></i> Загрузка сообщений...</div>';
         }
+    }
 
-        let currentClientMessageCount = chatMessagesAreaElement.querySelectorAll('.message-bubble').length;
-        if (isBackgroundUpdate && chatMessagesAreaElement.firstChild &&
-           (chatMessagesAreaElement.firstChild.textContent === 'В этом чате пока нет сообщений.' ||
-            (chatMessagesAreaElement.firstChild.querySelector && chatMessagesAreaElement.firstChild.querySelector('i.fa-spinner'))
-           )) {
-            currentClientMessageCount = 0;
-        }
-        
-        try {
-            const headers = {};
-            if (userCode) { headers['X-User-Code'] = userCode; }
+    let currentClientMessageCount = chatMessagesAreaElement.querySelectorAll('.message-bubble').length;
+    // Если это фоновое обновление и в чате сейчас отображается "нет сообщений" или спиннер, считаем, что текущее количество сообщений 0
+    if (isBackgroundUpdate && chatMessagesAreaElement.firstChild &&
+       (chatMessagesAreaElement.firstChild.textContent === 'В этом чате пока нет сообщений.' ||
+        (chatMessagesAreaElement.firstChild.querySelector && chatMessagesAreaElement.firstChild.querySelector('i.fa-spinner'))
+       )) {
+        currentClientMessageCount = 0;
+    }
+    
+    try {
+        const headers = {};
+        if (userCode) { headers['X-User-Code'] = userCode; }
 
-            const response = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/chat/${taskId}/messages`, {
-                method: 'GET', headers: headers
-            });
+        const response = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/chat/${taskId}/messages`, {
+            method: 'GET', headers: headers
+        });
 
-            if (!response.ok) {
-                let errorMsg = `Ошибка ${response.status}`;
-                try { const errorData = await response.json(); errorMsg = errorData.message ? `${errorData.message} (${response.status})` : errorMsg; }
-                catch (e) { errorMsg = `Ошибка ${response.status}: ${response.statusText}`; }
-                
-                // Не выбрасываем исключение при фоновом обновлении, чтобы не прерывать интервал, просто логируем
-                if (!isBackgroundUpdate) {
-                     throw new Error(`Не удалось загрузить сообщения чата. ${errorMsg}`);
-                } else {
-                    console.warn(`Фоновое обновление чата ОШИБКА: ${errorMsg}`);
-                    return; // Прерываем выполнение для фонового обновления при ошибке
-                }
+        if (!response.ok) {
+            let errorMsg = `Ошибка ${response.status}`;
+            try { 
+                const errorData = await response.json(); 
+                errorMsg = errorData.message ? `${errorData.message} (${response.status})` : errorMsg; 
+            } catch (e) { 
+                errorMsg = `Ошибка ${response.status}: ${response.statusText}`; 
             }
+            
+            if (!isBackgroundUpdate) {
+                 throw new Error(`Не удалось загрузить сообщения чата. ${errorMsg}`);
+            } else {
+                console.warn(`Фоновое обновление чата ОШИБКА: ${errorMsg}`);
+                return; 
+            }
+        }
 
-            const result = await response.json();
+        const result = await response.json();
 
-            if (result.success && result.messages) {
-                // Перерисовываем, если не фоновое обновление, ИЛИ если количество сообщений изменилось, ИЛИ если первое сообщение было "нет сообщений"
-                const noMessagesCurrentlyDisplayed = chatMessagesAreaElement.firstChild && chatMessagesAreaElement.firstChild.textContent === 'В этом чате пока нет сообщений.';
+        if (result.success && result.messages) {
+            const noMessagesCurrentlyDisplayed = chatMessagesAreaElement.firstChild && chatMessagesAreaElement.firstChild.textContent === 'В этом чате пока нет сообщений.';
+            const spinnerCurrentlyDisplayed = chatMessagesAreaElement.firstChild && chatMessagesAreaElement.firstChild.querySelector && chatMessagesAreaElement.firstChild.querySelector('i.fa-spinner');
 
-                if (!isBackgroundUpdate || result.messages.length !== currentClientMessageCount || noMessagesCurrentlyDisplayed) {
-                    chatMessagesAreaElement.innerHTML = ''; // Очищаем перед отрисовкой
-                    if (result.messages.length === 0) {
-                        const noMessagesDiv = document.createElement('div');
-                        noMessagesDiv.style.textAlign = 'center'; noMessagesDiv.style.color = '#6c757d';
-                        noMessagesDiv.style.padding = '20px'; noMessagesDiv.textContent = 'В этом чате пока нет сообщений.';
-                        chatMessagesAreaElement.appendChild(noMessagesDiv);
-                    } else {
-                        result.messages.forEach(message => displayChatMessage(message)); // Вот здесь вызывается displayChatMessage
-                        // Прокрутка вниз только если это не фоновое обновление или если добавились новые сообщения
-                        if (!isBackgroundUpdate || (result.messages.length > currentClientMessageCount && currentClientMessageCount >= 0)) {
-                           chatMessagesAreaElement.scrollTop = chatMessagesAreaElement.scrollHeight;
-                        }
+            // Перерисовываем, если:
+            // 1. Не фоновое обновление.
+            // 2. Количество сообщений изменилось.
+            // 3. Раньше не было сообщений, а теперь есть.
+            // 4. Раньше был спиннер, а теперь есть/нет сообщений.
+            if (!isBackgroundUpdate || result.messages.length !== currentClientMessageCount || noMessagesCurrentlyDisplayed || spinnerCurrentlyDisplayed) {
+                chatMessagesAreaElement.innerHTML = ''; 
+                if (result.messages.length === 0) {
+                    const noMessagesDiv = document.createElement('div');
+                    noMessagesDiv.style.textAlign = 'center'; 
+                    noMessagesDiv.style.color = '#6c757d';
+                    noMessagesDiv.style.padding = '20px'; 
+                    noMessagesDiv.textContent = 'В этом чате пока нет сообщений.';
+                    chatMessagesAreaElement.appendChild(noMessagesDiv);
+                } else {
+                    result.messages.forEach(message => displayChatMessage(message)); 
+                    // Прокрутка вниз, если это не фоновое обновление, ИЛИ если добавились новые сообщения (и это не первый рендер с 0 до N)
+                    // ИЛИ если раньше не было сообщений (noMessagesCurrentlyDisplayed)
+                    if (!isBackgroundUpdate || 
+                        (result.messages.length > currentClientMessageCount && currentClientMessageCount > 0) || 
+                        (result.messages.length > 0 && currentClientMessageCount === 0 && !noMessagesCurrentlyDisplayed && !spinnerCurrentlyDisplayed) ||
+                        (noMessagesCurrentlyDisplayed && result.messages.length > 0) ||
+                        (spinnerCurrentlyDisplayed && result.messages.length > 0)) {
+                       chatMessagesAreaElement.scrollTop = chatMessagesAreaElement.scrollHeight;
                     }
                 }
-            } else {
-                const errorText = result.message || 'Получены некорректные данные сообщений от сервера.';
-                 if (!isBackgroundUpdate) {
-                    throw new Error(errorText);
-                 } else {
-                    console.warn(`Фоновое обновление чата: ${errorText}`);
-                 }
             }
-        } catch (error) {
-            // Этот блок catch теперь будет ловить ошибки от throw new Error выше
-            console.error('Ошибка при загрузке сообщений чата:', error.message);
-            if (chatMessagesAreaElement && !isBackgroundUpdate) { // Показываем ошибку только если не фоновое обновление
-                chatMessagesAreaElement.innerHTML = `<div class="error-message-placeholder" style="text-align:center;">Ошибка загрузки сообщений: ${error.message}</div>`;
+            
+            // Вызов пометки сообщений прочитанными клиентом
+            if (!isBackgroundUpdate && userCode) { 
+                const hasEmployeeMessagesToMark = result.messages.some(msg => msg.senderType === 'Employee' /*&& !msg.isOwn -- если бы мы знали, что isOwn правильно определяет непрочитанность клиентом, но сейчас isOwn зависит от X-User-Code, а нам нужен сам факт, что это сообщение от сотрудника */);
+                // Фактически, ПросмотреноКлиентом должно быть ЛОЖЬ, но это проверит сервер.
+                // Мы просто говорим, что клиент "посмотрел" чат.
+
+                if (hasEmployeeMessagesToMark || result.messages.length > 0) { // Вызываем, если есть сообщения от сотрудника, или если чат в принципе загружен (чтобы сервер сам решил)
+                    try {
+                        fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/chat/${taskId}/markAsReadByClient`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                // Если ваш эндпоинт ожидает X-User-Code для авторизации этого действия:
+                                // 'X-User-Code': userCode 
+                            }
+                            // Тело запроса не требуется, taskId передается в URL
+                        })
+                        .then(markReadResponse => {
+                            if (!markReadResponse.ok) { // Проверяем HTTP статус
+                                // Пытаемся получить текст ошибки, если есть
+                                return markReadResponse.json().catch(() => ({ // Возвращаем объект ошибки, если JSON парсинг неудачен
+                                    success: false, 
+                                    message: `Ошибка сервера: ${markReadResponse.status} ${markReadResponse.statusText}`
+                                }));
+                            }
+                            return markReadResponse.json();
+                        })
+                        .then(markReadResult => {
+                            if (markReadResult.success) {
+                                console.log(`Сообщения для задачи ${taskId} помечены (или попытка пометки) как прочитанные клиентом.`);
+                            } else {
+                                console.warn(`Не удалось пометить сообщения как прочитанные клиентом для задачи ${taskId}: ${markReadResult.message || 'Неизвестная ошибка от markAsReadByClient'}`);
+                            }
+                        })
+                        .catch(err => console.error(`Сетевая ошибка или ошибка JSON при вызове markAsReadByClient для задачи ${taskId}:`, err));
+                    } catch (e) {
+                        console.error("Исключение JavaScript при попытке вызвать markAsReadByClient:", e);
+                    }
+                }
+            }
+
+        } else {
+            const errorText = result.message || 'Получены некорректные данные сообщений от сервера.';
+            if (!isBackgroundUpdate) {
+               throw new Error(errorText);
+            } else {
+               console.warn(`Фоновое обновление чата: ${errorText}`);
             }
         }
+    } catch (error) {
+        console.error('Ошибка при загрузке сообщений чата:', error.message);
+        if (chatMessagesAreaElement && !isBackgroundUpdate) { 
+            chatMessagesAreaElement.innerHTML = `<div class="error-message-placeholder" style="text-align:center;">Ошибка загрузки сообщений: ${error.message}</div>`;
+        }
     }
+}
 
     // ФУНКЦИЯ ОТПРАВКИ СООБЩЕНИЯ (С ФАЙЛОМ ИЛИ БЕЗ)
     async function sendChatMessage(taskId, userCode, messageText, fileToSend) {
