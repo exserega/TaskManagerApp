@@ -285,18 +285,7 @@ h1 {
 }
 
 
-/* styles.css */
 
-/* ... (ваши существующие глобальные стили, стили для tasks.html, create-task.html, login.html) ... */
-
-Хорошо, понял ваши пожелания! Мы сделаем страницу task-details.html с двухколоночным макетом (детали слева, чат справа), где чат будет занимать всю доступную высоту, а список прикрепленных файлов (к самой задаче) будет сворачиваемым.
-
-1. Обновленный блок стилей для task-details.html в styles.css
-Замените или обновите существующий блок стилей для task-details.html в вашем файле styles.css следующим кодом. Он включает реализацию двухколоночного макета и стили для сворачиваемого списка файлов.
-
-CSS
-
-/* styles.css */
 
 /* ... (ваши существующие глобальные стили, стили для tasks.html, create-task.html, login.html) ... */
 
@@ -308,7 +297,7 @@ body.task-details-page {
     padding: 0; 
     margin: 0;
     height: 100vh; 
-    overflow: hidden; 
+    overflow: hidden; /* ЗАПРЕЩАЕМ ПРОКРУТКУ BODY */
 }
 
 body.task-details-page .container {
@@ -331,7 +320,7 @@ body.task-details-page .container {
     background-color: #ffffff; 
     border-bottom: 1px solid #e0e0e0;
     box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-    flex-shrink: 0; 
+    flex-shrink: 0; /* Заголовок не сжимается по высоте */
     position: relative; 
     z-index: 10; 
 }
@@ -365,19 +354,21 @@ body.task-details-page .container {
 /* --- Основная обертка для деталей и чата --- */
 .task-chat-wrapper {
     display: flex;
-    flex-direction: column; 
-    flex-grow: 1; 
-    overflow: hidden; 
+    flex-direction: column; /* По умолчанию для мобильных */
+    flex-grow: 1; /* Занимает все оставшееся место в .container */
+    overflow: hidden; /* Важно: предотвращает растягивание из-за контента */
     background-color: #f4f7f6; 
+    min-height: 0; /* ДОБАВЛЕНО: Для корректной работы flex-grow и overflow */
 }
 
 /* --- Секция с деталями задачи (ЛЕВАЯ КОЛОНКА) --- */
 .task-details-section {
     background-color: #fff;
     padding: 20px 25px; 
-    overflow-y: auto; 
+    overflow-y: auto; /* Включаем прокрутку для этой колонки, если контент не помещается */
     flex-shrink: 0; 
     border-bottom: 1px solid #dfe4ea; 
+    /* min-height: 0; */ /* Обычно не нужно здесь, если высота задается через % или flex-basis в media-query */
 }
 
 .task-details-section h2 {
@@ -479,66 +470,61 @@ body.task-details-page .container {
 /* --- Секция чата (ПРАВАЯ КОЛОНКА) --- */
 .chat-container {
     display: flex;
-    flex-direction: column;
+    flex-direction: column; /* Сообщения сверху, поле ввода снизу */
     flex-grow: 1; 
     background-color: #e5ddd5; 
-    overflow: hidden; 
+    overflow: hidden; /* Важно: сам контейнер чата не должен скроллиться */
     position: relative; 
+    min-height: 0; /* ДОБАВЛЕНО: Для корректной работы flex-grow и overflow */
 }
 
 .chat-messages { /* Этот блок будет скроллиться */
-    flex-grow: 1;
+    flex-grow: 1; /* Занимает все доступное место над полем ввода */
     padding: 15px 12px; 
-    overflow-y: auto; 
-    display: flex; /* Необходимо для align-self у message-bubble */
-    flex-direction: column; /* Необходимо для align-self у message-bubble */
+    overflow-y: auto; /* ВКЛЮЧАЕМ ВНУТРЕННЮЮ ПРОКРУТКУ */
+    display: flex; 
+    flex-direction: column; 
+    min-height: 0; /* ДОБАВЛЕНО: Позволяет flex-grow корректно работать с overflow */
 }
 
-/* --- СТИЛИ ДЛЯ СООБЩЕНИЙ ЧАТА (ПУЗЫРИ) - ВАЖНО! --- */
 .message-bubble {
     max-width: 75%; 
-    padding: 8px 12px; /* Уменьшил padding для более компактного вида */
-    border-radius: 7px; /* Более стандартный WA радиус */
+    padding: 8px 12px; 
+    border-radius: 7px; 
     margin-bottom: 10px; 
-    font-size: 0.92em; /* Немного уменьшил, стандартный вид */
+    font-size: 0.92em; 
     line-height: 1.4;
     box-shadow: 0 1px 1px rgba(0,0,0,0.1); 
     word-wrap: break-word; 
     position: relative; 
-    color: #303030; /* Общий цвет текста для сообщений */
+    color: #303030; 
 }
-
 .message-bubble.sent { 
     background-color: #dcf8c6; 
     align-self: flex-end; 
-    border-bottom-right-radius: 4px; /* Небольшой "хвостик" */
+    border-bottom-right-radius: 4px; 
 }
-
 .message-bubble.received { 
     background-color: #ffffff; 
     align-self: flex-start; 
-    border-bottom-left-radius: 4px; /* Небольшой "хвостик" */
+    border-bottom-left-radius: 4px; 
 }
-        
-.message-content p { /* Текст внутри сообщения */
+.message-content p {
     margin: 0; 
     padding: 0; 
     font-weight: 400; 
 }
-
 .message-timestamp {
-    font-size: 0.7em; /* Мельче шрифт для времени */
-    color: rgba(0,0,0,0.45); /* Полупрозрачный черный */
+    font-size: 0.7em; 
+    color: rgba(0,0,0,0.45); 
     text-align: right;
-    margin-top: 4px; /* Отступ времени от текста */
+    margin-top: 4px; 
     display: block; 
-    user-select: none; /* Чтобы время не выделялось случайно */
+    user-select: none; 
 }
 .message-bubble.sent .message-timestamp { 
-    color: #77936c; /* Зеленоватый оттенок для времени на зеленых сообщениях */
+    color: #77936c; 
 }
-
-/* Стили для вложений в сообщениях чата */
 .message-attachment {
     margin-top: 8px; 
     padding: 10px 12px; 
@@ -561,28 +547,27 @@ body.task-details-page .container {
     text-decoration: underline;
 }
 
-/* Стили для области ввода сообщения чата (остаются из вашего исходного styles.css) */
 .chat-input-area {
     display: flex;
-    padding: 8px 12px; /* Компактнее */
-    background-color: #f0f0f0; /* Стандартный фон для поля ввода */
+    padding: 8px 12px; 
+    background-color: #f0f0f0; 
     border-top: 1px solid #d1d1d1;
-    align-items: flex-end; /* Выравнивание по низу */
+    align-items: flex-end; 
+    flex-shrink: 0; /* Поле ввода не должно сжиматься */
 }
-
-.chat-input-area textarea#chat-message-input { /* Используем ID для специфичности */
+.chat-input-area textarea#chat-message-input {
     flex-grow: 1;
     border: 1px solid #ccc; 
     padding: 8px 12px; 
-    border-radius: 18px; /* Скругленное поле */
+    border-radius: 18px; 
     resize: none;
     font-size: 0.95em;
     font-family: 'Open Sans', sans-serif;
-    min-height: 20px; /* Базовая высота строки */
+    min-height: 20px; 
     max-height: 90px; 
     overflow-y: auto; 
     line-height: 1.35;
-    margin: 0 8px; /* Отступы по бокам */
+    margin: 0 8px; 
     background-color: #fff; 
 }
 .chat-input-area textarea#chat-message-input:focus {
@@ -590,8 +575,7 @@ body.task-details-page .container {
     border-color: #8e44ad; 
     box-shadow: 0 0 0 1px rgba(142, 68, 173, 0.2); 
 }
-
-.chat-attach-button, .chat-send-button { /* Общие стили для кнопок чата */
+.chat-attach-button, .chat-send-button {
     background: none;
     border: none;
     color: #546e7a; 
@@ -602,37 +586,36 @@ body.task-details-page .container {
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    width: 40px; /* Фиксированный размер */
+    width: 40px; 
     height: 40px;
     transition: background-color 0.2s ease, color 0.2s ease;
+    flex-shrink: 0; /* Кнопки не должны сжиматься */
 }
 .chat-attach-button:hover, .chat-send-button:hover {
-    background-color: #e0e0e0; /* Легкий фон при наведении */
+    background-color: #e0e0e0; 
     color: #333;
 }
-.chat-send-button { /* Специфичные для кнопки отправки */
-    color: #8e44ad; /* Фиолетовый */
+.chat-send-button {
+    color: #8e44ad; 
 }
 .chat-send-button:hover {
-    background-color: #f0e9f7; /* Светло-фиолетовый */
+    background-color: #f0e9f7; 
     color: #7a3b97;
 }
-.chat-send-button:disabled { /* Для состояния загрузки/отправки */
+.chat-send-button:disabled {
     color: #b0b0b0;
     cursor: default;
 }
 .chat-send-button:disabled:hover {
     background-color: transparent;
 }
-
-
-/* Информация о выбранном файле для чата */
 .selected-file-info {
     font-size: 0.8em;
     padding: 4px 12px; 
     color: #555;
     background-color: #f0f0f0; 
     border-top: 1px solid #e0e0e0; 
+    flex-shrink: 0; /* Эта плашка также не должна сжиматься */
 }
 .selected-file-info .remove-file-button {
     background: none;
@@ -653,17 +636,18 @@ body.task-details-page .container {
     .task-chat-wrapper {
         flex-direction: row; 
     }
-    .task-details-section {
+    .task-details-section { /* Левая колонка */
         width: 380px; 
         flex-shrink: 0; 
-        height: 100%; 
-        overflow-y: auto; 
+        height: 100%; /* Занимает всю высоту .task-chat-wrapper */
+        overflow-y: auto; /* Внутренняя прокрутка для этой колонки */
         border-bottom: none; 
         border-right: 1px solid #d1d7db; 
     }
-    .chat-container {
+    .chat-container { /* Правая колонка */
         flex-grow: 1; 
-        height: 100%; 
+        height: 100%; /* Занимает всю высоту .task-chat-wrapper */
+        /* min-height: 0; уже установлено выше для .chat-container */
     }
 }
 
