@@ -306,14 +306,14 @@ CSS
 
 body.task-details-page {
     padding: 0; 
-    margin: 0; /* Убедимся, что нет внешних отступов у body */
-    height: 100vh; /* Задаем высоту body для корректной работы 100% высоты у дочерних */
-    overflow: hidden; /* Запрещаем прокрутку на уровне body */
+    margin: 0;
+    height: 100vh; 
+    overflow: hidden; 
 }
 
 body.task-details-page .container {
     margin: 0 auto; 
-    height: 100%; /* Занимает всю высоту body */
+    height: 100%; 
     max-width: none; 
     border-radius: 0; 
     box-shadow: none; 
@@ -327,12 +327,12 @@ body.task-details-page .container {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 25px; /* Компактные отступы */
+    padding: 15px 25px;
     background-color: #ffffff; 
     border-bottom: 1px solid #e0e0e0;
     box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-    flex-shrink: 0; /* Заголовок не сжимается */
-    position: relative; /* Для z-index, если потребуется */
+    flex-shrink: 0; 
+    position: relative; 
     z-index: 10; 
 }
 
@@ -365,19 +365,19 @@ body.task-details-page .container {
 /* --- Основная обертка для деталей и чата --- */
 .task-chat-wrapper {
     display: flex;
-    flex-direction: column; /* По умолчанию для мобильных */
+    flex-direction: column; 
     flex-grow: 1; 
-    overflow: hidden; /* Важно для предотвращения двойных скроллов */
+    overflow: hidden; 
     background-color: #f4f7f6; 
 }
 
 /* --- Секция с деталями задачи (ЛЕВАЯ КОЛОНКА) --- */
 .task-details-section {
     background-color: #fff;
-    padding: 20px 25px; /* Компактнее */
-    overflow-y: auto; /* Включаем прокрутку для этой колонки */
-    flex-shrink: 0; /* На мобильных не сжимается */
-    border-bottom: 1px solid #dfe4ea; /* Разделитель на мобильных */
+    padding: 20px 25px; 
+    overflow-y: auto; 
+    flex-shrink: 0; 
+    border-bottom: 1px solid #dfe4ea; 
 }
 
 .task-details-section h2 {
@@ -400,7 +400,7 @@ body.task-details-page .container {
     font-weight: 600;
     color: #4a5568; 
     margin-right: 10px;
-    flex-basis: 120px; /* Немного уменьшил для компактности */
+    flex-basis: 120px; 
     flex-shrink: 0; 
 }
 .detail-item span {
@@ -416,8 +416,7 @@ body.task-details-page .container {
     font-weight: 700; 
 }
 
-/* Список прикрепленных файлов (к ЗАДАЧЕ) - СВОРАЧИВАЕМЫЙ */
-.expandable-file-list-container { /* Новая обертка */
+.expandable-file-list-container {
     margin-bottom: 15px;
 }
 .attached-files-list {
@@ -425,7 +424,7 @@ body.task-details-page .container {
     padding-left: 0;
     margin-top: 5px;
     margin-bottom: 10px; 
-    overflow: hidden; /* Для анимации или просто скрытия */
+    overflow: hidden; 
 }
 .attached-files-list li {
     margin-bottom: 6px;
@@ -434,9 +433,9 @@ body.task-details-page .container {
     border: 1px solid #e9ecef;
     border-radius: 5px;
     transition: background-color 0.2s ease, border-color 0.2s ease;
-    font-size: 0.85em; /* Мельче для списка файлов */
+    font-size: 0.85em; 
 }
-.attached-files-list li.hidden-file { /* Класс для скрытых файлов */
+.attached-files-list li.hidden-file {
     display: none;
 }
 .attached-files-list li:hover {
@@ -460,7 +459,7 @@ body.task-details-page .container {
     font-size: 0.95em; 
 }
 
-.toggle-files-button { /* Кнопка "Показать все / Скрыть" */
+.toggle-files-button {
     background-color: transparent;
     color: #8e44ad;
     border: 1px solid #e0c5f0;
@@ -483,18 +482,63 @@ body.task-details-page .container {
     flex-direction: column;
     flex-grow: 1; 
     background-color: #e5ddd5; 
-    overflow: hidden; /* Важно! Чат не должен прокручивать родителя */
+    overflow: hidden; 
     position: relative; 
 }
+
 .chat-messages { /* Этот блок будет скроллиться */
     flex-grow: 1;
     padding: 15px 12px; 
     overflow-y: auto; 
-    display: flex;
-    flex-direction: column;
+    display: flex; /* Необходимо для align-self у message-bubble */
+    flex-direction: column; /* Необходимо для align-self у message-bubble */
 }
-/* Стили для .message-bubble, .chat-input-area и т.д. остаются как в вашем styles.css */
-/* Убедитесь, что стили для .message-attachment также присутствуют и корректны */
+
+/* --- СТИЛИ ДЛЯ СООБЩЕНИЙ ЧАТА (ПУЗЫРИ) - ВАЖНО! --- */
+.message-bubble {
+    max-width: 75%; 
+    padding: 8px 12px; /* Уменьшил padding для более компактного вида */
+    border-radius: 7px; /* Более стандартный WA радиус */
+    margin-bottom: 10px; 
+    font-size: 0.92em; /* Немного уменьшил, стандартный вид */
+    line-height: 1.4;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.1); 
+    word-wrap: break-word; 
+    position: relative; 
+    color: #303030; /* Общий цвет текста для сообщений */
+}
+
+.message-bubble.sent { 
+    background-color: #dcf8c6; 
+    align-self: flex-end; 
+    border-bottom-right-radius: 4px; /* Небольшой "хвостик" */
+}
+
+.message-bubble.received { 
+    background-color: #ffffff; 
+    align-self: flex-start; 
+    border-bottom-left-radius: 4px; /* Небольшой "хвостик" */
+}
+        
+.message-content p { /* Текст внутри сообщения */
+    margin: 0; 
+    padding: 0; 
+    font-weight: 400; 
+}
+
+.message-timestamp {
+    font-size: 0.7em; /* Мельче шрифт для времени */
+    color: rgba(0,0,0,0.45); /* Полупрозрачный черный */
+    text-align: right;
+    margin-top: 4px; /* Отступ времени от текста */
+    display: block; 
+    user-select: none; /* Чтобы время не выделялось случайно */
+}
+.message-bubble.sent .message-timestamp { 
+    color: #77936c; /* Зеленоватый оттенок для времени на зеленых сообщениях */
+}
+
+/* Стили для вложений в сообщениях чата */
 .message-attachment {
     margin-top: 8px; 
     padding: 10px 12px; 
@@ -517,22 +561,109 @@ body.task-details-page .container {
     text-decoration: underline;
 }
 
+/* Стили для области ввода сообщения чата (остаются из вашего исходного styles.css) */
+.chat-input-area {
+    display: flex;
+    padding: 8px 12px; /* Компактнее */
+    background-color: #f0f0f0; /* Стандартный фон для поля ввода */
+    border-top: 1px solid #d1d1d1;
+    align-items: flex-end; /* Выравнивание по низу */
+}
+
+.chat-input-area textarea#chat-message-input { /* Используем ID для специфичности */
+    flex-grow: 1;
+    border: 1px solid #ccc; 
+    padding: 8px 12px; 
+    border-radius: 18px; /* Скругленное поле */
+    resize: none;
+    font-size: 0.95em;
+    font-family: 'Open Sans', sans-serif;
+    min-height: 20px; /* Базовая высота строки */
+    max-height: 90px; 
+    overflow-y: auto; 
+    line-height: 1.35;
+    margin: 0 8px; /* Отступы по бокам */
+    background-color: #fff; 
+}
+.chat-input-area textarea#chat-message-input:focus {
+    outline: none;
+    border-color: #8e44ad; 
+    box-shadow: 0 0 0 1px rgba(142, 68, 173, 0.2); 
+}
+
+.chat-attach-button, .chat-send-button { /* Общие стили для кнопок чата */
+    background: none;
+    border: none;
+    color: #546e7a; 
+    font-size: 1.3em; 
+    padding: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    width: 40px; /* Фиксированный размер */
+    height: 40px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+.chat-attach-button:hover, .chat-send-button:hover {
+    background-color: #e0e0e0; /* Легкий фон при наведении */
+    color: #333;
+}
+.chat-send-button { /* Специфичные для кнопки отправки */
+    color: #8e44ad; /* Фиолетовый */
+}
+.chat-send-button:hover {
+    background-color: #f0e9f7; /* Светло-фиолетовый */
+    color: #7a3b97;
+}
+.chat-send-button:disabled { /* Для состояния загрузки/отправки */
+    color: #b0b0b0;
+    cursor: default;
+}
+.chat-send-button:disabled:hover {
+    background-color: transparent;
+}
+
+
+/* Информация о выбранном файле для чата */
+.selected-file-info {
+    font-size: 0.8em;
+    padding: 4px 12px; 
+    color: #555;
+    background-color: #f0f0f0; 
+    border-top: 1px solid #e0e0e0; 
+}
+.selected-file-info .remove-file-button {
+    background: none;
+    border: none;
+    color: #999;
+    font-size: 1.1em;
+    cursor: pointer;
+    margin-left: 8px;
+    padding: 0 4px;
+    font-weight: bold;
+}
+.selected-file-info .remove-file-button:hover {
+    color: #e53935; 
+}
+
 /* --- Медиа-запрос для десктопной версии (двухколоночный макет) --- */
 @media (min-width: 992px) { 
     .task-chat-wrapper {
-        flex-direction: row; /* Колонки в ряд */
+        flex-direction: row; 
     }
     .task-details-section {
-        width: 380px; /* Фиксированная ширина для левой колонки */
-        flex-shrink: 0; /* Колонка не будет сжиматься */
-        height: 100%; /* Занимает всю высоту .task-chat-wrapper */
-        overflow-y: auto; /* Прокрутка только для этой колонки */
+        width: 380px; 
+        flex-shrink: 0; 
+        height: 100%; 
+        overflow-y: auto; 
         border-bottom: none; 
         border-right: 1px solid #d1d7db; 
     }
     .chat-container {
-        flex-grow: 1; /* Чат занимает все оставшееся пространство */
-        height: 100%; /* Занимает всю высоту .task-chat-wrapper */
+        flex-grow: 1; 
+        height: 100%; 
     }
 }
 
