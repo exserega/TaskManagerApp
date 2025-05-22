@@ -305,7 +305,13 @@
             const payload = { userCode: userCode, text: messageText };
             if (tempFileId) {
                 payload.attachedFileId = tempFileId;
-                payload.attachedFileName = originalFileName;
+                 try {
+                    payload.attachedFileName = decodeURIComponent(originalFileName);
+                } catch (e) {
+                    console.error("Ошибка декодирования имени файла: ", originalFileName, e);
+                    payload.attachedFileName = originalFileName; // Отправляем как есть, если декодирование не удалось
+                }
+                // --- КОНЕЦ ИЗМЕНЕНИЯ ---
             }
 
             const response = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/chat/${taskId}/sendmessage`, {
