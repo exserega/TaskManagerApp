@@ -205,6 +205,44 @@ position: relative;
 }
 
 
+.filter-buttons {
+    display: flex;
+    justify-content: center; /* Центрируем кнопки */
+    margin-bottom: 30px;
+    gap: 15px; /* Промежуток между кнопками */
+}
+
+.filter-button {
+    padding: 10px 20px;
+    font-size: 0.95em;
+    font-weight: 600;
+    color: #546e7a; /* Цвет неактивной кнопки */
+    background-color: #f0f4f8; /* Фон неактивной кнопки */
+    border: 1px solid #dfe4ea; /* Рамка неактивной кнопки */
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    outline: none;
+}
+
+.filter-button:hover {
+    background-color: #e4e9ed;
+    border-color: #c8d0d8;
+    color: #37474f;
+}
+
+.filter-button.active {
+    background-color: #8e44ad; /* Фиолетовый фон для активной кнопки (как у кнопки "Новая задача") */
+    color: white;
+    border-color: #8e44ad; /* Рамка в цвет фона */
+    box-shadow: 0 2px 8px rgba(142, 68, 173, 0.3);
+}
+
+.filter-button.active:hover {
+    background-color: #7a3b97; /* Чуть темнее при наведении на активную */
+    border-color: #7a3b97;
+}
+
 /* ================================================================ */
 /* ================ СТИЛИ ДЛЯ CREATE-TASK.HTML ================== */
 /* ================================================================ */
