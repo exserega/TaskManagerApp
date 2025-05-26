@@ -20,6 +20,13 @@
            <a href="create-task.html" class="create-task-button">Новая Задача +</a>
             <h1>Мои задачи</h1>
         </div>
+
+  <div class="filter-buttons">
+        <button class="filter-button active" data-filter="all">Все активные</button>
+        <button class="filter-button" data-filter="inProgress">В работе</button>
+        <button class="filter-button" data-filter="onCheck">На проверке</button>
+        <button class="filter-button" data-filter="completed">Выполненные</button>
+    </div>
                 
         <div id="loadingMessage" style="display: none;">Загрузка задач...</div>
         <div id="errorMessage" class="error-message" style="display: none;"></div>
@@ -61,83 +68,96 @@
         }, TASKS_UPDATE_INTERVAL);
     };
 
-    async function loadTasks(userCode, isPollingUpdate = false) {
-        const loadingMessageDiv = document.getElementById('loadingMessage');
-        const errorMessageDiv = document.getElementById('errorMessage');
-        const taskListContainer = document.getElementById('taskListContainer');
-        const noTasksMessageDiv = document.getElementById('noTasksMessage');
+   async function loadTasks(userCode, isPollingUpdate = false, statusFilter = 'all') { // Добавлен параметр statusFilter
+    const loadingMessageDiv = document.getElementById('loadingMessage');
+    const errorMessageDiv = document.getElementById('errorMessage');
+    const taskListContainer = document.getElementById('taskListContainer');
+    const noTasksMessageDiv = document.getElementById('noTasksMessage');
 
-        if (!isPollingUpdate) { // Показываем основной индикатор загрузки только при первой загрузке
-            if (loadingMessageDiv) loadingMessageDiv.style.display = 'block';
-            if (noTasksMessageDiv) noTasksMessageDiv.style.display = 'none';
-            if (taskListContainer) taskListContainer.innerHTML = ''; // Очищаем список только при полной перезагрузке
-        }
+    // При смене фильтра (не isPollingUpdate) мы всегда показываем загрузку и очищаем список.
+    // При фоновом обновлении (isPollingUpdate) этого делать не нужно, чтобы не было "мигания".
+    if (!isPollingUpdate) { 
+        if (loadingMessageDiv) loadingMessageDiv.style.display = 'block';
+        if (noTasksMessageDiv) noTasksMessageDiv.style.display = 'none';
+        if (taskListContainer) taskListContainer.innerHTML = ''; // Очищаем список только при явной смене фильтра или первой загрузке
+        if (errorMessageDiv) errorMessageDiv.style.display = 'none'; // Скрываем предыдущие ошибки
+    } else {
+        // Для фонового обновления, можно скрыть только сообщение об ошибке, если оно было
         if (errorMessageDiv) errorMessageDiv.style.display = 'none';
-
-
-        const apiUrl = `https://1c.c-r.kz/Registrator_test/hs/auth/taskslist/${userCode}`;
-        if (!isPollingUpdate) console.log('Запрашиваем задачи по URL:', apiUrl);
-
-        try {
-            const response = await fetch(apiUrl, { method: 'GET' });
-
-            if (!isPollingUpdate && loadingMessageDiv) {
-                loadingMessageDiv.style.display = 'none';
-            }
-
-            if (!response.ok) {
-                let errorMsg = `Ошибка загрузки задач: ${response.status} ${response.statusText}`;
-                try {
-                    const errorData = await response.json();
-                    if (errorData && errorData.message) {
-                        errorMsg += ` - ${errorData.message}`;
-                    }
-                } catch (e) { /* Не удалось распарсить JSON ошибки */ }
-                
-                if (!isPollingUpdate && errorMessageDiv) { // Показываем большую ошибку только если это не фоновое обновление
-                    errorMessageDiv.textContent = errorMsg;
-                    errorMessageDiv.style.display = 'block';
-                } else if (isPollingUpdate) { // Для фонового обновления просто логируем
-                    console.warn('Ошибка фонового обновления списка задач:', errorMsg);
-                }
-                console.error('Ошибка ответа сервера:', response);
-                return; // Прерываем, если ошибка
-            }
-
-            const tasks = await response.json();
-            if (!isPollingUpdate) console.log('Получены задачи:', tasks);
-
-            if (tasks) { // Сервер может вернуть пустой массив или null/undefined при ошибках парсинга JSON на его стороне
-                if (tasks.length > 0) {
-                    if (noTasksMessageDiv) noTasksMessageDiv.style.display = 'none';
-                    displayTasks(tasks); // displayTasks теперь должна аккуратно обновлять список
-                } else {
-                     if (taskListContainer) taskListContainer.innerHTML = ''; // Очищаем, если задач нет
-                    if (noTasksMessageDiv) noTasksMessageDiv.style.display = 'block';
-                }
-            } else {
-                 // Если tasks === null или undefined, это может быть проблемой ответа сервера
-                if (!isPollingUpdate && errorMessageDiv) {
-                    errorMessageDiv.textContent = "Получен некорректный ответ от сервера (нет данных о задачах).";
-                    errorMessageDiv.style.display = 'block';
-                } else if (isPollingUpdate) {
-                    console.warn('Фоновое обновление: получен некорректный ответ от сервера (нет данных о задачах).');
-                }
-            }
-
-        } catch (error) {
-            if (!isPollingUpdate && loadingMessageDiv) {
-                loadingMessageDiv.style.display = 'none';
-            }
-            if (!isPollingUpdate && errorMessageDiv) { // Показываем большую ошибку только если это не фоновое обновление
-                errorMessageDiv.textContent = 'Сетевая ошибка или ошибка при выполнении запроса: ' + error.message;
-                errorMessageDiv.style.display = 'block';
-            } else if (isPollingUpdate) { // Для фонового обновления просто логируем
-                console.warn('Сетевая ошибка при фоновом обновлении списка задач:', error.message);
-            }
-            console.error('Сетевая ошибка или ошибка выполнения:', error);
-        }
     }
+
+    // Формируем URL с учетом фильтра
+    let apiUrl = `https://1c.c-r.kz/Registrator_test/hs/auth/taskslist/${userCode}`;
+    if (statusFilter && statusFilter !== 'all') { // Если фильтр не "all", добавляем его
+        apiUrl += `?statusFilter=${encodeURIComponent(statusFilter)}`; // Используем encodeURIComponent для параметра
+    }
+    
+    if (!isPollingUpdate) {
+        console.log(`Запрашиваем задачи по URL: ${apiUrl} (Фильтр: ${statusFilter})`);
+    } else {
+        // Для фонового обновления можно логировать меньше или по-другому, если нужно
+        // console.log(`Фоновое обновление: ${apiUrl} (Фильтр: ${statusFilter})`);
+    }
+
+    try {
+        const response = await fetch(apiUrl, { method: 'GET' });
+
+        if (!isPollingUpdate && loadingMessageDiv) { // Скрываем сообщение о загрузке только если это не фоновое обновление
+            loadingMessageDiv.style.display = 'none';
+        }
+
+        if (!response.ok) {
+            let errorMsg = `Ошибка загрузки задач: ${response.status} ${response.statusText}`;
+            try {
+                const errorData = await response.json();
+                if (errorData && errorData.message) {
+                    errorMsg += ` - ${errorData.message}`;
+                }
+            } catch (e) { /* Не удалось распарсить JSON ошибки */ }
+            
+            if (!isPollingUpdate && errorMessageDiv) { 
+                errorMessageDiv.textContent = errorMsg;
+                errorMessageDiv.style.display = 'block';
+            } else if (isPollingUpdate) { 
+                console.warn('Ошибка фонового обновления списка задач:', errorMsg);
+            }
+            // console.error('Ошибка ответа сервера:', response); // Можно оставить для детальной отладки
+            return; 
+        }
+
+        const tasks = await response.json();
+        // if (!isPollingUpdate) console.log('Получены задачи:', tasks); // Для отладки
+
+        if (tasks) { 
+            if (tasks.length > 0) {
+                if (noTasksMessageDiv) noTasksMessageDiv.style.display = 'none';
+                displayTasks(tasks); 
+            } else {
+                 if (taskListContainer) taskListContainer.innerHTML = ''; 
+                if (noTasksMessageDiv) noTasksMessageDiv.style.display = 'block';
+            }
+        } else {
+            if (!isPollingUpdate && errorMessageDiv) {
+                errorMessageDiv.textContent = "Получен некорректный ответ от сервера (нет данных о задачах).";
+                errorMessageDiv.style.display = 'block';
+            } else if (isPollingUpdate) {
+                console.warn('Фоновое обновление: получен некорректный ответ от сервера (нет данных о задачах).');
+            }
+        }
+
+    } catch (error) {
+        if (!isPollingUpdate && loadingMessageDiv) {
+            loadingMessageDiv.style.display = 'none';
+        }
+        if (!isPollingUpdate && errorMessageDiv) { 
+            errorMessageDiv.textContent = 'Сетевая ошибка или ошибка при выполнении запроса: ' + error.message;
+            errorMessageDiv.style.display = 'block';
+        } else if (isPollingUpdate) { 
+            console.warn('Сетевая ошибка при фоновом обновлении списка задач:', error.message);
+        }
+        // console.error('Сетевая ошибка или ошибка выполнения:', error); // Можно оставить для детальной отладки
+    }
+}
 
     function displayTasks(tasks) {
         const taskListContainer = document.getElementById('taskListContainer');
