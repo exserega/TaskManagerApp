@@ -384,7 +384,7 @@ position: relative;
 .file-name-display ul.file-list {
     list-style-type: none;
     padding: 0;
-    margin: 0;
+    margin: 10;
 }
 
 .file-name-display ul.file-list li {
@@ -395,10 +395,11 @@ position: relative;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    font-size: 0.9em;
 }
 
 .file-name-display ul.file-list li span {
-    word-break: break-all; /* Для длинных имен файлов */
+    word-break: break-all;
     margin-right: 10px;
 }
 
@@ -416,6 +417,25 @@ position: relative;
     background-color: #fed7d7; 
 }
 
+
+.drop-zone.has-files {
+    /* Можно немного изменить стиль, когда файлы уже есть, но лимит не достигнут */
+    /* Например, менее яркая рамка или фон */
+    border-style: solid; /* Меняем на сплошную, если хотим */
+    padding: 20px; /* Можно уменьшить padding */
+}
+
+.drop-zone.limit-reached {
+    background-color: #f8f9fa; /* Возвращаем стандартный фон или делаем его сероватым */
+    border-color: #e0e0e0;   /* Серая рамка */
+    border-style: solid;
+    opacity: 0.7; /* Делаем полупрозрачным, показывая неактивность */
+}
+
+.drop-zone.limit-reached .drop-zone-prompt u {
+    text-decoration: none; /* Убираем подчеркивание у текста, если он не кликабелен */
+    color: inherit;
+}
 
 
 /* ... (ваши существующие глобальные стили, стили для tasks.html, create-task.html, login.html) ... */
