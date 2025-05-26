@@ -157,6 +157,7 @@
             }
 
             const result = await response.json(); // Ожидаем { success, tasks, newInCategories }
+console.log("Ответ от сервера (newInCategories):", result.newInCategories);
 
             if (result && result.success) {
                 if (result.tasks && result.tasks.length > 0) {
