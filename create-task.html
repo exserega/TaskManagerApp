@@ -155,6 +155,18 @@
         return true;
     }
 
+
+
+function removeFileFromUploadList(fileIndex) {
+        if (fileIndex >= 0 && fileIndex < currentFilesForUpload.length) {
+            currentFilesForUpload.splice(fileIndex, 1);
+            updateFilesDisplayAndInput(); // Перерисовываем список после удаления
+        } else {
+            console.error("Попытка удалить файл с некорректным индексом:", fileIndex);
+        }
+    }
+
+
     function updateFilesDisplayAndInput() {
         const fileNameDisplay = document.getElementById('fileNameDisplay');
         const dropZone = document.getElementById('dropZone'); 
