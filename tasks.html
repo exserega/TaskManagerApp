@@ -196,16 +196,32 @@
                 listItem.classList.add('has-unread-messages');
             }
 
+            let originalStatusFromServer = String(task.status || '').trim(); // Получаем оригинальный статус
+            let displayStatusText = originalStatusFromServer || 'Статус не определен'; // Текст для отображения
+            
+            // Замена текста для конкретных статусов
+            // Важно: сравниваем с тем, как статус приходит из 1С (Строка(Перечисление.СтатусыЗадач.ИмяЗначения))
+            // На скриншоте был "ТребуетОценки"
+            if (originalStatusFromServer === 'ТребуетОценки') {
+                displayStatusText = 'Передано на оценку';
+            }
+            // Примечание: если из 1С приходит "Требует оценки" (с пробелом), то и сравнивать нужно с ним.
+            // Лучше всего проверить, какая точно строка приходит в task.status для этого случая.
+
             let statusClass = 'status-default';
-            if (task.status) {
-                const statusNormalized = String(task.status).toLowerCase().replace(/\s+/g, '-');
-                // Добавим больше вариантов для сопоставления, если из 1С приходят разные написания
+            // Определение CSS-класса на основе ОРИГИНАЛЬНОГО статуса с сервера, если это нужно для стилизации
+            // или можно на основе displayStatusText, если классы соответствуют отображаемому тексту.
+            // Для простоты оставим текущую логику определения statusClass, но вы можете ее доработать.
+            if (originalStatusFromServer) {
+                const statusNormalized = originalStatusFromServer.toLowerCase().replace(/\s+/g, '-');
                 if (statusNormalized.includes('новая')) statusClass = 'status-new';
                 else if (statusNormalized.includes('в-работе') || statusNormalized.includes('в работе')) statusClass = 'status-in-progress';
-                else if (statusNormalized.includes('на-проверке') || statusNormalized.includes('на проверке')) statusClass = 'status-on-check'; // Пример для "На проверке"
+                else if (statusNormalized.includes('на-проверке') || statusNormalized.includes('на проверке')) statusClass = 'status-on-check';
                 else if (statusNormalized.includes('выполнена') || statusNormalized.includes('завершена') || statusNormalized.includes('закрыта')) statusClass = 'status-completed';
-                else if (statusNormalized.includes('оценкасогласована') || statusNormalized.includes('оценка согласована')) statusClass = 'status- согласование-оценки'; // Пример
-                // Добавьте другие классы по аналогии, если нужно
+                else if (statusNormalized.includes('оценкасогласована') || statusNormalized.includes('оценка согласована')) statusClass = 'status-согласование-оценки';
+                else if (originalStatusFromServer === 'ТребуетОценки') { // Можно добавить специальный класс для "Передано на оценку"
+                    statusClass = 'status-awaiting-assessment'; // Например
+                }
             }
             
             let formattedDate = task.date;
@@ -231,13 +247,13 @@
             }
 
             let taskHTML = '<div class="task-info">';
-            taskHTML += '<h3>' + (task.summary || 'Без темы') + ' (№' + (task.number || 'б/н') + ')</h3>';
+            taskHTML += '<h3>' + (escapeHTML(task.summary) || 'Без темы') + ' (№' + (escapeHTML(task.number) || 'б/н') + ')</h3>';
             taskHTML += '<p>Дата: ' + formattedDate + '</p>';
             taskHTML += '</div>'; 
             taskHTML += '<div class="unread-indicator-container">';
             taskHTML += '  <span class="unread-indicator"></span>'; 
             taskHTML += '</div>';
-            taskHTML += '<span class="task-status ' + statusClass + '">' + (task.status || 'Статус не определен') + '</span>';
+            taskHTML += '<span class="task-status ' + statusClass + '">' + escapeHTML(displayStatusText) + '</span>';
             listItem.innerHTML = taskHTML;
             
             listItem.onclick = function() {
