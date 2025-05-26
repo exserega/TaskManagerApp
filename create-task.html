@@ -118,16 +118,23 @@
     }
 
     function addFileToUploadList(file) {
+   function addFileToUploadList(file) {
         if (currentFilesForUpload.length >= MAX_FILES) {
             alert(`Можно прикрепить не более ${MAX_FILES} файлов.`);
             return false;
         }
-        // Проверка на дубликат по имени файла (опционально, но полезно)
-        if (currentFilesForUpload.some(f => f.name === file.name)) {
-            // alert(`Файл с именем "${file.name}" уже добавлен.`);
-            // return false; 
-            // Если разрешаем дубликаты по имени, эту проверку убрать
+
+        // Проверка на дубликат по имени И РАЗМЕРУ файла
+        const isDuplicate = currentFilesForUpload.some(existingFile => 
+            existingFile.name === file.name && existingFile.size === file.size
+        );
+
+        if (isDuplicate) {
+            // Используем escapeHTML для безопасного отображения имени файла в alert
+            alert(`Файл с именем "${escapeHTML(file.name)}" уже добавлен.`); 
+            return false; // Не добавляем дубликат
         }
+        
         currentFilesForUpload.push(file);
         return true;
     }
