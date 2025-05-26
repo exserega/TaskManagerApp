@@ -155,36 +155,26 @@
         return true;
     }
 
-     function updateFilesDisplayAndInput() {
+    function updateFilesDisplayAndInput() {
         const fileNameDisplay = document.getElementById('fileNameDisplay');
-        const dropZone = document.getElementById('dropZone'); // Получаем саму dropZone
-        const dropZonePrompt = dropZone.querySelector('.drop-zone-prompt'); // Получаем элемент с подсказкой
+        const dropZone = document.getElementById('dropZone'); 
+        const dropZonePrompt = dropZone.querySelector('.drop-zone-prompt'); 
         const taskFileInput = document.getElementById('taskFile');
 
-        if (!fileNameDisplay || !dropZonePrompt || !taskFileInput || !dropZone) return;
+        if (!fileNameDisplay || !dropZonePrompt || !taskFileInput || !dropZone) {
+            console.error("Не найден один из DOM элементов для обновления списка файлов.");
+            return;
+        }
 
         fileNameDisplay.innerHTML = ''; // Очищаем текущий список отображаемых файлов
 
-        // Управление отображением и текстом dropZonePrompt
         if (currentFilesForUpload.length === 0) {
             dropZonePrompt.innerHTML = `Перетащите файлы сюда или <u>кликните для выбора</u> (до ${MAX_FILES})`;
             dropZone.classList.remove('has-files', 'limit-reached');
-            dropZone.style.cursor = 'pointer'; // Возвращаем курсор по умолчанию
-        } else if (currentFilesForUpload.length < MAX_FILES) {
-            const remaining = MAX_FILES - currentFilesForUpload.length;
-            dropZonePrompt.innerHTML = `Добавить еще (осталось ${remaining}) или перетащите`;
-            dropZone.classList.add('has-files');
-            dropZone.classList.remove('limit-reached');
             dropZone.style.cursor = 'pointer';
-        } else { // currentFilesForUpload.length >= MAX_FILES
-            dropZonePrompt.innerHTML = `Достигнут лимит в ${MAX_FILES} файла(ов)`;
-            dropZone.classList.add('has-files', 'limit-reached');
-            dropZone.style.cursor = 'not-allowed'; // Меняем курсор, показывая неактивность
-        }
-        dropZonePrompt.style.display = 'block'; // Убедимся, что подсказка всегда видна
-
-        // Отображение списка выбранных файлов
-        if (currentFilesForUpload.length > 0) {
+            fileNameDisplay.style.display = 'none'; // Скрываем блок отображения имен файлов
+        } else {
+            // Формируем список файлов
             const ul = document.createElement('ul');
             ul.className = 'file-list';
             currentFilesForUpload.forEach((file, index) => {
@@ -195,21 +185,43 @@
             fileNameDisplay.appendChild(ul);
             fileNameDisplay.style.display = 'block';
 
-            fileNameDisplay.querySelectorAll('.remove-file-link').forEach(link => {
-                const newLink = link.cloneNode(true);
-                link.parentNode.replaceChild(newLink, link);
-                newLink.addEventListener('click', (e) => {
+            // Обновляем текст в dropZone в зависимости от количества файлов
+            if (currentFilesForUpload.length < MAX_FILES) {
+                const remaining = MAX_FILES - currentFilesForUpload.length;
+                dropZonePrompt.innerHTML = `Добавить еще (осталось ${remaining}) или перетащите`;
+                dropZone.classList.add('has-files');
+                dropZone.classList.remove('limit-reached');
+                dropZone.style.cursor = 'pointer';
+            } else { // currentFilesForUpload.length >= MAX_FILES
+                dropZonePrompt.innerHTML = `Достигнут лимит в ${MAX_FILES} файла(ов)`;
+                dropZone.classList.add('has-files', 'limit-reached');
+                dropZone.style.cursor = 'not-allowed';
+            }
+            dropZonePrompt.style.display = 'block';
+
+            // Назначаем обработчики событий на ВСЕ ссылки удаления в обновленном списке
+            fileNameDisplay.querySelectorAll('.remove-file-link').forEach(linkEl => {
+                // Удаляем предыдущий обработчик, если он мог быть (хотя после innerHTML = '' их не должно быть)
+                // Но для надежности, особенно если бы мы не пересоздавали весь список:
+                // linkEl.replaceWith(linkEl.cloneNode(true)); // Это создаст новый элемент без слушателей
+                // linkEl = fileNameDisplay.querySelector(`[data-index="${linkEl.dataset.index}"]`); // Получаем ссылку на новый элемент
+
+                // Для простоты, так как мы пересоздаем UL каждый раз, просто навешиваем:
+                linkEl.addEventListener('click', function(e) { // Используем function, чтобы this ссылался на linkEl
                     e.preventDefault();
                     e.stopPropagation();
-                    const indexToRemove = parseInt(e.target.dataset.index, 10);
-                    removeFileFromUploadList(indexToRemove);
+                    const indexToRemove = parseInt(this.dataset.index, 10);
+                    if (!isNaN(indexToRemove)) {
+                        // console.log('Удаление файла по индексу:', indexToRemove);
+                        removeFileFromUploadList(indexToRemove);
+                    } else {
+                        console.error("Не удалось получить индекс для удаления файла:", this.dataset.index);
+                    }
                 });
             });
-        } else {
-            fileNameDisplay.style.display = 'none';
         }
-
-        // Обновляем files у input type="file" (важно для консистентности, если бы мы на него полагались напрямую)
+        
+        // Обновляем files у input type="file"
         const dataTransfer = new DataTransfer();
         currentFilesForUpload.forEach(file => dataTransfer.items.add(file));
         taskFileInput.files = dataTransfer.files;
