@@ -50,7 +50,7 @@
 <body>
 
 <script>
-    let currentFilesForUpload = []; // Теперь это массив для хранения до 3-х файлов
+    let currentFilesForUpload = []; // Массив для хранения до 3-х файлов
     const MAX_FILES = 3;
 
     window.onload = function() {
@@ -122,6 +122,12 @@
             alert(`Можно прикрепить не более ${MAX_FILES} файлов.`);
             return false;
         }
+        // Проверка на дубликат по имени файла (опционально, но полезно)
+        if (currentFilesForUpload.some(f => f.name === file.name)) {
+            // alert(`Файл с именем "${file.name}" уже добавлен.`);
+            // return false; 
+            // Если разрешаем дубликаты по имени, эту проверку убрать
+        }
         currentFilesForUpload.push(file);
         return true;
     }
@@ -140,7 +146,7 @@
 
         if (!fileNameDisplay || !dropZonePrompt || !taskFileInput) return;
 
-        fileNameDisplay.innerHTML = ''; // Очищаем список файлов
+        fileNameDisplay.innerHTML = ''; 
 
         if (currentFilesForUpload.length > 0) {
             dropZonePrompt.style.display = 'none';
@@ -154,9 +160,10 @@
             fileNameDisplay.appendChild(ul);
             fileNameDisplay.style.display = 'block';
 
-            // Добавляем обработчики для новых кнопок удаления
             fileNameDisplay.querySelectorAll('.remove-file-link').forEach(link => {
-                link.addEventListener('click', (e) => {
+                const newLink = link.cloneNode(true); // Клонируем для удаления старых обработчиков
+                link.parentNode.replaceChild(newLink, link);
+                newLink.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     const indexToRemove = parseInt(e.target.dataset.index, 10);
@@ -168,7 +175,6 @@
             fileNameDisplay.style.display = 'none';
         }
 
-        // Обновляем files у input type="file"
         const dataTransfer = new DataTransfer();
         currentFilesForUpload.forEach(file => dataTransfer.items.add(file));
         taskFileInput.files = dataTransfer.files;
@@ -181,21 +187,25 @@
         if (!dropZone || !taskFileInput) return;
 
         dropZone.addEventListener('click', (e) => {
-            if (e.target.classList.contains('remove-file-link') || e.target.parentElement.classList.contains('remove-file-link')) {
-                return; // Не открывать диалог, если кликнули по ссылке удаления
+            if (e.target.classList.contains('remove-file-link') || (e.target.parentElement && e.target.parentElement.classList.contains('remove-file-link'))) {
+                return; 
             }
             taskFileInput.click();
         });
 
         taskFileInput.addEventListener('change', () => {
-            if (taskFileInput.files.length > 0) {
-                for (let i = 0; i < taskFileInput.files.length; i++) {
-                    if (!addFileToUploadList(taskFileInput.files[i])) break; // Прерываем, если достигли лимита
-                }
-                updateFilesDisplayAndInput();
-            } else if (currentFilesForUpload.length === 0) { // Если файлы были очищены (например, отменой выбора)
-                updateFilesDisplayAndInput(); // Обновит UI до начального состояния
+            // При новом выборе через диалог, мы ОБНОВЛЯЕМ список выбранных файлов,
+            // а не добавляем к старым, если пользователь хочет изменить свой выбор.
+            // Если нужно НАКАПЛИВАТЬ, то currentFilesForUpload не нужно очищать.
+            // Судя по вашему "файлы просто заменяются", возможно, вы ожидали очистки.
+            // Чтобы было накопление, как в предыдущей версии:
+            // currentFilesForUpload = []; // Если нужно заменять, а не накапливать из диалога
+            
+            const filesFromDialog = Array.from(taskFileInput.files);
+            for (const file of filesFromDialog) {
+                if (!addFileToUploadList(file)) break; 
             }
+            updateFilesDisplayAndInput();
         });
 
         dropZone.addEventListener('dragenter', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
@@ -207,8 +217,9 @@
             dropZone.classList.remove('drag-over');
             
             if (e.dataTransfer.files.length > 0) {
-                for (let i = 0; i < e.dataTransfer.files.length; i++) {
-                     if (!addFileToUploadList(e.dataTransfer.files[i])) break;
+                const filesFromDrop = Array.from(e.dataTransfer.files);
+                for (const file of filesFromDrop) {
+                     if (!addFileToUploadList(file)) break;
                 }
                 updateFilesDisplayAndInput();
             }
@@ -216,7 +227,7 @@
     }
     
     function setupPasteListener() {
-        const dropZone = document.getElementById('dropZone'); // Для визуального эффекта
+        const dropZone = document.getElementById('dropZone'); 
         const detailsTextarea = document.getElementById('details');
 
         document.addEventListener('paste', (event) => {
@@ -231,14 +242,18 @@
                 }
             }
 
-            if (pastedImageFile) {
+            if (pastedImageFile) { // Если в буфере есть изображение
                 const activeElement = document.activeElement;
-                // Разрешаем вставку как файл, если фокус на textarea "details" или если фокус не на текстовом поле ввода
+                
+                // Условие: изображение прикрепляется, если:
+                // 1. Фокус на textarea "Детальное описание" (activeElement.id === 'details')
+                // ИЛИ
+                // 2. Фокус НЕ на другом текстовом поле ввода (т.е. вставка на страницу в целом)
                 if ( (activeElement && activeElement.id === 'details') || 
-                     !(activeElement && (activeElement.tagName === 'INPUT' && activeElement.type !== 'file' || activeElement.tagName === 'TEXTAREA'))
+                     !(activeElement && ((activeElement.tagName === 'INPUT' && activeElement.type !== 'file') || activeElement.tagName === 'TEXTAREA'))
                    ) {
                     event.preventDefault(); 
-                    console.log('Изображение из буфера обмена для аттача:', pastedImageFile);
+                    console.log('Изображение из буфера обмена для прикрепления:', pastedImageFile);
 
                     const timestamp = new Date().toISOString().replace(/[-:.]/g, '').substring(0,14);
                     const extension = pastedImageFile.type.split('/')[1] || 'png';
@@ -255,8 +270,10 @@
                         }
                     }
                 }
-                // Если изображение вставлено, но фокус на другом текстовом поле, ничего не делаем (даем браузеру обработать)
+                // Если изображение вставлено, но фокус на другом текстовом поле (не 'details'),
+                // то ничего не делаем здесь, позволяя браузеру стандартно обработать (или не обработать) вставку.
             }
+            // Если в буфере не изображение, то стандартная вставка текста в поля ввода отработает как обычно.
         });
     }
 
@@ -295,7 +312,7 @@
                 submitButton.textContent = 'Обработка...';
             }
 
-            let uploadedFileInfos = []; // Массив для информации о загруженных файлах
+            let uploadedFileInfos = [];
 
             try {
                 if (currentFilesForUpload.length > 0) {
@@ -310,7 +327,7 @@
                         });
 
                         if (!fileUploadResponse.ok) {
-                            let errorMsg = `Ошибка загрузки файла "${fileToUpload.name}": ${fileUploadResponse.status}`;
+                            let errorMsg = `Ошибка загрузки файла "${escapeHTML(fileToUpload.name)}": ${fileUploadResponse.status}`;
                             try { const errorData = await fileUploadResponse.json(); errorMsg = errorData.message || errorMsg; } catch (e) { /* не JSON */ }
                             throw new Error(errorMsg);
                         }
@@ -319,11 +336,11 @@
                         if (fileResult.success) {
                             uploadedFileInfos.push({
                                 tempFileId: fileResult.tempFileId,
-                                fileName: fileResult.fileName // Используем имя, которое вернул сервер
+                                fileName: fileResult.fileName 
                             });
-                            console.log(`Файл "${fileResult.fileName}" успешно загружен:`, fileResult);
+                            console.log(`Файл "${escapeHTML(fileResult.fileName)}" успешно загружен:`, fileResult);
                         } else {
-                            throw new Error(fileResult.message || `Не удалось загрузить файл "${fileToUpload.name}".`);
+                            throw new Error(fileResult.message || `Не удалось загрузить файл "${escapeHTML(fileToUpload.name)}".`);
                         }
                     }
                 }
@@ -337,10 +354,6 @@
                 };
 
                 if (uploadedFileInfos.length > 0) {
-                    // ВАЖНО: Бэкенд (1С) должен быть готов принять массив файлов!
-                    // Сейчас он ожидает 'attachedFileId' и 'attachedFileName' (сингулярные).
-                    // Мы отправим массив, предполагая будущую доработку бэкенда.
-                    // Если бэкенд не доработан, он, скорее всего, проигнорирует это поле или выдаст ошибку.
                     taskData.attachedFiles = uploadedFileInfos; 
                     console.log("Данные для создания задачи с файлами:", taskData);
                 }
@@ -366,8 +379,8 @@
                     }
                     if(createTaskForm) createTaskForm.reset(); 
                     
-                    currentFilesForUpload = []; // Очищаем массив файлов
-                    updateFilesDisplayAndInput(); // Обновляем UI (убираем список файлов)
+                    currentFilesForUpload = []; 
+                    updateFilesDisplayAndInput();
 
                     setTimeout(() => { window.location.href = 'tasks.html'; }, 2500);
                 } else {
