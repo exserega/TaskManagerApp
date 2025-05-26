@@ -37,7 +37,7 @@
                  <label for="taskFile">Прикрепить файл (до 30МБ)</label>
             <div id="dropZone" class="drop-zone">
                 <span class="drop-zone-prompt">Перетащите файл сюда или <u>кликните для выбора</u></span>
-                <input type="file" id="taskFile" name="taskFile" class="drop-zone-input">
+               <input type="file" id="taskFile" name="taskFile" class="drop-zone-input" multiple>
             </div>
             <div id="fileNameDisplay" class="file-name-display"></div>
 
@@ -49,8 +49,9 @@
     </div>
 <body>
 
- <script>
-    let currentFileForUpload = null; // Глобальная переменная для хранения выбранного файла
+<script>
+    let currentFilesForUpload = []; // Теперь это массив для хранения до 3-х файлов
+    const MAX_FILES = 3;
 
     window.onload = function() {
         const userCode = localStorage.getItem('userCode');
@@ -61,7 +62,7 @@
         }
         loadClientConfigurations(userCode);
         setupDragAndDrop();
-        setupPasteListener(); // Настройка слушателя вставки из буфера
+        setupPasteListener();
     };
 
     async function loadClientConfigurations(userCode) {
@@ -116,33 +117,61 @@
         return div.innerHTML;
     }
 
-    // Функция для отображения информации о файле и управления ссылкой на удаление
-    function updateFileInfoAndResetInput(fileNameToDisplay) {
+    function addFileToUploadList(file) {
+        if (currentFilesForUpload.length >= MAX_FILES) {
+            alert(`Можно прикрепить не более ${MAX_FILES} файлов.`);
+            return false;
+        }
+        currentFilesForUpload.push(file);
+        return true;
+    }
+
+    function removeFileFromUploadList(fileIndex) {
+        if (fileIndex >= 0 && fileIndex < currentFilesForUpload.length) {
+            currentFilesForUpload.splice(fileIndex, 1);
+            updateFilesDisplayAndInput();
+        }
+    }
+
+    function updateFilesDisplayAndInput() {
         const fileNameDisplay = document.getElementById('fileNameDisplay');
         const dropZonePrompt = document.querySelector('#dropZone .drop-zone-prompt');
         const taskFileInput = document.getElementById('taskFile');
 
-        if (dropZonePrompt) dropZonePrompt.style.display = 'none';
-        if (fileNameDisplay) {
-            fileNameDisplay.innerHTML = `Выбран файл: <strong>${escapeHTML(fileNameToDisplay)}</strong> <a href="#" id="removeFileLink" class="remove-file-link" title="Удалить файл">&times;</a>`;
+        if (!fileNameDisplay || !dropZonePrompt || !taskFileInput) return;
+
+        fileNameDisplay.innerHTML = ''; // Очищаем список файлов
+
+        if (currentFilesForUpload.length > 0) {
+            dropZonePrompt.style.display = 'none';
+            const ul = document.createElement('ul');
+            ul.className = 'file-list';
+            currentFilesForUpload.forEach((file, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span>${escapeHTML(file.name)}</span> <a href="#" class="remove-file-link" data-index="${index}" title="Удалить файл">&times;</a>`;
+                ul.appendChild(li);
+            });
+            fileNameDisplay.appendChild(ul);
             fileNameDisplay.style.display = 'block';
 
-            const removeFileLink = document.getElementById('removeFileLink');
-            if (removeFileLink) {
-                // Удаляем старый обработчик, если он был, чтобы избежать дублирования
-                const newRemoveFileLink = removeFileLink.cloneNode(true);
-                removeFileLink.parentNode.replaceChild(newRemoveFileLink, removeFileLink);
-                
-                newRemoveFileLink.addEventListener('click', (e) => {
+            // Добавляем обработчики для новых кнопок удаления
+            fileNameDisplay.querySelectorAll('.remove-file-link').forEach(link => {
+                link.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    currentFileForUpload = null;
-                    if (taskFileInput) taskFileInput.value = ''; 
-                    if (fileNameDisplay) fileNameDisplay.style.display = 'none';
-                    if (dropZonePrompt) dropZonePrompt.style.display = 'block';
+                    const indexToRemove = parseInt(e.target.dataset.index, 10);
+                    removeFileFromUploadList(indexToRemove);
                 });
-            }
+            });
+        } else {
+            dropZonePrompt.style.display = 'block';
+            fileNameDisplay.style.display = 'none';
         }
+
+        // Обновляем files у input type="file"
+        const dataTransfer = new DataTransfer();
+        currentFilesForUpload.forEach(file => dataTransfer.items.add(file));
+        taskFileInput.files = dataTransfer.files;
     }
 
     function setupDragAndDrop() {
@@ -152,104 +181,81 @@
         if (!dropZone || !taskFileInput) return;
 
         dropZone.addEventListener('click', (e) => {
-            if (e.target.id === 'removeFileLink') {
-                return;
+            if (e.target.classList.contains('remove-file-link') || e.target.parentElement.classList.contains('remove-file-link')) {
+                return; // Не открывать диалог, если кликнули по ссылке удаления
             }
             taskFileInput.click();
         });
 
         taskFileInput.addEventListener('change', () => {
             if (taskFileInput.files.length > 0) {
-                currentFileForUpload = taskFileInput.files[0];
-                updateFileInfoAndResetInput(currentFileForUpload.name);
-            } else {
-                // Это условие может сработать, если пользователь отменил выбор файла в диалоге
-                // или если taskFileInput.value был очищен программно и currentFileForUpload уже null
-                if (!currentFileForUpload) { 
-                    const fileNameDisplay = document.getElementById('fileNameDisplay');
-                    const dropZonePrompt = document.querySelector('#dropZone .drop-zone-prompt');
-                    if (fileNameDisplay) fileNameDisplay.style.display = 'none';
-                    if (dropZonePrompt) dropZonePrompt.style.display = 'block';
+                for (let i = 0; i < taskFileInput.files.length; i++) {
+                    if (!addFileToUploadList(taskFileInput.files[i])) break; // Прерываем, если достигли лимита
                 }
+                updateFilesDisplayAndInput();
+            } else if (currentFilesForUpload.length === 0) { // Если файлы были очищены (например, отменой выбора)
+                updateFilesDisplayAndInput(); // Обновит UI до начального состояния
             }
         });
 
-        dropZone.addEventListener('dragenter', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('drag-over');
-        });
-
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('drag-over');
-        });
-
-        dropZone.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('drag-over');
-        });
+        dropZone.addEventListener('dragenter', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+        dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); dropZone.classList.remove('drag-over'); });
 
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
             dropZone.classList.remove('drag-over');
             
             if (e.dataTransfer.files.length > 0) {
-                currentFileForUpload = e.dataTransfer.files[0]; 
-                // taskFileInput.files = e.dataTransfer.files; // Это присвоение безопасно и полезно
-                const dataTransfer = new DataTransfer();
-                dataTransfer.items.add(currentFileForUpload);
-                taskFileInput.files = dataTransfer.files;
-
-                updateFileInfoAndResetInput(currentFileForUpload.name);
+                for (let i = 0; i < e.dataTransfer.files.length; i++) {
+                     if (!addFileToUploadList(e.dataTransfer.files[i])) break;
+                }
+                updateFilesDisplayAndInput();
             }
         });
     }
     
     function setupPasteListener() {
-        const dropZone = document.getElementById('dropZone');
-        const taskFileInput = document.getElementById('taskFile');
-
-        if (!taskFileInput) return; // Если нет инпута файла, нет смысла
+        const dropZone = document.getElementById('dropZone'); // Для визуального эффекта
+        const detailsTextarea = document.getElementById('details');
 
         document.addEventListener('paste', (event) => {
-            const activeElement = document.activeElement;
-            if (activeElement && (activeElement.tagName === 'INPUT' && activeElement.type !== 'file' || activeElement.tagName === 'TEXTAREA')) {
-                return; 
-            }
-
             const items = (event.clipboardData || window.clipboardData)?.items;
             if (!items) return;
 
-            let imageFile = null;
+            let pastedImageFile = null;
             for (let i = 0; i < items.length; i++) {
                 if (items[i].type.indexOf('image') !== -1) {
-                    imageFile = items[i].getAsFile();
+                    pastedImageFile = items[i].getAsFile();
                     break;
                 }
             }
 
-            if (imageFile) {
-                event.preventDefault(); 
-                console.log('Изображение из буфера обмена получено:', imageFile);
+            if (pastedImageFile) {
+                const activeElement = document.activeElement;
+                // Разрешаем вставку как файл, если фокус на textarea "details" или если фокус не на текстовом поле ввода
+                if ( (activeElement && activeElement.id === 'details') || 
+                     !(activeElement && (activeElement.tagName === 'INPUT' && activeElement.type !== 'file' || activeElement.tagName === 'TEXTAREA'))
+                   ) {
+                    event.preventDefault(); 
+                    console.log('Изображение из буфера обмена для аттача:', pastedImageFile);
 
-                const timestamp = new Date().toISOString().replace(/[-:.]/g, '').substring(0, 14); // ГГГГММДДЧЧММСС
-                const extension = imageFile.type.split('/')[1] || 'png';
-                const fileName = `clipboard-${timestamp}.${extension}`;
-                
-                currentFileForUpload = new File([imageFile], fileName, {type: imageFile.type});
-                
-                const dataTransfer = new DataTransfer();
-                dataTransfer.items.add(currentFileForUpload);
-                taskFileInput.files = dataTransfer.files;
-
-                updateFileInfoAndResetInput(currentFileForUpload.name); 
-                
-                if(dropZone) { 
-                    dropZone.classList.add('drag-over'); 
-                    setTimeout(() => {
-                        dropZone.classList.remove('drag-over');
-                    }, 200);
+                    const timestamp = new Date().toISOString().replace(/[-:.]/g, '').substring(0,14);
+                    const extension = pastedImageFile.type.split('/')[1] || 'png';
+                    const fileName = `clipboard-${timestamp}.${extension}`;
+                    
+                    const fileToAdd = new File([pastedImageFile], fileName, {type: pastedImageFile.type});
+                    
+                    if (addFileToUploadList(fileToAdd)) {
+                        updateFilesDisplayAndInput();
+                        
+                        if (dropZone) { 
+                            dropZone.classList.add('drag-over'); 
+                            setTimeout(() => { dropZone.classList.remove('drag-over'); }, 200);
+                        }
+                    }
                 }
+                // Если изображение вставлено, но фокус на другом текстовом поле, ничего не делаем (даем браузеру обработать)
             }
         });
     }
@@ -289,37 +295,36 @@
                 submitButton.textContent = 'Обработка...';
             }
 
-            let attachedFileId = "";
-            let attachedFileName = "";
+            let uploadedFileInfos = []; // Массив для информации о загруженных файлах
 
             try {
-                if (currentFileForUpload) {
-                    if(submitButton) submitButton.textContent = 'Загрузка файла...';
-                    
-                    const fileUploadResponse = await fetch('https://1c.c-r.kz/Registrator_test/hs/auth/files/upload', {
-                        method: 'POST',
-                        body: currentFileForUpload, 
-                        headers: {
-                            'X-File-Name': encodeURIComponent(currentFileForUpload.name) 
+                if (currentFilesForUpload.length > 0) {
+                    for (let i = 0; i < currentFilesForUpload.length; i++) {
+                        const fileToUpload = currentFilesForUpload[i];
+                        if(submitButton) submitButton.textContent = `Загрузка файла ${i + 1} из ${currentFilesForUpload.length}...`;
+                        
+                        const fileUploadResponse = await fetch('https://1c.c-r.kz/Registrator_test/hs/auth/files/upload', {
+                            method: 'POST',
+                            body: fileToUpload, 
+                            headers: { 'X-File-Name': encodeURIComponent(fileToUpload.name) }
+                        });
+
+                        if (!fileUploadResponse.ok) {
+                            let errorMsg = `Ошибка загрузки файла "${fileToUpload.name}": ${fileUploadResponse.status}`;
+                            try { const errorData = await fileUploadResponse.json(); errorMsg = errorData.message || errorMsg; } catch (e) { /* не JSON */ }
+                            throw new Error(errorMsg);
                         }
-                    });
 
-                    if (!fileUploadResponse.ok) {
-                        let errorMsg = `Ошибка загрузки файла: ${fileUploadResponse.status}`;
-                        try {
-                            const errorData = await fileUploadResponse.json();
-                            errorMsg = errorData.message || errorMsg;
-                        } catch (e) { /* не JSON */ }
-                        throw new Error(errorMsg);
-                    }
-
-                    const fileResult = await fileUploadResponse.json();
-                    if (fileResult.success) {
-                        attachedFileId = fileResult.tempFileId;
-                        attachedFileName = fileResult.fileName; 
-                        console.log('Файл успешно загружен:', fileResult);
-                    } else {
-                        throw new Error(fileResult.message || 'Не удалось загрузить файл.');
+                        const fileResult = await fileUploadResponse.json();
+                        if (fileResult.success) {
+                            uploadedFileInfos.push({
+                                tempFileId: fileResult.tempFileId,
+                                fileName: fileResult.fileName // Используем имя, которое вернул сервер
+                            });
+                            console.log(`Файл "${fileResult.fileName}" успешно загружен:`, fileResult);
+                        } else {
+                            throw new Error(fileResult.message || `Не удалось загрузить файл "${fileToUpload.name}".`);
+                        }
                     }
                 }
 
@@ -331,9 +336,13 @@
                     configurationCode: configurationCode || "" 
                 };
 
-                if (attachedFileId) {
-                    taskData.attachedFileId = attachedFileId;
-                    taskData.attachedFileName = attachedFileName; 
+                if (uploadedFileInfos.length > 0) {
+                    // ВАЖНО: Бэкенд (1С) должен быть готов принять массив файлов!
+                    // Сейчас он ожидает 'attachedFileId' и 'attachedFileName' (сингулярные).
+                    // Мы отправим массив, предполагая будущую доработку бэкенда.
+                    // Если бэкенд не доработан, он, скорее всего, проигнорирует это поле или выдаст ошибку.
+                    taskData.attachedFiles = uploadedFileInfos; 
+                    console.log("Данные для создания задачи с файлами:", taskData);
                 }
 
                 const taskCreateResponse = await fetch('https://1c.c-r.kz/Registrator_test/hs/auth/tasks', {
@@ -344,10 +353,7 @@
 
                 if (!taskCreateResponse.ok) {
                     let errorMsg = `Ошибка создания задачи: ${taskCreateResponse.status}`;
-                    try {
-                        const errorData = await taskCreateResponse.json();
-                        errorMsg = errorData.message || errorMsg;
-                    } catch (e) { /* не JSON */ }
+                    try { const errorData = await taskCreateResponse.json(); errorMsg = errorData.message || errorMsg; } catch (e) { /* не JSON */ }
                     throw new Error(errorMsg);
                 }
 
@@ -360,23 +366,16 @@
                     }
                     if(createTaskForm) createTaskForm.reset(); 
                     
-                    currentFileForUpload = null; 
-                    const taskFileInput = document.getElementById('taskFile');
-                    if(taskFileInput) taskFileInput.value = ''; 
-                    const fileNameDisplay = document.getElementById('fileNameDisplay');
-                    if(fileNameDisplay) fileNameDisplay.style.display = 'none';
-                    const dropZonePrompt = document.querySelector('#dropZone .drop-zone-prompt');
-                    if(dropZonePrompt) dropZonePrompt.style.display = 'block';
+                    currentFilesForUpload = []; // Очищаем массив файлов
+                    updateFilesDisplayAndInput(); // Обновляем UI (убираем список файлов)
 
-                    setTimeout(() => {
-                       window.location.href = 'tasks.html';
-                    }, 2500);
+                    setTimeout(() => { window.location.href = 'tasks.html'; }, 2500);
                 } else {
                     throw new Error(taskResult.message || 'Неизвестная ошибка при создании задачи.');
                 }
 
             } catch (error) {
-                console.error('Ошибка при создании задачи с файлом:', error);
+                console.error('Ошибка при создании задачи с файлом(ами):', error);
                 if(formMessageDiv) {
                     formMessageDiv.textContent = 'Ошибка: ' + error.message;
                     formMessageDiv.classList.add('error');
