@@ -207,18 +207,19 @@ position: relative;
 
 .filter-buttons {
     display: flex;
-    justify-content: center; /* Центрируем кнопки */
+    justify-content: center; 
     margin-bottom: 30px;
-    gap: 15px; /* Промежуток между кнопками */
+    gap: 15px; 
 }
 
 .filter-button {
     padding: 10px 20px;
+    position: relative; /* <--- Убедитесь, что это свойство есть у .filter-button */
     font-size: 0.95em;
     font-weight: 600;
-    color: #546e7a; /* Цвет неактивной кнопки */
-    background-color: #f0f4f8; /* Фон неактивной кнопки */
-    border: 1px solid #dfe4ea; /* Рамка неактивной кнопки */
+    color: #546e7a; 
+    background-color: #f0f4f8; 
+    border: 1px solid #dfe4ea; 
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease-in-out;
@@ -232,15 +233,37 @@ position: relative;
 }
 
 .filter-button.active {
-    background-color: #8e44ad; /* Фиолетовый фон для активной кнопки (как у кнопки "Новая задача") */
+    background-color: #8e44ad; 
     color: white;
-    border-color: #8e44ad; /* Рамка в цвет фона */
+    border-color: #8e44ad; 
     box-shadow: 0 2px 8px rgba(142, 68, 173, 0.3);
 }
 
 .filter-button.active:hover {
-    background-color: #7a3b97; /* Чуть темнее при наведении на активную */
+    background-color: #7a3b97; 
     border-color: #7a3b97;
+}
+
+/* --- ДОБАВЬТЕ ЭТИ СТИЛИ НИЖЕ --- */
+.filter-button.has-new-items::before {
+    content: '';
+    position: absolute;
+    top: 5px;       /* Отступ сверху для точки-индикатора */
+    right: 7px;     /* Отступ справа для точки-индикатора */
+    width: 9px;     /* Ширина точки */
+    height: 9px;    /* Высота точки */
+    background-color: #e53935; /* Ярко-красный цвет */
+    border-radius: 50%; /* Делает элемент круглым */
+    box-shadow: 0 0 4px rgba(229, 57, 53, 0.7); /* Небольшая тень для объема */
+    /* Опциональная анимация для привлечения внимания */
+    /* animation: pulseIndicator 1.5s infinite ease-in-out; */ 
+}
+
+
+@keyframes pulseIndicator {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
 }
 
 /* ================================================================ */
