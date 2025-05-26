@@ -118,32 +118,41 @@
     }
 
     function addFileToUploadList(file) {
-   function addFileToUploadList(file) {
         if (currentFilesForUpload.length >= MAX_FILES) {
             alert(`Можно прикрепить не более ${MAX_FILES} файлов.`);
+            // console.log(`[addFileToUploadList] Попытка добавить файл "${file.name}", но лимит ${MAX_FILES} достигнут.`);
             return false;
         }
 
-        // Проверка на дубликат по имени И РАЗМЕРУ файла
-        const isDuplicate = currentFilesForUpload.some(existingFile => 
-            existingFile.name === file.name && existingFile.size === file.size
-        );
+        const newFileNameLower = file.name.toLowerCase(); // Сравниваем имена в нижнем регистре
+        const newFileSize = file.size;
+
+        // Логируем текущее состояние и добавляемый файл
+        // console.log(`[addFileToUploadList] Попытка добавить: Name: "${file.name}" (Lower: "${newFileNameLower}"), Size: ${newFileSize}`);
+        // console.log(`[addFileToUploadList] Текущие файлы в списке (${currentFilesForUpload.length}):`);
+        // currentFilesForUpload.forEach((f, idx) => {
+        //     console.log(`  [${idx}] Name: "${f.name}" (Lower: "${f.name.toLowerCase()}"), Size: ${f.size}`);
+        // });
+
+        const isDuplicate = currentFilesForUpload.some(existingFile => {
+            const existingFileNameLower = existingFile.name.toLowerCase();
+            const namesMatch = existingFileNameLower === newFileNameLower;
+            const sizesMatch = existingFile.size === newFileSize;
+            // if (namesMatch && sizesMatch) {
+            //     console.log(`[addFileToUploadList] Найден дубликат: "${existingFile.name}" совпадает с "${file.name}" по имени и размеру.`);
+            // }
+            return namesMatch && sizesMatch;
+        });
 
         if (isDuplicate) {
-            // Используем escapeHTML для безопасного отображения имени файла в alert
-            alert(`Файл с именем "${escapeHTML(file.name)}" уже добавлен.`); 
-            return false; // Не добавляем дубликат
+            alert(`Файл с именем "${escapeHTML(file.name)}" уже добавлен.`);
+            // console.log(`[addFileToUploadList] Дубликат файла "${file.name}" не добавлен.`);
+            return false; 
         }
         
         currentFilesForUpload.push(file);
+        // console.log(`[addFileToUploadList] Файл "${file.name}" успешно добавлен. Всего файлов: ${currentFilesForUpload.length}`);
         return true;
-    }
-
-    function removeFileFromUploadList(fileIndex) {
-        if (fileIndex >= 0 && fileIndex < currentFilesForUpload.length) {
-            currentFilesForUpload.splice(fileIndex, 1);
-            updateFilesDisplayAndInput();
-        }
     }
 
      function updateFilesDisplayAndInput() {
