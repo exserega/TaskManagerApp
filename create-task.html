@@ -139,17 +139,36 @@
         }
     }
 
-    function updateFilesDisplayAndInput() {
+     function updateFilesDisplayAndInput() {
         const fileNameDisplay = document.getElementById('fileNameDisplay');
-        const dropZonePrompt = document.querySelector('#dropZone .drop-zone-prompt');
+        const dropZone = document.getElementById('dropZone'); // Получаем саму dropZone
+        const dropZonePrompt = dropZone.querySelector('.drop-zone-prompt'); // Получаем элемент с подсказкой
         const taskFileInput = document.getElementById('taskFile');
 
-        if (!fileNameDisplay || !dropZonePrompt || !taskFileInput) return;
+        if (!fileNameDisplay || !dropZonePrompt || !taskFileInput || !dropZone) return;
 
-        fileNameDisplay.innerHTML = ''; 
+        fileNameDisplay.innerHTML = ''; // Очищаем текущий список отображаемых файлов
 
+        // Управление отображением и текстом dropZonePrompt
+        if (currentFilesForUpload.length === 0) {
+            dropZonePrompt.innerHTML = `Перетащите файлы сюда или <u>кликните для выбора</u> (до ${MAX_FILES})`;
+            dropZone.classList.remove('has-files', 'limit-reached');
+            dropZone.style.cursor = 'pointer'; // Возвращаем курсор по умолчанию
+        } else if (currentFilesForUpload.length < MAX_FILES) {
+            const remaining = MAX_FILES - currentFilesForUpload.length;
+            dropZonePrompt.innerHTML = `Добавить еще (осталось ${remaining}) или перетащите`;
+            dropZone.classList.add('has-files');
+            dropZone.classList.remove('limit-reached');
+            dropZone.style.cursor = 'pointer';
+        } else { // currentFilesForUpload.length >= MAX_FILES
+            dropZonePrompt.innerHTML = `Достигнут лимит в ${MAX_FILES} файла(ов)`;
+            dropZone.classList.add('has-files', 'limit-reached');
+            dropZone.style.cursor = 'not-allowed'; // Меняем курсор, показывая неактивность
+        }
+        dropZonePrompt.style.display = 'block'; // Убедимся, что подсказка всегда видна
+
+        // Отображение списка выбранных файлов
         if (currentFilesForUpload.length > 0) {
-            dropZonePrompt.style.display = 'none';
             const ul = document.createElement('ul');
             ul.className = 'file-list';
             currentFilesForUpload.forEach((file, index) => {
@@ -161,7 +180,7 @@
             fileNameDisplay.style.display = 'block';
 
             fileNameDisplay.querySelectorAll('.remove-file-link').forEach(link => {
-                const newLink = link.cloneNode(true); // Клонируем для удаления старых обработчиков
+                const newLink = link.cloneNode(true);
                 link.parentNode.replaceChild(newLink, link);
                 newLink.addEventListener('click', (e) => {
                     e.preventDefault();
@@ -171,10 +190,10 @@
                 });
             });
         } else {
-            dropZonePrompt.style.display = 'block';
             fileNameDisplay.style.display = 'none';
         }
 
+        // Обновляем files у input type="file" (важно для консистентности, если бы мы на него полагались напрямую)
         const dataTransfer = new DataTransfer();
         currentFilesForUpload.forEach(file => dataTransfer.items.add(file));
         taskFileInput.files = dataTransfer.files;
