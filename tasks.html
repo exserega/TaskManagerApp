@@ -38,15 +38,22 @@
 
 <script>
     let tasksUpdateIntervalId = null;
-    const TASKS_UPDATE_INTERVAL = 20000;
+    const TASKS_UPDATE_INTERVAL = 20000; 
     let currentStatusFilter = 'all'; // Значение по умолчанию для фильтра
+
+    // Вспомогательная функция для экранирования HTML (если она нужна в этом файле)
+    function escapeHTML(str) {
+        if (typeof str !== 'string') return '';
+        const div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+    }
 
     window.onload = function() {
         const userName = localStorage.getItem('userName');
         const userCode = localStorage.getItem('userCode');
         
         const userNameDisplaySpan = document.getElementById('userNameDisplay');
-        // const errorMessageDiv = document.getElementById('errorMessage'); // Уже получаем в loadTasks
 
         if (userNameDisplaySpan && userName) {
             userNameDisplaySpan.innerHTML = `Пользователь: <strong>${userName}</strong>`;
@@ -59,17 +66,13 @@
             return;
         }
         
-        // Первоначальная загрузка с фильтром по умолчанию
         loadTasks(userCode, false, currentStatusFilter); 
+        setupFilterButtons(userCode); // Настройка кнопок фильтров
 
-        // Настройка кнопок фильтров
-        setupFilterButtons(userCode); // <--- ВЫЗОВ ФУНКЦИИ НАСТРОЙКИ КНОПОК
-
-        // Запускаем интервальное обновление с текущим фильтром
         if (tasksUpdateIntervalId) clearInterval(tasksUpdateIntervalId); 
         tasksUpdateIntervalId = setInterval(() => {
             // console.log(`Выполняется фоновое обновление списка задач с фильтром: ${currentStatusFilter}`);
-            loadTasks(userCode, true, currentStatusFilter); // Фоновое обновление тоже должно учитывать фильтр
+            loadTasks(userCode, true, currentStatusFilter); 
         }, TASKS_UPDATE_INTERVAL);
     };
 
@@ -85,7 +88,7 @@
                 
                 if (tasksUpdateIntervalId) clearInterval(tasksUpdateIntervalId);
                 
-                loadTasks(userCode, false, currentStatusFilter); // Загружаем задачи с новым фильтром (не фоновое)
+                loadTasks(userCode, false, currentStatusFilter); 
                 
                 tasksUpdateIntervalId = setInterval(() => {
                     // console.log(`Выполняется фоновое обновление списка задач с фильтром: ${currentStatusFilter}`);
@@ -115,7 +118,6 @@
             apiUrl += `?statusFilter=${encodeURIComponent(statusFilter)}`;
         }
         
-        // Логируем только при активной загрузке (не фоновой)
         // if (!isPollingUpdate) {
         //     console.log(`Запрашиваем задачи по URL: ${apiUrl} (Фильтр: ${statusFilter})`);
         // }
@@ -134,7 +136,7 @@
                     if (errorData && errorData.message) {
                         errorMsg += ` - ${errorData.message}`;
                     }
-                } catch (e) { /* Не удалось распарсить JSON ошибки */ }
+                } catch (e) { /* Не JSON */ }
                 
                 if (!isPollingUpdate && errorMessageDiv) { 
                     errorMessageDiv.textContent = errorMsg;
@@ -183,7 +185,6 @@
     function displayTasks(tasks) {
         const taskListContainer = document.getElementById('taskListContainer');
         if (!taskListContainer) {
-            // console.error("Элемент #taskListContainer не найден для отображения задач!");
             return;
         }
         taskListContainer.innerHTML = ''; 
@@ -196,22 +197,14 @@
                 listItem.classList.add('has-unread-messages');
             }
 
-            let originalStatusFromServer = String(task.status || '').trim(); // Получаем оригинальный статус
-            let displayStatusText = originalStatusFromServer || 'Статус не определен'; // Текст для отображения
+            let originalStatusFromServer = String(task.status || '').trim();
+            let displayStatusText = originalStatusFromServer || 'Статус не определен';
             
-            // Замена текста для конкретных статусов
-            // Важно: сравниваем с тем, как статус приходит из 1С (Строка(Перечисление.СтатусыЗадач.ИмяЗначения))
-            // На скриншоте был "ТребуетОценки"
             if (originalStatusFromServer === 'ТребуетОценки') {
                 displayStatusText = 'Передано на оценку';
             }
-            // Примечание: если из 1С приходит "Требует оценки" (с пробелом), то и сравнивать нужно с ним.
-            // Лучше всего проверить, какая точно строка приходит в task.status для этого случая.
-
+            
             let statusClass = 'status-default';
-            // Определение CSS-класса на основе ОРИГИНАЛЬНОГО статуса с сервера, если это нужно для стилизации
-            // или можно на основе displayStatusText, если классы соответствуют отображаемому тексту.
-            // Для простоты оставим текущую логику определения statusClass, но вы можете ее доработать.
             if (originalStatusFromServer) {
                 const statusNormalized = originalStatusFromServer.toLowerCase().replace(/\s+/g, '-');
                 if (statusNormalized.includes('новая')) statusClass = 'status-new';
@@ -219,8 +212,8 @@
                 else if (statusNormalized.includes('на-проверке') || statusNormalized.includes('на проверке')) statusClass = 'status-on-check';
                 else if (statusNormalized.includes('выполнена') || statusNormalized.includes('завершена') || statusNormalized.includes('закрыта')) statusClass = 'status-completed';
                 else if (statusNormalized.includes('оценкасогласована') || statusNormalized.includes('оценка согласована')) statusClass = 'status-согласование-оценки';
-                else if (originalStatusFromServer === 'ТребуетОценки') { // Можно добавить специальный класс для "Передано на оценку"
-                    statusClass = 'status-awaiting-assessment'; // Например
+                else if (originalStatusFromServer === 'ТребуетОценки') { 
+                    statusClass = 'status-awaiting-assessment'; 
                 }
             }
             
@@ -273,13 +266,11 @@
         localStorage.removeItem('userName');
         localStorage.removeItem('userId');
         localStorage.removeItem('userCode');
-        // window.location.href = 'index.html'; // Уже есть в HTML
     }
 
     window.addEventListener('beforeunload', () => {
         if (tasksUpdateIntervalId) {
             clearInterval(tasksUpdateIntervalId);
-            // console.log("Интервал обновления списка задач остановлен.");
         }
     });
 </script>
