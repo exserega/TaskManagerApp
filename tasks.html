@@ -75,16 +75,20 @@
     };
 
     function updateFilterButtonIndicators(newInCategoriesData) {
-        const filterButtons = document.querySelectorAll('.filter-button');
-        filterButtons.forEach(button => {
-            const filterKey = button.dataset.filter;
-            if (newInCategoriesData && newInCategoriesData[filterKey]) {
-                button.classList.add('has-new-items');
-            } else {
-                button.classList.remove('has-new-items');
-            }
-        });
-    }
+    const filterButtons = document.querySelectorAll('.filter-button');
+    console.log("Данные для индикаторов:", newInCategoriesData); // Лог входных данных
+    filterButtons.forEach(button => {
+        const filterKey = button.dataset.filter;
+        // Логируем ключ и значение, которое для него нашлось
+        console.log(`Кнопка: ${filterKey}, Новое: ${newInCategoriesData ? newInCategoriesData[filterKey] : 'нет данных'}`); 
+        if (newInCategoriesData && newInCategoriesData[filterKey] === true) {
+            button.classList.add('has-new-items');
+            console.log(`   -> Добавлен класс has-new-items для ${filterKey}`);
+        } else {
+            button.classList.remove('has-new-items');
+        }
+    });
+}
 
     function setupFilterButtons(userCode) {
         const filterButtons = document.querySelectorAll('.filter-button');
