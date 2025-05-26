@@ -39,9 +39,8 @@
 <script>
     let tasksUpdateIntervalId = null;
     const TASKS_UPDATE_INTERVAL = 20000; 
-    let currentStatusFilter = 'all'; // Значение по умолчанию для фильтра
+    let currentStatusFilter = 'all'; 
 
-    // Вспомогательная функция для экранирования HTML (если она нужна в этом файле)
     function escapeHTML(str) {
         if (typeof str !== 'string') return '';
         const div = document.createElement('div');
@@ -60,21 +59,32 @@
         }
 
         if (!userCode) {
-            console.log("Код пользователя не найден в localStorage, перенаправление на index.html");
+            // console.log("Код пользователя не найден, перенаправление на index.html");
             if (tasksUpdateIntervalId) clearInterval(tasksUpdateIntervalId);
             window.location.href = 'index.html'; 
             return;
         }
         
         loadTasks(userCode, false, currentStatusFilter); 
-        setupFilterButtons(userCode); // Настройка кнопок фильтров
+        setupFilterButtons(userCode); 
 
         if (tasksUpdateIntervalId) clearInterval(tasksUpdateIntervalId); 
         tasksUpdateIntervalId = setInterval(() => {
-            // console.log(`Выполняется фоновое обновление списка задач с фильтром: ${currentStatusFilter}`);
             loadTasks(userCode, true, currentStatusFilter); 
         }, TASKS_UPDATE_INTERVAL);
     };
+
+    function updateFilterButtonIndicators(newInCategoriesData) {
+        const filterButtons = document.querySelectorAll('.filter-button');
+        filterButtons.forEach(button => {
+            const filterKey = button.dataset.filter;
+            if (newInCategoriesData && newInCategoriesData[filterKey]) {
+                button.classList.add('has-new-items');
+            } else {
+                button.classList.remove('has-new-items');
+            }
+        });
+    }
 
     function setupFilterButtons(userCode) {
         const filterButtons = document.querySelectorAll('.filter-button');
@@ -84,14 +94,21 @@
                 this.classList.add('active');
                 
                 currentStatusFilter = this.dataset.filter; 
-                // console.log(`Фильтр изменен на: ${currentStatusFilter}`);
                 
+                // При клике на вкладку, мы ожидаем, что сервер при следующем запросе
+                // вернет для этой вкладки newInCategories[currentStatusFilter] = false
+                // Поэтому мы можем оптимистично убрать индикатор сразу,
+                // либо дождаться ответа от loadTasks.
+                // Для простоты, уберем сразу, а loadTasks обновит если что-то еще появилось.
+                this.classList.remove('has-new-items'); 
+                // Альтернативно, можно просто вызвать updateFilterButtonIndicators с текущими данными,
+                // а потом еще раз после loadTasks.
+
                 if (tasksUpdateIntervalId) clearInterval(tasksUpdateIntervalId);
                 
                 loadTasks(userCode, false, currentStatusFilter); 
                 
                 tasksUpdateIntervalId = setInterval(() => {
-                    // console.log(`Выполняется фоновое обновление списка задач с фильтром: ${currentStatusFilter}`);
                     loadTasks(userCode, true, currentStatusFilter);
                 }, TASKS_UPDATE_INTERVAL);
             });
@@ -118,10 +135,6 @@
             apiUrl += `?statusFilter=${encodeURIComponent(statusFilter)}`;
         }
         
-        // if (!isPollingUpdate) {
-        //     console.log(`Запрашиваем задачи по URL: ${apiUrl} (Фильтр: ${statusFilter})`);
-        // }
-
         try {
             const response = await fetch(apiUrl, { method: 'GET' });
 
@@ -130,59 +143,56 @@
             }
 
             if (!response.ok) {
+                // ... (существующая обработка ошибок)
                 let errorMsg = `Ошибка загрузки задач: ${response.status} ${response.statusText}`;
                 try {
                     const errorData = await response.json();
-                    if (errorData && errorData.message) {
-                        errorMsg += ` - ${errorData.message}`;
-                    }
+                    if (errorData && errorData.message) { errorMsg += ` - ${errorData.message}`; }
                 } catch (e) { /* Не JSON */ }
-                
                 if (!isPollingUpdate && errorMessageDiv) { 
                     errorMessageDiv.textContent = errorMsg;
                     errorMessageDiv.style.display = 'block';
-                } else if (isPollingUpdate) { 
-                    // console.warn('Ошибка фонового обновления списка задач:', errorMsg);
                 }
-                // console.error('Ошибка ответа сервера:', response);
                 return; 
             }
 
-            const tasks = await response.json();
-            // if (!isPollingUpdate) console.log('Получены задачи:', tasks);
+            const result = await response.json(); // Ожидаем { success, tasks, newInCategories }
 
-            if (tasks) { 
-                if (tasks.length > 0) {
+            if (result && result.success) {
+                if (result.tasks && result.tasks.length > 0) {
                     if (noTasksMessageDiv) noTasksMessageDiv.style.display = 'none';
-                    displayTasks(tasks); 
+                    displayTasks(result.tasks); 
                 } else {
                     if (taskListContainer) taskListContainer.innerHTML = ''; 
                     if (noTasksMessageDiv) noTasksMessageDiv.style.display = 'block';
                 }
+                // Обновляем индикаторы на кнопках
+                if (result.newInCategories) {
+                    updateFilterButtonIndicators(result.newInCategories);
+                } else {
+                    // Если сервер не вернул newInCategories, сбрасываем все индикаторы (или оставляем как есть)
+                    updateFilterButtonIndicators({}); // Передаем пустой объект, чтобы убрать все индикаторы
+                }
             } else {
-                if (!isPollingUpdate && errorMessageDiv) {
-                    errorMessageDiv.textContent = "Получен некорректный ответ от сервера (нет данных о задачах).";
+                // ... (обработка если result.success = false или нет result.tasks) ...
+                 if (!isPollingUpdate && errorMessageDiv) {
+                    errorMessageDiv.textContent = (result && result.message) || "Получен некорректный ответ от сервера.";
                     errorMessageDiv.style.display = 'block';
-                } else if (isPollingUpdate) {
-                    // console.warn('Фоновое обновление: получен некорректный ответ от сервера (нет данных о задачах).');
                 }
             }
-
         } catch (error) {
-            if (!isPollingUpdate && loadingMessageDiv) {
-                loadingMessageDiv.style.display = 'none';
-            }
+            // ... (существующая обработка сетевых ошибок) ...
+            if (!isPollingUpdate && loadingMessageDiv) { loadingMessageDiv.style.display = 'none'; }
             if (!isPollingUpdate && errorMessageDiv) { 
-                errorMessageDiv.textContent = 'Сетевая ошибка или ошибка при выполнении запроса: ' + error.message;
+                errorMessageDiv.textContent = 'Сетевая ошибка: ' + error.message;
                 errorMessageDiv.style.display = 'block';
-            } else if (isPollingUpdate) { 
-                // console.warn('Сетевая ошибка при фоновом обновлении списка задач:', error.message);
             }
-            // console.error('Сетевая ошибка или ошибка выполнения:', error);
         }
     }
 
     function displayTasks(tasks) {
+        // ... (код displayTasks остается таким же, как в вашем последнем работающем варианте из ответа №47)
+        // Он использует escapeHTML, убедитесь, что escapeHTML определена выше
         const taskListContainer = document.getElementById('taskListContainer');
         if (!taskListContainer) {
             return;
@@ -197,10 +207,10 @@
                 listItem.classList.add('has-unread-messages');
             }
 
-            let originalStatusFromServer = String(task.status || '').trim();
+            let originalStatusFromServer = String(task.status || '').trim(); 
             let displayStatusText = originalStatusFromServer || 'Статус не определен';
             
-            if (originalStatusFromServer === 'Требует оценки') {
+            if (originalStatusFromServer.toLowerCase().replace(/\s+/g, '') === "требуетоценки") {
                 displayStatusText = 'Передано на оценку';
             }
             
@@ -208,11 +218,11 @@
             if (originalStatusFromServer) {
                 const statusNormalized = originalStatusFromServer.toLowerCase().replace(/\s+/g, '-');
                 if (statusNormalized.includes('новая')) statusClass = 'status-new';
-                else if (statusNormalized.includes('в-работе') || statusNormalized.includes('в работе')) statusClass = 'status-in-progress';
-                else if (statusNormalized.includes('на-проверке') || statusNormalized.includes('на проверке')) statusClass = 'status-on-check';
-                else if (statusNormalized.includes('выполнена') || statusNormalized.includes('завершена') || statusNormalized.includes('закрыта')) statusClass = 'status-completed';
-                else if (statusNormalized.includes('оценкасогласована') || statusNormalized.includes('оценка согласована')) statusClass = 'status-согласование-оценки';
-                else if (originalStatusFromServer === 'ТребуетОценки') { 
+                else if (statusNormalized.includes('в-работе')) statusClass = 'status-in-progress';
+                else if (statusNormalized.includes('на-проверке')) statusClass = 'status-on-check';
+                else if (statusNormalized.includes('выполнена') || statusNormalized.includes('закрыта')) statusClass = 'status-completed';
+                else if (statusNormalized.includes('оценкасогласована') || statusNormalized.includes('оценка-согласована')) statusClass = 'status-согласование-оценки';
+                else if (originalStatusFromServer.toLowerCase().replace(/\s+/g, '') === "требуетоценки") { 
                     statusClass = 'status-awaiting-assessment'; 
                 }
             }
@@ -229,12 +239,8 @@
                             year: 'numeric', month: 'long', day: 'numeric',
                             hour: '2-digit', minute: '2-digit'
                         });
-                    } else {
-                        formattedDate = "Некорректная дата";
-                    }
-                } catch (e) { 
-                    formattedDate = task.date + " (ошибка формата)";
-                }
+                    } else { formattedDate = "Некорректная дата"; }
+                } catch (e) { formattedDate = task.date + " (ошибка формата)"; }
             } else {
                 formattedDate = 'не указана';
             }
@@ -243,9 +249,7 @@
             taskHTML += '<h3>' + (escapeHTML(task.summary) || 'Без темы') + ' (№' + (escapeHTML(task.number) || 'б/н') + ')</h3>';
             taskHTML += '<p>Дата: ' + formattedDate + '</p>';
             taskHTML += '</div>'; 
-            taskHTML += '<div class="unread-indicator-container">';
-            taskHTML += '  <span class="unread-indicator"></span>'; 
-            taskHTML += '</div>';
+            taskHTML += '<div class="unread-indicator-container"><span class="unread-indicator"></span></div>';
             taskHTML += '<span class="task-status ' + statusClass + '">' + escapeHTML(displayStatusText) + '</span>';
             listItem.innerHTML = taskHTML;
             
