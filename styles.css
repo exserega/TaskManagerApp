@@ -763,10 +763,22 @@ body.login-page {
 .login-page .login-container input[type="text"]:focus,
 .login-page .login-container input[type="password"]:focus {
     border-color: #8e44ad; /* Фиолетовый при фокусе, как у кнопок */
-    background-color: #fff; /* Белый фон при фокусе */
+    background-color: #fff;
+    margin-bottom: 5px; 
     box-shadow: 0 6px 12px rgba(142, 68, 173, 0.1), 0 0 0 3px rgba(142, 68, 173, 0.15); /* Тень при фокусе */
     outline: none;
 }
+
+
+.login-page .login-container .phone-hint {
+    display: block; /* Чтобы подсказка была на новой строке */
+    font-size: 0.8em;
+    color: #6c757d; /* Серый цвет для подсказки */
+    text-align: left; /* Выравнивание по левому краю поля */
+    margin-bottom: 18px; /* Отступ после подсказки до следующего поля */
+    padding-left: 5px; /* Небольшой отступ слева для выравнивания с текстом поля */
+}
+
 
 /* Стили для кнопки "Войти" - используем общий класс .button-primary */
 .login-page .login-container .button-primary { 
@@ -774,7 +786,7 @@ body.login-page {
     font-size: 1.15em; /* Чуть крупнее шрифт */
     padding-top: 16px; /* Увеличил вертикальный padding */
     padding-bottom: 16px;
-    margin-top: 15px; /* Отступ над кнопкой */
+    margin-top: 25px; /* Отступ над кнопкой */
 }
 
 /* Стили для сообщения об ошибке на странице входа */
