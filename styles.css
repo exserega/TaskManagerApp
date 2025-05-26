@@ -326,7 +326,60 @@ position: relative;
     display: block; 
 }
 
+.drop-zone {
+    border: 2px dashed #dfe4ea; /* Пунктирная рамка */
+    border-radius: 12px; /* Скругление как у других полей */
+    padding: 30px 20px;
+    text-align: center;
+    cursor: pointer;
+    background-color: #f8f9fa; /* Очень светлый фон */
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    position: relative; /* Для позиционирования скрытого input */
+    margin-bottom: 10px; /* Отступ снизу, если нужно */
+}
 
+.drop-zone.drag-over {
+    background-color: #e9f5ff; /* Светло-голубой фон при перетаскивании */
+    border-color: #8e44ad; /* Фиолетовая рамка при перетаскивании */
+}
+
+.drop-zone-prompt {
+    color: #546e7a; /* Цвет текста подсказки */
+    font-size: 0.95em;
+}
+.drop-zone-prompt u { /* Подчеркивание для "кликните" */
+    text-decoration: underline;
+    color: #8e44ad;
+}
+
+.drop-zone-input {
+    display: none; /* Скрываем стандартный input type="file" */
+}
+
+.file-name-display {
+    font-size: 0.9em;
+    color: #37474f;
+    margin-top: 10px;
+    padding: 8px 12px;
+    background-color: #eef1f5;
+    border-radius: 6px;
+    display: none; /* Изначально скрыт */
+}
+.file-name-display strong {
+    font-weight: 600;
+}
+.remove-file-link {
+    color: #e53e3e; /* Красный цвет для кнопки удаления */
+    font-weight: bold;
+    text-decoration: none;
+    margin-left: 10px;
+    padding: 2px 5px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+.remove-file-link:hover {
+    background-color: #fed7d7; /* Светло-красный фон при наведении */
+}
 
 
 /* ... (ваши существующие глобальные стили, стили для tasks.html, create-task.html, login.html) ... */
