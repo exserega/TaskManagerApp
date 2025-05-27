@@ -40,6 +40,11 @@
     let tasksUpdateIntervalId = null;
     const TASKS_UPDATE_INTERVAL = 20000; 
     let currentStatusFilter = 'all'; 
+    
+    // Новые переменные для пагинации списка "Выполненные"
+    let currentPageForCompleted = 1;
+    const PAGE_SIZE_FOR_COMPLETED = 10; // Например, 10 задач на странице
+    let totalPagesForCompleted = 0;
 
     function escapeHTML(str) {
         if (typeof str !== 'string') return '';
@@ -55,40 +60,43 @@
         const userNameDisplaySpan = document.getElementById('userNameDisplay');
 
         if (userNameDisplaySpan && userName) {
-            userNameDisplaySpan.innerHTML = `Пользователь: <strong>${userName}</strong>`;
+            userNameDisplaySpan.innerHTML = `Пользователь: <strong>${escapeHTML(userName)}</strong>`; // Добавлено escapeHTML
         }
 
         if (!userCode) {
-            // console.log("Код пользователя не найден, перенаправление на index.html");
             if (tasksUpdateIntervalId) clearInterval(tasksUpdateIntervalId);
             window.location.href = 'index.html'; 
             return;
         }
         
-        loadTasks(userCode, false, currentStatusFilter); 
+        // При первоначальной загрузке сбрасываем страницу для "Выполненных" на 1
+        currentPageForCompleted = 1; 
+        loadTasks(userCode, false, currentStatusFilter, currentPageForCompleted); 
         setupFilterButtons(userCode); 
 
         if (tasksUpdateIntervalId) clearInterval(tasksUpdateIntervalId); 
         tasksUpdateIntervalId = setInterval(() => {
-            loadTasks(userCode, true, currentStatusFilter); 
+            // Для автообновления всегда загружаем текущую страницу
+            // Если это "completed", то currentPageForCompleted, иначе - не используется (сервер вернет все)
+            const pageToLoad = (currentStatusFilter === 'completed') ? currentPageForCompleted : 1;
+            loadTasks(userCode, true, currentStatusFilter, pageToLoad); 
         }, TASKS_UPDATE_INTERVAL);
     };
 
     function updateFilterButtonIndicators(newInCategoriesData) {
-    const filterButtons = document.querySelectorAll('.filter-button');
-    console.log("Данные для индикаторов:", newInCategoriesData); // Лог входных данных
-    filterButtons.forEach(button => {
-        const filterKey = button.dataset.filter;
-        // Логируем ключ и значение, которое для него нашлось
-        console.log(`Кнопка: ${filterKey}, Новое: ${newInCategoriesData ? newInCategoriesData[filterKey] : 'нет данных'}`); 
-        if (newInCategoriesData && newInCategoriesData[filterKey] === true) {
-            button.classList.add('has-new-items');
-            console.log(`   -> Добавлен класс has-new-items для ${filterKey}`);
-        } else {
-            button.classList.remove('has-new-items');
-        }
-    });
-}
+        const filterButtons = document.querySelectorAll('.filter-button');
+        // console.log("Данные для индикаторов:", newInCategoriesData); 
+        filterButtons.forEach(button => {
+            const filterKey = button.dataset.filter;
+            // console.log(`Кнопка: ${filterKey}, Новое: ${newInCategoriesData ? newInCategoriesData[filterKey] : 'нет данных'}`); 
+            if (newInCategoriesData && newInCategoriesData[filterKey] === true) {
+                button.classList.add('has-new-items');
+                // console.log(`   -> Добавлен класс has-new-items для ${filterKey}`);
+            } else {
+                button.classList.remove('has-new-items');
+            }
+        });
+    }
 
     function setupFilterButtons(userCode) {
         const filterButtons = document.querySelectorAll('.filter-button');
@@ -97,46 +105,56 @@
                 filterButtons.forEach(btn => btn.classList.remove('active'));
                 this.classList.add('active');
                 
-                currentStatusFilter = this.dataset.filter; 
+                currentStatusFilter = this.dataset.filter;
+                currentPageForCompleted = 1; // Сброс на первую страницу при смене фильтра
                 
-                // При клике на вкладку, мы ожидаем, что сервер при следующем запросе
-                // вернет для этой вкладки newInCategories[currentStatusFilter] = false
-                // Поэтому мы можем оптимистично убрать индикатор сразу,
-                // либо дождаться ответа от loadTasks.
-                // Для простоты, уберем сразу, а loadTasks обновит если что-то еще появилось.
                 this.classList.remove('has-new-items'); 
-                // Альтернативно, можно просто вызвать updateFilterButtonIndicators с текущими данными,
-                // а потом еще раз после loadTasks.
 
                 if (tasksUpdateIntervalId) clearInterval(tasksUpdateIntervalId);
                 
-                loadTasks(userCode, false, currentStatusFilter); 
+                loadTasks(userCode, false, currentStatusFilter, currentPageForCompleted); 
                 
                 tasksUpdateIntervalId = setInterval(() => {
-                    loadTasks(userCode, true, currentStatusFilter);
+                    const pageToLoad = (currentStatusFilter === 'completed') ? currentPageForCompleted : 1;
+                    loadTasks(userCode, true, currentStatusFilter, pageToLoad);
                 }, TASKS_UPDATE_INTERVAL);
             });
         });
     }
 
-    async function loadTasks(userCode, isPollingUpdate = false, statusFilter = 'all') {
+    async function loadTasks(userCode, isPollingUpdate = false, statusFilter = 'all', page = 1) {
         const loadingMessageDiv = document.getElementById('loadingMessage');
         const errorMessageDiv = document.getElementById('errorMessage');
         const taskListContainer = document.getElementById('taskListContainer');
         const noTasksMessageDiv = document.getElementById('noTasksMessage');
+        const paginationControlsDiv = document.getElementById('paginationControls'); // Получаем контейнер пагинации
 
         if (!isPollingUpdate) { 
             if (loadingMessageDiv) loadingMessageDiv.style.display = 'block';
             if (noTasksMessageDiv) noTasksMessageDiv.style.display = 'none';
             if (taskListContainer) taskListContainer.innerHTML = ''; 
-            if (errorMessageDiv) errorMessageDiv.style.display = 'none'; 
+            if (errorMessageDiv) errorMessageDiv.style.display = 'none';
+            if (paginationControlsDiv) paginationControlsDiv.innerHTML = ''; // Очищаем кнопки пагинации
+            if (paginationControlsDiv) paginationControlsDiv.style.display = 'none'; // Скрываем пагинацию
         } else {
             if (errorMessageDiv) errorMessageDiv.style.display = 'none';
         }
 
         let apiUrl = `https://1c.c-r.kz/Registrator_test/hs/auth/taskslist/${userCode}`;
+        const params = new URLSearchParams();
+
         if (statusFilter && statusFilter !== 'all') {
-            apiUrl += `?statusFilter=${encodeURIComponent(statusFilter)}`;
+            params.append('statusFilter', statusFilter);
+        }
+
+        // Добавляем параметры пагинации, только если фильтр "completed"
+        if (statusFilter === 'completed') {
+            params.append('page', page);
+            params.append('pageSize', PAGE_SIZE_FOR_COMPLETED);
+        }
+        
+        if (Array.from(params).length > 0) {
+            apiUrl += `?${params.toString()}`;
         }
         
         try {
@@ -147,7 +165,6 @@
             }
 
             if (!response.ok) {
-                // ... (существующая обработка ошибок)
                 let errorMsg = `Ошибка загрузки задач: ${response.status} ${response.statusText}`;
                 try {
                     const errorData = await response.json();
@@ -160,33 +177,46 @@
                 return; 
             }
 
-            const result = await response.json(); // Ожидаем { success, tasks, newInCategories }
-console.log("Ответ от сервера (newInCategories):", result.newInCategories);
+            const result = await response.json(); 
+            // console.log("Ответ от сервера:", result); // Для отладки данных пагинации
 
             if (result && result.success) {
                 if (result.tasks && result.tasks.length > 0) {
                     if (noTasksMessageDiv) noTasksMessageDiv.style.display = 'none';
                     displayTasks(result.tasks); 
                 } else {
-                    if (taskListContainer) taskListContainer.innerHTML = ''; 
-                    if (noTasksMessageDiv) noTasksMessageDiv.style.display = 'block';
+                    if (!isPollingUpdate || statusFilter !== 'completed') { // Очищаем, только если не пагинация или не "completed"
+                        if (taskListContainer) taskListContainer.innerHTML = ''; 
+                    }
+                     // Для пагинации, если задач на странице нет, но есть другие страницы, "нет задач" не показываем
+                    if (statusFilter !== 'completed' || (statusFilter === 'completed' && (!result.totalPages || result.totalPages === 0))) {
+                       if (noTasksMessageDiv) noTasksMessageDiv.style.display = 'block';
+                    }
                 }
-                // Обновляем индикаторы на кнопках
+                
                 if (result.newInCategories) {
                     updateFilterButtonIndicators(result.newInCategories);
                 } else {
-                    // Если сервер не вернул newInCategories, сбрасываем все индикаторы (или оставляем как есть)
-                    updateFilterButtonIndicators({}); // Передаем пустой объект, чтобы убрать все индикаторы
+                    updateFilterButtonIndicators({}); 
                 }
+
+                // Обработка данных пагинации для "completed"
+                if (statusFilter === 'completed') {
+                    currentPageForCompleted = result.currentPage || 1;
+                    totalPagesForCompleted = result.totalPages || 0;
+                    // console.log(`Pagination: Current: ${currentPageForCompleted}, Total: ${totalPagesForCompleted}, TotalTasks: ${result.totalTasks}`);
+                    renderPaginationControls(userCode); // Передаем userCode для использования в обработчиках
+                } else {
+                    if (paginationControlsDiv) paginationControlsDiv.style.display = 'none'; // Скрываем пагинацию для других фильтров
+                }
+
             } else {
-                // ... (обработка если result.success = false или нет result.tasks) ...
                  if (!isPollingUpdate && errorMessageDiv) {
                     errorMessageDiv.textContent = (result && result.message) || "Получен некорректный ответ от сервера.";
                     errorMessageDiv.style.display = 'block';
                 }
             }
         } catch (error) {
-            // ... (существующая обработка сетевых ошибок) ...
             if (!isPollingUpdate && loadingMessageDiv) { loadingMessageDiv.style.display = 'none'; }
             if (!isPollingUpdate && errorMessageDiv) { 
                 errorMessageDiv.textContent = 'Сетевая ошибка: ' + error.message;
@@ -196,13 +226,17 @@ console.log("Ответ от сервера (newInCategories):", result.newInCat
     }
 
     function displayTasks(tasks) {
-        // ... (код displayTasks остается таким же, как в вашем последнем работающем варианте из ответа №47)
-        // Он использует escapeHTML, убедитесь, что escapeHTML определена выше
         const taskListContainer = document.getElementById('taskListContainer');
         if (!taskListContainer) {
             return;
         }
+        // Если это НЕ пагинация для "completed", то очищаем контейнер.
+        // При пагинации "completed" мы не очищаем, если это "load more" (пока не load more, но логика схожа)
+        // В текущей реализации с перерисовкой страницы - всегда очищаем, если это не фоновое обновление.
+        // Поскольку loadTasks уже очищает контейнер при !isPollingUpdate, здесь доп. очистка не нужна.
+        // НО, если мы решим делать "дозагрузку", то очищать не нужно будет. Сейчас - очищаем всегда перед отрисовкой новой страницы.
         taskListContainer.innerHTML = ''; 
+
 
         tasks.forEach(task => {
             const listItem = document.createElement('li');
@@ -213,7 +247,7 @@ console.log("Ответ от сервера (newInCategories):", result.newInCat
             }
 
             let originalStatusFromServer = String(task.status || '').trim(); 
-            let displayStatusText = originalStatusFromServer || 'Статус не определен';
+            let displayStatusText = escapeHTML(originalStatusFromServer) || 'Статус не определен'; // escapeHTML
             
             if (originalStatusFromServer.toLowerCase().replace(/\s+/g, '') === "требуетоценки") {
                 displayStatusText = 'Передано на оценку';
@@ -229,6 +263,9 @@ console.log("Ответ от сервера (newInCategories):", result.newInCat
                 else if (statusNormalized.includes('оценкасогласована') || statusNormalized.includes('оценка-согласована')) statusClass = 'status-согласование-оценки';
                 else if (originalStatusFromServer.toLowerCase().replace(/\s+/g, '') === "требуетоценки") { 
                     statusClass = 'status-awaiting-assessment'; 
+                } else if (statusNormalized.includes('требуетоценки')) { // Добавлено для случая "ТребуетОценки" без пробелов
+                    statusClass = 'status-awaiting-assessment';
+                    displayStatusText = 'Передано на оценку';
                 }
             }
             
@@ -237,15 +274,24 @@ console.log("Ответ от сервера (newInCategories):", result.newInCat
                 try {
                     let dateObj = new Date(task.date);
                     if (isNaN(dateObj.getTime())) {
-                        dateObj = new Date(task.date.replace('Т', ' '));
+                        // Попытка исправить дату без 'Т' если она в формате "гггг-ММ-дд ЧЧ:мм:сс"
+                        const parts = task.date.split(' ');
+                        if (parts.length === 2) {
+                           dateObj = new Date(parts[0] + 'T' + parts[1]);
+                        }
+                         // Если все еще невалидна, пробуем "гггг.ММ.дд ЧЧ:мм:сс" -> "гггг-ММ-ддТЧЧ:мм:сс"
+                        if (isNaN(dateObj.getTime()) && task.date.includes('.')) {
+                            dateObj = new Date(task.date.replace(/\./g, '-').replace(' ', 'T'));
+                        }
                     }
+
                     if (!isNaN(dateObj.getTime())) {
                         formattedDate = dateObj.toLocaleString('ru-RU', {
-                            year: 'numeric', month: 'long', day: 'numeric',
+                            year: 'numeric', month: '2-digit', day: '2-digit', // Используем 2-digit для месяца и дня
                             hour: '2-digit', minute: '2-digit'
-                        });
+                        }).replace(/, /g, ' '); // Заменяем ", " между датой и временем на пробел
                     } else { formattedDate = "Некорректная дата"; }
-                } catch (e) { formattedDate = task.date + " (ошибка формата)"; }
+                } catch (e) { formattedDate = escapeHTML(task.date) + " (ошибка формата)"; }
             } else {
                 formattedDate = 'не указана';
             }
@@ -255,7 +301,7 @@ console.log("Ответ от сервера (newInCategories):", result.newInCat
             taskHTML += '<p>Дата: ' + formattedDate + '</p>';
             taskHTML += '</div>'; 
             taskHTML += '<div class="unread-indicator-container"><span class="unread-indicator"></span></div>';
-            taskHTML += '<span class="task-status ' + statusClass + '">' + escapeHTML(displayStatusText) + '</span>';
+            taskHTML += '<span class="task-status ' + statusClass + '">' + displayStatusText + '</span>'; // displayStatusText уже содержит escapeHTML
             listItem.innerHTML = taskHTML;
             
             listItem.onclick = function() {
@@ -270,11 +316,59 @@ console.log("Ответ от сервера (newInCategories):", result.newInCat
         });
     }
 
+    // Новая функция для отрисовки кнопок пагинации
+    function renderPaginationControls(userCode) {
+        const paginationControlsDiv = document.getElementById('paginationControls');
+        if (!paginationControlsDiv) return;
+
+        paginationControlsDiv.innerHTML = ''; // Очищаем старые кнопки
+
+        if (currentStatusFilter === 'completed' && totalPagesForCompleted > 1) {
+            const prevButton = document.createElement('button');
+            prevButton.textContent = 'Назад';
+            prevButton.className = 'pagination-button';
+            prevButton.disabled = currentPageForCompleted <= 1;
+            prevButton.addEventListener('click', () => {
+                if (currentPageForCompleted > 1) {
+                    currentPageForCompleted--;
+                    loadTasks(userCode, false, currentStatusFilter, currentPageForCompleted);
+                }
+            });
+
+            const pageInfo = document.createElement('span');
+            pageInfo.textContent = `Стр. ${currentPageForCompleted} из ${totalPagesForCompleted}`;
+            pageInfo.className = 'pagination-info';
+
+            const nextButton = document.createElement('button');
+            nextButton.textContent = 'Вперед';
+            nextButton.className = 'pagination-button';
+            nextButton.disabled = currentPageForCompleted >= totalPagesForCompleted;
+            nextButton.addEventListener('click', () => {
+                if (currentPageForCompleted < totalPagesForCompleted) {
+                    currentPageForCompleted++;
+                    loadTasks(userCode, false, currentStatusFilter, currentPageForCompleted);
+                }
+            });
+
+            paginationControlsDiv.appendChild(prevButton);
+            paginationControlsDiv.appendChild(pageInfo);
+            paginationControlsDiv.appendChild(nextButton);
+            paginationControlsDiv.style.display = 'flex'; // Показываем блок
+        } else {
+            paginationControlsDiv.style.display = 'none'; // Скрываем, если не нужно
+        }
+    }
+
+
     function logout() {
         if (tasksUpdateIntervalId) clearInterval(tasksUpdateIntervalId);
         localStorage.removeItem('userName');
         localStorage.removeItem('userId');
         localStorage.removeItem('userCode');
+        // Добавим также сброс состояний пагинации при выходе
+        currentPageForCompleted = 1;
+        totalPagesForCompleted = 0;
+        window.location.href = 'index.html'; // Перенаправляем после очистки
     }
 
     window.addEventListener('beforeunload', () => {
