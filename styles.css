@@ -266,6 +266,50 @@ position: relative;
     100% { transform: scale(1); opacity: 1; }
 }
 
+
+/* --- Стили для пагинации на tasks.html --- */
+.pagination-controls-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px 0;
+    margin-top: 20px; /* Отступ от списка задач */
+    border-top: 1px solid #dfe4ea; /* Разделитель сверху */
+}
+
+.pagination-button {
+    padding: 8px 16px;
+    margin: 0 8px;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: #546e7a;
+    background-color: #f0f4f8;
+    border: 1px solid #dfe4ea;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.pagination-button:hover:not(:disabled) {
+    background-color: #e4e9ed;
+    border-color: #c8d0d8;
+    color: #37474f;
+}
+
+.pagination-button:disabled {
+    background-color: #f8f9fa;
+    color: #b0bec5;
+    border-color: #eef1f5;
+    cursor: not-allowed;
+}
+
+.pagination-info {
+    font-size: 0.95em;
+    color: #546e7a;
+    margin: 0 10px;
+    font-weight: 500;
+}
+
 /* ================================================================ */
 /* ================ СТИЛИ ДЛЯ CREATE-TASK.HTML ================== */
 /* ================================================================ */
