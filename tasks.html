@@ -30,8 +30,11 @@
                 
         <div id="loadingMessage" style="display: none;">Загрузка задач...</div>
         <div id="errorMessage" class="error-message" style="display: none;"></div>
-        <ul id="taskListContainer" class="task-list">
+     <ul id="taskListContainer" class="task-list">
             </ul>
+        <div id="loadMoreCompletedContainer" class="pagination-controls-container" style="display: none; margin-top: 20px; justify-content: center;">
+            <button id="loadAllCompletedButton" class="pagination-button">Загрузить все выполненные задачи</button>
+        </div>
         <div id="noTasksMessage" style="display: none;">У вас пока нет задач.</div>
 
         </div> 
@@ -40,7 +43,12 @@
     let tasksUpdateIntervalId = null;
     const TASKS_UPDATE_INTERVAL = 20000; 
     let currentStatusFilter = 'all'; 
+    const INITIAL_COMPLETED_LIMIT = 10; // N для выполненных задач (как вы просили для теста)
 
+    // Элементы UI для "Загрузить все выполненные" (добавлено для пагинации)
+    let loadMoreCompletedContainerDiv, loadAllCompletedButton;
+
+    // Ваша оригинальная функция escapeHTML
     function escapeHTML(str) {
         if (typeof str !== 'string') return '';
         const div = document.createElement('div');
@@ -55,41 +63,61 @@
         const userNameDisplaySpan = document.getElementById('userNameDisplay');
 
         if (userNameDisplaySpan && userName) {
-            userNameDisplaySpan.innerHTML = `Пользователь: <strong>${userName}</strong>`;
+            // Используем вашу функцию escapeHTML для безопасности
+            userNameDisplaySpan.innerHTML = `Пользователь: <strong>${escapeHTML(userName)}</strong>`;
         }
 
         if (!userCode) {
-            // console.log("Код пользователя не найден, перенаправление на index.html");
             if (tasksUpdateIntervalId) clearInterval(tasksUpdateIntervalId);
             window.location.href = 'index.html'; 
             return;
         }
         
-        loadTasks(userCode, false, currentStatusFilter); 
+        // Инициализация элементов для пагинации (добавлено)
+        loadMoreCompletedContainerDiv = document.getElementById('loadMoreCompletedContainer');
+        loadAllCompletedButton = document.getElementById('loadAllCompletedButton');
+
+        if (loadAllCompletedButton) {
+            loadAllCompletedButton.addEventListener('click', () => {
+                if (currentStatusFilter === 'completed') {
+                    // Вызываем loadTasks с флагом загрузки всех выполненных (fetchAllCompleted = true)
+                    loadTasks(userCode, false /*isPollingUpdate*/, currentStatusFilter, true /*fetchAllCompleted*/);
+                }
+            });
+        }
+        
+        // Первоначальная загрузка задач (fetchAllCompleted = false)
+        loadTasks(userCode, false /*isPollingUpdate*/, currentStatusFilter, false /*fetchAllCompleted*/); 
         setupFilterButtons(userCode); 
 
         if (tasksUpdateIntervalId) clearInterval(tasksUpdateIntervalId); 
         tasksUpdateIntervalId = setInterval(() => {
-            loadTasks(userCode, true, currentStatusFilter); 
+            let fetchAllForPolling = false;
+            if (currentStatusFilter === 'completed' && loadMoreCompletedContainerDiv && loadMoreCompletedContainerDiv.style.display === 'none' && loadAllCompletedButton) {
+                 // Если кнопка "Загрузить все" скрыта, значит, все выполненные уже загружены
+                fetchAllForPolling = true;
+            }
+            loadTasks(userCode, true /*isPollingUpdate*/, currentStatusFilter, fetchAllForPolling); 
         }, TASKS_UPDATE_INTERVAL);
     };
 
+    // Ваша оригинальная функция updateFilterButtonIndicators
     function updateFilterButtonIndicators(newInCategoriesData) {
-    const filterButtons = document.querySelectorAll('.filter-button');
-    console.log("Данные для индикаторов:", newInCategoriesData); // Лог входных данных
-    filterButtons.forEach(button => {
-        const filterKey = button.dataset.filter;
-        // Логируем ключ и значение, которое для него нашлось
-        console.log(`Кнопка: ${filterKey}, Новое: ${newInCategoriesData ? newInCategoriesData[filterKey] : 'нет данных'}`); 
-        if (newInCategoriesData && newInCategoriesData[filterKey] === true) {
-            button.classList.add('has-new-items');
-            console.log(`   -> Добавлен класс has-new-items для ${filterKey}`);
-        } else {
-            button.classList.remove('has-new-items');
-        }
-    });
-}
+        const filterButtons = document.querySelectorAll('.filter-button');
+        // console.log("Данные для индикаторов:", newInCategoriesData); 
+        filterButtons.forEach(button => {
+            const filterKey = button.dataset.filter;
+            // console.log(`Кнопка: ${filterKey}, Новое: ${newInCategoriesData ? newInCategoriesData[filterKey] : 'нет данных'}`); 
+            if (newInCategoriesData && newInCategoriesData[filterKey] === true) {
+                button.classList.add('has-new-items');
+                // console.log(`   -> Добавлен класс has-new-items для ${filterKey}`);
+            } else {
+                button.classList.remove('has-new-items');
+            }
+        });
+    }
 
+    // Ваша оригинальная функция setupFilterButtons, но с учетом fetchAllCompleted = false при смене фильтра
     function setupFilterButtons(userCode) {
         const filterButtons = document.querySelectorAll('.filter-button');
         filterButtons.forEach(button => {
@@ -98,28 +126,26 @@
                 this.classList.add('active');
                 
                 currentStatusFilter = this.dataset.filter; 
-                
-                // При клике на вкладку, мы ожидаем, что сервер при следующем запросе
-                // вернет для этой вкладки newInCategories[currentStatusFilter] = false
-                // Поэтому мы можем оптимистично убрать индикатор сразу,
-                // либо дождаться ответа от loadTasks.
-                // Для простоты, уберем сразу, а loadTasks обновит если что-то еще появилось.
                 this.classList.remove('has-new-items'); 
-                // Альтернативно, можно просто вызвать updateFilterButtonIndicators с текущими данными,
-                // а потом еще раз после loadTasks.
 
                 if (tasksUpdateIntervalId) clearInterval(tasksUpdateIntervalId);
                 
-                loadTasks(userCode, false, currentStatusFilter); 
+                // При смене фильтра всегда загружаем начальную порцию (fetchAllCompleted = false)
+                loadTasks(userCode, false /*isPollingUpdate*/, currentStatusFilter, false /*fetchAllCompleted*/); 
                 
                 tasksUpdateIntervalId = setInterval(() => {
-                    loadTasks(userCode, true, currentStatusFilter);
+                    let fetchAllForPolling = false;
+                    if (currentStatusFilter === 'completed' && loadMoreCompletedContainerDiv && loadMoreCompletedContainerDiv.style.display === 'none' && loadAllCompletedButton) {
+                        fetchAllForPolling = true; 
+                    }
+                    loadTasks(userCode, true /*isPollingUpdate*/, currentStatusFilter, fetchAllForPolling);
                 }, TASKS_UPDATE_INTERVAL);
             });
         });
     }
 
-    async function loadTasks(userCode, isPollingUpdate = false, statusFilter = 'all') {
+    // Модифицированная функция loadTasks для поддержки пагинации
+    async function loadTasks(userCode, isPollingUpdate = false, statusFilter = 'all', fetchAllCompleted = false) {
         const loadingMessageDiv = document.getElementById('loadingMessage');
         const errorMessageDiv = document.getElementById('errorMessage');
         const taskListContainer = document.getElementById('taskListContainer');
@@ -133,10 +159,33 @@
         } else {
             if (errorMessageDiv) errorMessageDiv.style.display = 'none';
         }
+        
+        // Скрываем кнопку "Загрузить все" перед запросом, если это не polling и не загрузка всех
+        if (loadMoreCompletedContainerDiv && !isPollingUpdate && !fetchAllCompleted && statusFilter === 'completed') {
+             loadMoreCompletedContainerDiv.style.display = 'none';
+        } else if (statusFilter !== 'completed' && loadMoreCompletedContainerDiv) {
+            loadMoreCompletedContainerDiv.style.display = 'none'; // Скрываем для других фильтров
+        }
+
 
         let apiUrl = `https://1c.c-r.kz/Registrator_test/hs/auth/taskslist/${userCode}`;
+        const params = new URLSearchParams();
+
         if (statusFilter && statusFilter !== 'all') {
-            apiUrl += `?statusFilter=${encodeURIComponent(statusFilter)}`;
+            params.append('statusFilter', statusFilter);
+        }
+
+        if (statusFilter === 'completed') {
+            if (fetchAllCompleted) {
+                params.append('loadAllCompleted', 'true');
+            } else {
+                params.append('limit', String(INITIAL_COMPLETED_LIMIT));
+            }
+        }
+        
+        const queryString = params.toString();
+        if (queryString) {
+            apiUrl += `?${queryString}`;
         }
         
         try {
@@ -147,7 +196,6 @@
             }
 
             if (!response.ok) {
-                // ... (существующая обработка ошибок)
                 let errorMsg = `Ошибка загрузки задач: ${response.status} ${response.statusText}`;
                 try {
                     const errorData = await response.json();
@@ -157,47 +205,58 @@
                     errorMessageDiv.textContent = errorMsg;
                     errorMessageDiv.style.display = 'block';
                 }
+                if (loadMoreCompletedContainerDiv) loadMoreCompletedContainerDiv.style.display = 'none';
                 return; 
             }
 
-            const result = await response.json(); // Ожидаем { success, tasks, newInCategories }
-console.log("Ответ от сервера (newInCategories):", result.newInCategories);
+            const result = await response.json();
 
             if (result && result.success) {
                 if (result.tasks && result.tasks.length > 0) {
                     if (noTasksMessageDiv) noTasksMessageDiv.style.display = 'none';
-                    displayTasks(result.tasks); 
+                    displayTasks(result.tasks); // ВАЖНО: эта функция из вашего оригинального кода
                 } else {
                     if (taskListContainer) taskListContainer.innerHTML = ''; 
                     if (noTasksMessageDiv) noTasksMessageDiv.style.display = 'block';
                 }
-                // Обновляем индикаторы на кнопках
+                
+                // ВАЖНО: вызов функции обновления индикаторов из вашего оригинального кода
                 if (result.newInCategories) {
                     updateFilterButtonIndicators(result.newInCategories);
                 } else {
-                    // Если сервер не вернул newInCategories, сбрасываем все индикаторы (или оставляем как есть)
-                    updateFilterButtonIndicators({}); // Передаем пустой объект, чтобы убрать все индикаторы
+                    updateFilterButtonIndicators({}); // Сбрасываем, если данных нет
                 }
+
+                // Управление кнопкой "Загрузить все выполненные задачи" (добавлено для пагинации)
+                if (statusFilter === 'completed' && loadMoreCompletedContainerDiv && loadAllCompletedButton) {
+                    if (result.hasMoreCompleted === true && !fetchAllCompleted) {
+                        loadMoreCompletedContainerDiv.style.display = 'flex'; 
+                    } else {
+                        loadMoreCompletedContainerDiv.style.display = 'none';
+                    }
+                } else if (loadMoreCompletedContainerDiv) { 
+                    loadMoreCompletedContainerDiv.style.display = 'none';
+                }
+
             } else {
-                // ... (обработка если result.success = false или нет result.tasks) ...
                  if (!isPollingUpdate && errorMessageDiv) {
                     errorMessageDiv.textContent = (result && result.message) || "Получен некорректный ответ от сервера.";
                     errorMessageDiv.style.display = 'block';
                 }
+                 if (loadMoreCompletedContainerDiv) loadMoreCompletedContainerDiv.style.display = 'none';
             }
         } catch (error) {
-            // ... (существующая обработка сетевых ошибок) ...
             if (!isPollingUpdate && loadingMessageDiv) { loadingMessageDiv.style.display = 'none'; }
             if (!isPollingUpdate && errorMessageDiv) { 
                 errorMessageDiv.textContent = 'Сетевая ошибка: ' + error.message;
                 errorMessageDiv.style.display = 'block';
             }
+             if (loadMoreCompletedContainerDiv) loadMoreCompletedContainerDiv.style.display = 'none';
         }
     }
 
+    // Ваша оригинальная функция displayTasks
     function displayTasks(tasks) {
-        // ... (код displayTasks остается таким же, как в вашем последнем работающем варианте из ответа №47)
-        // Он использует escapeHTML, убедитесь, что escapeHTML определена выше
         const taskListContainer = document.getElementById('taskListContainer');
         if (!taskListContainer) {
             return;
@@ -270,11 +329,14 @@ console.log("Ответ от сервера (newInCategories):", result.newInCat
         });
     }
 
+    // Ваша оригинальная функция logout
     function logout() {
         if (tasksUpdateIntervalId) clearInterval(tasksUpdateIntervalId);
         localStorage.removeItem('userName');
         localStorage.removeItem('userId');
         localStorage.removeItem('userCode');
+        // Добавлено: сброс кнопки пагинации при выходе
+        if (loadMoreCompletedContainerDiv) loadMoreCompletedContainerDiv.style.display = 'none';
     }
 
     window.addEventListener('beforeunload', () => {
