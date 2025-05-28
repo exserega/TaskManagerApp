@@ -69,6 +69,7 @@
 </div>
 
 <script>
+    // Глобальные переменные для чата и файлов
     let chatUpdateIntervalId = null;
     const CHAT_UPDATE_INTERVAL = 5000; 
     let currentSelectedFile = null; 
@@ -87,6 +88,7 @@
             console.error("displayChatMessage: Элемент #chat-messages-area не найден!");
             return;
         }
+        // Удаляем плейсхолдеры "загрузка" или "нет сообщений" только если они есть
         const firstChild = chatMessagesAreaElement.firstChild;
         if (firstChild && firstChild.nodeType === Node.ELEMENT_NODE &&
             (firstChild.querySelector('i.fa-spinner') || 
@@ -95,6 +97,7 @@
              firstChild.classList.contains('error-message-placeholder'))) {
             chatMessagesAreaElement.innerHTML = '';
         }
+
         const messageDiv = document.createElement('div');
         messageDiv.classList.add('message-bubble');
         if (message.isOwn) {
@@ -112,11 +115,11 @@
                     let minutes = dateObj.getMinutes().toString().padStart(2, '0');
                     formattedTimestamp = `${hours}:${minutes}`;
                 } else { 
-                    const timePartMatch = message.timestamp.match(/(\d{2}:\d{2})(:\d{2})?$/);
-                    if (timePartMatch && timePartMatch[1]) { formattedTimestamp = timePartMatch[1]; }
-                }
-            } catch (e) { 
-                const timePartMatch = message.timestamp.match(/(\d{2}:\d{2})(:\d{2})?$/);
+                    const timePartMatch = message.timestamp.match(/(\d{2}:\d{2})(:\d{2})?<span class="math-inline">/\);
+if \(timePartMatch && timePartMatch\[1\]\) \{ formattedTimestamp \= timePartMatch\[1\]; \}
+\}
+\} catch \(e\) \{ 
+const timePartMatch \= message\.timestamp\.match\(/\(\\d\{2\}\:\\d\{2\}\)\(\:\\d\{2\}\)?</span>/);
                 if (timePartMatch && timePartMatch[1]) { formattedTimestamp = timePartMatch[1];}
                 console.warn("Ошибка форматирования времени, использован fallback:", message.timestamp, e);
             }
@@ -143,11 +146,12 @@
         const taskTitleElement = document.getElementById('task-title');
         const actionsPlaceholder = document.getElementById('taskDetailActionsPlaceholder'); // Используем ID плейсхолдера
 
-        if (!actionsPlaceholder) {
-            console.error("Плейсхолдер для кнопок действий 'taskDetailActionsPlaceholder' не найден!");
-        } else {
+        if (actionsPlaceholder) {
             actionsPlaceholder.innerHTML = ''; 
+        } else {
+             console.error("Плейсхолдер для кнопок действий 'taskDetailActionsPlaceholder' не найден!");
         }
+
 
         if (task.number && taskTitleElement) {
             taskTitleElement.textContent = `Задача №${escapeHTML(task.number)}`;
@@ -218,21 +222,195 @@
             const reworkBtn = actionsPlaceholder.querySelector('.rework-task-btn-details');
 
             if (approveBtn) {
-                approveBtn.addEventListener('click', function() { // Не async напрямую здесь
+                approveBtn.addEventListener('click', function() {
                     handleApproveCompletionOnDetailsPage(this.dataset.taskId);
                 });
             }
             if (reworkBtn) {
-                reworkBtn.addEventListener('click', function() { // Не async напрямую здесь
+                reworkBtn.addEventListener('click', function() { 
                     handleRequestReworkOnDetailsPage(this.dataset.taskId);
                 });
             }
         }
     }
     
-    function setupExpandableFileList(totalFiles) { /* ... (код без изменений) ... */ }
-    async function loadChatMessages(taskId, isBackgroundUpdate = false) { /* ... (код без изменений) ... */ }
-    async function sendChatMessage(taskId, userCode, messageText, fileToSend) { /* ... (код без изменений) ... */ }
+    function setupExpandableFileList(totalFiles) {
+        const filesList = document.getElementById('attached-files');
+        const toggleButton = document.getElementById('toggle-files-btn');
+        const filesToShowByDefault = 3;
+        if (!filesList || !toggleButton) return;
+        const allFileItems = filesList.querySelectorAll('li');
+        if (totalFiles <= filesToShowByDefault) {
+            toggleButton.style.display = 'none';
+            allFileItems.forEach(item => item.classList.remove('hidden-file'));
+            return;
+        }
+        toggleButton.style.display = 'inline-block';
+        let isExpanded = false;
+        const toggleButtonClickHandler = () => {
+            isExpanded = !isExpanded;
+            updateFileListVisibility();
+        };
+        function updateFileListVisibility() {
+            allFileItems.forEach((item, index) => {
+                if (isExpanded || index < filesToShowByDefault) {
+                    item.classList.remove('hidden-file');
+                } else {
+                    item.classList.add('hidden-file');
+                }
+            });
+            toggleButton.textContent = isExpanded ? 'Скрыть лишние' : `Показать все (${totalFiles})`;
+        }
+        if (toggleButton.clickHandlerFunction) { 
+            toggleButton.removeEventListener('click', toggleButton.clickHandlerFunction);
+        }
+        toggleButton.addEventListener('click', toggleButtonClickHandler);
+        toggleButton.clickHandlerFunction = toggleButtonClickHandler;
+        updateFileListVisibility();
+    }
+
+    async function loadChatMessages(taskId, isBackgroundUpdate = false) {
+        const chatMessagesAreaElement = document.getElementById('chat-messages-area');
+        if (!chatMessagesAreaElement) { return; }
+        const userCode = localStorage.getItem('userCode'); 
+        if (!isBackgroundUpdate) {
+            const currentContent = chatMessagesAreaElement.innerHTML.trim();
+            if (currentContent === '' || (chatMessagesAreaElement.firstChild && chatMessagesAreaElement.firstChild.nodeType === Node.ELEMENT_NODE && (chatMessagesAreaElement.firstChild.querySelector('i.fa-spinner') || chatMessagesAreaElement.firstChild.classList.contains('error-message-placeholder') || chatMessagesAreaElement.firstChild.textContent === 'В этом чате пока нет сообщений.'))) {
+                 chatMessagesAreaElement.innerHTML = '<div><i class="fas fa-spinner fa-spin"></i> Загрузка сообщений...</div>';
+            }
+        }
+        let currentClientMessageCount = chatMessagesAreaElement.querySelectorAll('.message-bubble').length;
+        if (isBackgroundUpdate && chatMessagesAreaElement.firstChild && (chatMessagesAreaElement.firstChild.textContent === 'В этом чате пока нет сообщений.' || (chatMessagesAreaElement.firstChild.querySelector && chatMessagesAreaElement.firstChild.querySelector('i.fa-spinner')))) {
+            currentClientMessageCount = 0;
+        }
+        try {
+            const headers = {};
+            if (userCode) { headers['X-User-Code'] = userCode; }
+            const response = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/chat/${taskId}/messages`, { method: 'GET', headers: headers });
+            if (!response.ok) {
+                let errorMsg = `Ошибка ${response.status}`;
+                try { const errorData = await response.json(); errorMsg = errorData.message ? `${errorData.message} (${response.status})` : errorMsg; } catch (e) { errorMsg = `Ошибка ${response.status}: ${response.statusText}`; }
+                if (!isBackgroundUpdate) { throw new Error(`Не удалось загрузить сообщения чата. ${errorMsg}`); } else { console.warn(`Фоновое обновление чата ОШИБКА: ${errorMsg}`); return; }
+            }
+            const result = await response.json();
+            if (result.success && result.messages) {
+                const noMessagesCurrentlyDisplayed = chatMessagesAreaElement.firstChild && chatMessagesAreaElement.firstChild.textContent === 'В этом чате пока нет сообщений.';
+                const spinnerCurrentlyDisplayed = chatMessagesAreaElement.firstChild && chatMessagesAreaElement.firstChild.querySelector && chatMessagesAreaElement.firstChild.querySelector('i.fa-spinner');
+                
+                // Обновляем чат только если есть новые сообщения или это первая загрузка/ошибка
+                if (!isBackgroundUpdate || result.messages.length !== currentClientMessageCount || noMessagesCurrentlyDisplayed || spinnerCurrentlyDisplayed) {
+                    chatMessagesAreaElement.innerHTML = ''; 
+                    if (result.messages.length === 0) {
+                        const noMessagesDiv = document.createElement('div');
+                        noMessagesDiv.style.textAlign = 'center'; noMessagesDiv.style.color = '#6c757d'; noMessagesDiv.style.padding = '20px'; 
+                        noMessagesDiv.textContent = 'В этом чате пока нет сообщений.';
+                        chatMessagesAreaElement.appendChild(noMessagesDiv);
+                    } else {
+                        result.messages.forEach(message => displayChatMessage(message)); 
+                         // Условие для прокрутки вниз
+                        if (!isBackgroundUpdate || (result.messages.length > currentClientMessageCount && currentClientMessageCount > 0) || (result.messages.length > 0 && (currentClientMessageCount === 0 || noMessagesCurrentlyDisplayed || spinnerCurrentlyDisplayed) ) ) {
+                           chatMessagesAreaElement.scrollTop = chatMessagesAreaElement.scrollHeight;
+                        }
+                    }
+                }
+                if (!isBackgroundUpdate && userCode) { 
+                    const hasEmployeeMessagesToMark = result.messages.some(msg => msg.senderType === 'Employee' && !msg.isOwn); // Добавил !msg.isOwn, хотя markAsReadByClient на сервере сам разберется
+                    if (hasEmployeeMessagesToMark || result.messages.length > 0) { 
+                        try {
+                            fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/chat/${taskId}/markAsReadByClient`, {
+                                method: 'POST', headers: { 'Content-Type': 'application/json' }
+                            })
+                            .then(markReadResponse => markReadResponse.json().catch(() => ({ success: false, message: `Ошибка сервера: ${markReadResponse.status} ${markReadResponse.statusText}` })))
+                            .then(markReadResult => {
+                                if (markReadResult.success) { console.log(`Сообщения для задачи ${taskId} помечены как прочитанные клиентом.`); } 
+                                else { console.warn(`Не удалось пометить сообщения как прочитанные клиентом для ${taskId}: ${markReadResult.message || 'Неизвестная ошибка'}`); }
+                            })
+                            .catch(err => console.error(`Сетевая ошибка markAsReadByClient для ${taskId}:`, err));
+                        } catch (e) { console.error("Исключение JS при вызове markAsReadByClient:", e); }
+                    }
+                }
+            } else {
+                const errorText = result.message || 'Получены некорректные данные сообщений от сервера.';
+                if (!isBackgroundUpdate) { throw new Error(errorText); } else { console.warn(`Фоновое обновление чата: ${errorText}`); }
+            }
+        } catch (error) {
+            console.error('Ошибка при загрузке сообщений чата:', error.message);
+            if (chatMessagesAreaElement && !isBackgroundUpdate) { 
+                chatMessagesAreaElement.innerHTML = `<div class="error-message-placeholder" style="text-align:center;">Ошибка загрузки сообщений: ${error.message}</div>`;
+            }
+        }
+    }
+
+    async function sendChatMessage(taskId, userCode, messageText, fileToSend) {
+        const chatSendButtonElement = document.getElementById('chat-send-button');
+        if (!chatSendButtonElement) return false;
+        const originalButtonContent = chatSendButtonElement.innerHTML;
+        chatSendButtonElement.disabled = true;
+        chatSendButtonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        let tempFileId = "";
+        let originalFileName = "";
+        try {
+            if (fileToSend) {
+                chatSendButtonElement.innerHTML = '<i class="fas fa-upload"></i>';
+                const fileUploadResponse = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/chat/uploadfile`, {
+                    method: 'POST', body: fileToSend, headers: { 'X-File-Name': encodeURIComponent(fileToSend.name) }
+                });
+                if (!fileUploadResponse.ok) {
+                    let errorMsg = `Ошибка загрузки файла: ${fileUploadResponse.status}`;
+                    try { const errorData = await fileUploadResponse.json(); errorMsg = errorData.message || errorMsg; } catch (e) { /* не JSON */ }
+                    throw new Error(errorMsg);
+                }
+                const fileResult = await fileUploadResponse.json();
+                if (fileResult.success && fileResult.tempFileId) {
+                    tempFileId = fileResult.tempFileId;
+                    originalFileName = fileResult.fileName; 
+                } else {
+                    throw new Error(fileResult.message || 'Не удалось загрузить файл для чата.');
+                }
+            }
+            chatSendButtonElement.innerHTML = '<i class="fas fa-paper-plane"></i>'; // Вернем иконку отправки
+            const payload = { userCode: userCode, text: messageText };
+            if (tempFileId) {
+                payload.attachedFileId = tempFileId;
+                payload.attachedFileName = originalFileName;
+            }
+            const response = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/chat/${taskId}/sendmessage`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+            });
+            if (!response.ok) {
+                let errorMsg = `Ошибка ${response.status}`;
+                try { const errorData = await response.json(); errorMsg = errorData.message ? `${errorData.message} (статус ${response.status})` : errorMsg; } catch (e) { errorMsg = `Ошибка ${response.status}: ${response.statusText}`; }
+                throw new Error(`Не удалось отправить сообщение. ${errorMsg}`);
+            }
+            const result = await response.json();
+            if (result.success && result.sentMessage) {
+                displayChatMessage(result.sentMessage);
+                if(document.getElementById('chat-message-input')) {
+                    document.getElementById('chat-message-input').value = '';
+                    document.getElementById('chat-message-input').style.height = 'auto';
+                }
+                currentSelectedFile = null;
+                if(document.getElementById('chat-file-input')) document.getElementById('chat-file-input').value = '';
+                if(document.getElementById('chat-selected-file-info')) document.getElementById('chat-selected-file-info').style.display = 'none';
+                if(document.getElementById('selected-file-name')) document.getElementById('selected-file-name').textContent = '';
+                const chatMessagesAreaElement = document.getElementById('chat-messages-area');
+                if(chatMessagesAreaElement) chatMessagesAreaElement.scrollTop = chatMessagesAreaElement.scrollHeight;
+                return true;
+            } else {
+                throw new Error(result.message || 'Ошибка при отправке сообщения (ответ сервера).');
+            }
+        } catch (error) {
+            console.error('Ошибка отправки сообщения в чат:', error);
+            // Не показываем alert если ошибка была "пустое сообщение" т.к. это UX-проверка
+            if (error.message.toLowerCase() !== "пустое сообщение и нет файла.") {
+                 alert(`Не удалось отправить сообщение: ${error.message}`);
+            }
+            return false;
+        } finally {
+            chatSendButtonElement.disabled = false;
+            chatSendButtonElement.innerHTML = originalButtonContent;
+        }
+    }
 
     async function handleApproveCompletionOnDetailsPage(taskId) {
         if (!taskId) return;
@@ -274,13 +452,11 @@
             return;
         }
 
-        // Используем новые ID для модального окна на этой странице
         const reworkModal = document.getElementById('reworkCommentModalDetails');
         const commentTextarea = document.getElementById('reworkCommentTextareaDetails');
         const submitReworkBtn = document.getElementById('submitReworkCommentBtnDetails');
         const cancelReworkBtn = document.getElementById('cancelReworkCommentBtnDetails');
         const originalPageReworkButton = document.querySelector(`.rework-task-btn-details[data-task-id="${taskId}"]`);
-
 
         if (!reworkModal || !commentTextarea || !submitReworkBtn || !cancelReworkBtn) {
             console.error("Не найдены элементы модального окна для доработки на странице деталей.");
@@ -292,14 +468,14 @@
         reworkModal.style.display = 'flex'; 
         commentTextarea.focus();
 
-        // Удаляем предыдущие обработчики, чтобы избежать дублирования
+        // Клонируем кнопки для удаления старых обработчиков
         const newSubmitBtn = submitReworkBtn.cloneNode(true);
         submitReworkBtn.parentNode.replaceChild(newSubmitBtn, submitReworkBtn);
         
         const newCancelBtn = cancelReworkBtn.cloneNode(true);
         cancelReworkBtn.parentNode.replaceChild(newCancelBtn, cancelReworkBtn);
 
-        newSubmitBtn.onclick = async () => {
+        newSubmitBtn.onclick = async () => { // Назначаем обработчик на новую кнопку
             const comment = commentTextarea.value.trim();
             if (comment === "") {
                 alert("Комментарий не может быть пустым для отправки на доработку.");
@@ -337,21 +513,21 @@
                 }
             } finally {
                 reworkModal.style.display = 'none';
-                newSubmitBtn.disabled = false;
+                newSubmitBtn.disabled = false; // Возвращаем кнопку модального окна в исх. состояние
                 newSubmitBtn.textContent = originalSubmitText;
             }
         };
 
-        newCancelBtn.onclick = () => {
+        newCancelBtn.onclick = () => { // Назначаем обработчик на новую кнопку
             reworkModal.style.display = 'none';
         };
     }
     
     async function loadTaskDetailsAndChat(taskId) {
-        currentOpenTaskId = taskId; // Обновляем глобальную переменную, если она изменилась
+        currentOpenTaskId = taskId; 
         const taskDetailsContentElement = document.getElementById('task-details-content');
         const attachedFilesListElement = document.getElementById('attached-files'); 
-        const actionsPlaceholder = document.getElementById('taskDetailActionsPlaceholder');
+        const actionsPlaceholder = document.getElementById('taskDetailActionsPlaceholder'); // Убедимся что это правильный ID
 
         if(actionsPlaceholder) actionsPlaceholder.innerHTML = '';
         if(taskDetailsContentElement) taskDetailsContentElement.innerHTML = '<div class="loading-spinner" style="text-align:left; padding-left:0;">Загрузка деталей...</div>';
@@ -417,6 +593,7 @@
         }
         if (!currentOpenTaskId) return; 
         loadTaskDetailsAndChat(currentOpenTaskId); 
+
         if (chatMessageInputElement) {
             chatMessageInputElement.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; });
             chatMessageInputElement.addEventListener('keypress', function(event) { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); if (chatSendButtonElement) { chatSendButtonElement.click();}}});
