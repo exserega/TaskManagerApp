@@ -143,6 +143,8 @@
 
     // Модифицированная функция loadTasks для поддержки пагинации
     async function loadTasks(userCode, isPollingUpdate = false, statusFilter = 'all', fetchAllCompleted = false) {
+ console.log(`loadTasks вызван: statusFilter=<span class="math-inline">\{statusFilter\}, fetchAllCompleted\=</span>{fetchAllCompleted}, isPollingUpdate=${isPollingUpdate}`); // <-- ДОБАВЬТЕ ЭТОТ ЛОГ
+    const loadingMessageDiv = document.getElementById('loadingMessage');
         const loadingMessageDiv = document.getElementById('loadingMessage');
         const errorMessageDiv = document.getElementById('errorMessage');
         const taskListContainer = document.getElementById('taskListContainer');
@@ -206,7 +208,8 @@
                 return; 
             }
 
-            const result = await response.json();
+           const result = await response.json();
+    console.log('Ответ от сервера (taskslist):', JSON.stringify(result, null, 2));
 
             if (result && result.success) {
                 if (result.tasks && result.tasks.length > 0) {
