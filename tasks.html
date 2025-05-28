@@ -32,6 +32,9 @@
         <div id="errorMessage" class="error-message" style="display: none;"></div>
         <ul id="taskListContainer" class="task-list">
             </ul>
+ <div id="loadMoreCompletedContainer" class="pagination-controls-container" style="display: none; margin-top: 20px; justify-content: center;">
+            <button id="loadAllCompletedButton" class="pagination-button">Загрузить все выполненные задачи</button>
+        </div>
         <div id="noTasksMessage" style="display: none;">У вас пока нет задач.</div>
 
 
@@ -143,9 +146,10 @@
     }
 
     // Модифицированная функция loadTasks для поддержки пагинации
-    async function loadTasks(userCode, isPollingUpdate = false, statusFilter = 'all', fetchAllCompleted = false) {
- console.log(`loadTasks вызван: statusFilter=<span class="math-inline">\{statusFilter\}, fetchAllCompleted\=</span>{fetchAllCompleted}, isPollingUpdate=${isPollingUpdate}`); // <-- ДОБАВЬТЕ ЭТОТ ЛОГ
-   
+   async function loadTasks(userCode, isPollingUpdate = false, statusFilter = 'all', fetchAllCompleted = false) {
+        // ЛОГ 1 (ИСПРАВЛЕННЫЙ): Параметры вызова функции
+        console.log(`loadTasks вызван: statusFilter=${statusFilter}, fetchAllCompleted=${fetchAllCompleted}, isPollingUpdate=${isPollingUpdate}`);
+    
         const loadingMessageDiv = document.getElementById('loadingMessage');
         const errorMessageDiv = document.getElementById('errorMessage');
         const taskListContainer = document.getElementById('taskListContainer');
@@ -160,13 +164,18 @@
             if (errorMessageDiv) errorMessageDiv.style.display = 'none';
         }
         
-        // Скрываем кнопку "Загрузить все" перед запросом, если это не polling и не загрузка всех
-        if (loadMoreCompletedContainerDiv && !isPollingUpdate && !fetchAllCompleted && statusFilter === 'completed') {
-             loadMoreCompletedContainerDiv.style.display = 'none';
-        } else if (statusFilter !== 'completed' && loadMoreCompletedContainerDiv) {
-            loadMoreCompletedContainerDiv.style.display = 'none'; // Скрываем для других фильтров
+        // Управление видимостью кнопки "Загрузить все" в начале
+        if (loadMoreCompletedContainerDiv) { // Убедимся, что элемент существует
+            if (!isPollingUpdate && !fetchAllCompleted && statusFilter === 'completed') {
+                // Не делаем display='none' здесь, если это начальная загрузка для 'completed',
+                // так как результат запроса должен определить, показывать кнопку или нет.
+                // Оставим ее скрытой по умолчанию из HTML (style="display: none;")
+            } else if (statusFilter !== 'completed') {
+                loadMoreCompletedContainerDiv.style.display = 'none'; // Скрываем для других фильтров
+            }
+            // Если fetchAllCompleted=true, она будет скрыта ниже после успешного запроса.
+            // Если isPollingUpdate=true, ее состояние не меняем здесь.
         }
-
 
         let apiUrl = `https://1c.c-r.kz/Registrator_test/hs/auth/taskslist/${userCode}`;
         const params = new URLSearchParams();
@@ -209,34 +218,49 @@
                 return; 
             }
 
-           const result = await response.json();
-    console.log('Ответ от сервера (taskslist):', JSON.stringify(result, null, 2));
+            const result = await response.json();
+            // ЛОГ 2: Полный ответ сервера
+            console.log('Ответ от сервера (taskslist):', JSON.stringify(result, null, 2)); 
+            
+            // ЛОГ 3: Проверка переменных для кнопки перед логикой ее отображения
+            console.log('Проверка переменных для кнопки: loadMoreCompletedContainerDiv =', loadMoreCompletedContainerDiv);
+            console.log('Проверка переменных для кнопки: loadAllCompletedButton =', loadAllCompletedButton);
 
             if (result && result.success) {
                 if (result.tasks && result.tasks.length > 0) {
                     if (noTasksMessageDiv) noTasksMessageDiv.style.display = 'none';
-                    displayTasks(result.tasks); // ВАЖНО: эта функция из вашего оригинального кода
+                    displayTasks(result.tasks);
                 } else {
                     if (taskListContainer) taskListContainer.innerHTML = ''; 
                     if (noTasksMessageDiv) noTasksMessageDiv.style.display = 'block';
                 }
                 
-                // ВАЖНО: вызов функции обновления индикаторов из вашего оригинального кода
                 if (result.newInCategories) {
                     updateFilterButtonIndicators(result.newInCategories);
                 } else {
-                    updateFilterButtonIndicators({}); // Сбрасываем, если данных нет
+                    updateFilterButtonIndicators({});
                 }
 
-                // Управление кнопкой "Загрузить все выполненные задачи" (добавлено для пагинации)
-                if (statusFilter === 'completed' && loadMoreCompletedContainerDiv && loadAllCompletedButton) {
-                    if (result.hasMoreCompleted === true && !fetchAllCompleted) {
-                        loadMoreCompletedContainerDiv.style.display = 'flex'; 
-                    } else {
+                // Управление кнопкой "Загрузить все выполненные задачи"
+                // ЛОГ 4: Условия для отображения/скрытия кнопки
+                console.log(`Логика кнопки: statusFilter='${statusFilter}', result.hasMoreCompleted=${result.hasMoreCompleted}, fetchAllCompleted=${fetchAllCompleted}`);
+
+                if (loadMoreCompletedContainerDiv && loadAllCompletedButton) {
+                    console.log('Элементы кнопки (контейнер и сама кнопка) найдены в DOM.');
+                    if (statusFilter === 'completed') {
+                        if (result.hasMoreCompleted === true && !fetchAllCompleted) {
+                            console.log('ПОКАЗЫВАЕМ кнопку "Загрузить все". Условие (result.hasMoreCompleted === true && !fetchAllCompleted) истинно.');
+                            loadMoreCompletedContainerDiv.style.display = 'flex'; 
+                        } else {
+                            console.log('СКРЫВАЕМ кнопку "Загрузить все". Условие для показа не выполнено (fetchAllCompleted=' + fetchAllCompleted + ' или result.hasMoreCompleted=' + result.hasMoreCompleted + ').');
+                            loadMoreCompletedContainerDiv.style.display = 'none';
+                        }
+                    } else { 
+                        console.log('СКРЫВАЕМ кнопку "Загрузить все". Фильтр не "completed".');
                         loadMoreCompletedContainerDiv.style.display = 'none';
                     }
-                } else if (loadMoreCompletedContainerDiv) { 
-                    loadMoreCompletedContainerDiv.style.display = 'none';
+                } else {
+                    console.error('ОШИБКА: Элементы для кнопки "Загрузить все" (loadMoreCompletedContainerDiv или loadAllCompletedButton) НЕ НАЙДЕНЫ в DOM!');
                 }
 
             } else {
