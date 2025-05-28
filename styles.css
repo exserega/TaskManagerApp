@@ -982,6 +982,58 @@ body.task-details-page .container {
     padding: 35px 15px !important; 
 }
 
+
+
+.task-detail-actions-container {
+    display: flex;
+    gap: 10px; /* Расстояние между кнопками */
+    justify-content: flex-start; /* Или center, flex-end по вашему выбору */
+    padding-bottom: 15px; /* Немного отступа снизу */
+}
+
+/* Можно использовать общие стили .task-action-button, если они подходят,
+   или определить специфичные для _details, если нужно другое оформление */
+
+.approve-task-btn-details, .rework-task-btn-details {
+    padding: 10px 18px;
+    font-size: 0.9em;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.approve-task-btn-details {
+    background-color: #28a745; /* Зеленый */
+    color: white;
+    border-color: #28a745;
+}
+.approve-task-btn-details:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+.approve-task-btn-details:disabled {
+    background-color: #5cb85c;
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.rework-task-btn-details {
+    background-color: #ffc107; /* Желтый/Оранжевый */
+    color: #212529;
+    border-color: #ffc107;
+}
+.rework-task-btn-details:hover {
+    background-color: #e0a800;
+    border-color: #d39e00;
+}
+.rework-task-btn-details:disabled {
+    background-color: #ffca2c;
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
 /* ================================================================ */
 /* =================== СТИЛИ ДЛЯ INDEX.HTML (ВХОД) ================ */
 /* ================================================================ */
