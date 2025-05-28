@@ -144,7 +144,7 @@
     // Модифицированная функция loadTasks для поддержки пагинации
     async function loadTasks(userCode, isPollingUpdate = false, statusFilter = 'all', fetchAllCompleted = false) {
  console.log(`loadTasks вызван: statusFilter=<span class="math-inline">\{statusFilter\}, fetchAllCompleted\=</span>{fetchAllCompleted}, isPollingUpdate=${isPollingUpdate}`); // <-- ДОБАВЬТЕ ЭТОТ ЛОГ
-    const loadingMessageDiv = document.getElementById('loadingMessage');
+   
         const loadingMessageDiv = document.getElementById('loadingMessage');
         const errorMessageDiv = document.getElementById('errorMessage');
         const taskListContainer = document.getElementById('taskListContainer');
