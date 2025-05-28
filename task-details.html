@@ -88,7 +88,6 @@
             console.error("displayChatMessage: Элемент #chat-messages-area не найден!");
             return;
         }
-        // Удаляем плейсхолдеры "загрузка" или "нет сообщений" только если они есть
         const firstChild = chatMessagesAreaElement.firstChild;
         if (firstChild && firstChild.nodeType === Node.ELEMENT_NODE &&
             (firstChild.querySelector('i.fa-spinner') || 
@@ -97,7 +96,6 @@
              firstChild.classList.contains('error-message-placeholder'))) {
             chatMessagesAreaElement.innerHTML = '';
         }
-
         const messageDiv = document.createElement('div');
         messageDiv.classList.add('message-bubble');
         if (message.isOwn) {
@@ -115,12 +113,18 @@
                     let minutes = dateObj.getMinutes().toString().padStart(2, '0');
                     formattedTimestamp = `${hours}:${minutes}`;
                 } else { 
-                    const timePartMatch = message.timestamp.match(/(\d{2}:\d{2})(:\d{2})?<span class="math-inline">/\);
-if \(timePartMatch && timePartMatch\[1\]\) \{ formattedTimestamp \= timePartMatch\[1\]; \}
-\}
-\} catch \(e\) \{ 
-const timePartMatch \= message\.timestamp\.match\(/\(\\d\{2\}\:\\d\{2\}\)\(\:\\d\{2\}\)?</span>/);
-                if (timePartMatch && timePartMatch[1]) { formattedTimestamp = timePartMatch[1];}
+                    // ИСПРАВЛЕНО РЕГУЛЯРНОЕ ВЫРАЖЕНИЕ ЗДЕСЬ (удален мусор в конце)
+                    const timePartMatch = message.timestamp.match(/(\d{2}:\d{2})(:\d{2})?$/);
+                    if (timePartMatch && timePartMatch[1]) {
+                        formattedTimestamp = timePartMatch[1];
+                    }
+                }
+            } catch (e) { 
+                // И И ЗДЕСЬ ТОЖЕ ИСПРАВЛЕНО
+                const timePartMatch = message.timestamp.match(/(\d{2}:\d{2})(:\d{2})?$/);
+                if (timePartMatch && timePartMatch[1]) {
+                    formattedTimestamp = timePartMatch[1];
+                }
                 console.warn("Ошибка форматирования времени, использован fallback:", message.timestamp, e);
             }
         }
@@ -135,7 +139,10 @@ const timePartMatch \= message\.timestamp\.match\(/\(\\d\{2\}\:\\d\{2\}\)\(\:\\d
         }
         const safeTextForDisplay = escapeHTML(message.text || '').replace(/\n/g, '<br>');
         messageDiv.innerHTML = `
-            <div class="message-content"><p>${safeTextForDisplay}</p>${fileHTML}</div>
+            <div class="message-content">
+                <p>${safeTextForDisplay}</p>
+                ${fileHTML}
+            </div>
             <span class="message-timestamp">${formattedTimestamp}</span>`;
         chatMessagesAreaElement.appendChild(messageDiv);
     }
