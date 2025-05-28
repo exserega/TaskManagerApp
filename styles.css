@@ -84,6 +84,80 @@ h1 {
     box-shadow: 0 3px 10px rgba(155, 89, 182, 0.3);
 }
 
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Должно быть выше других элементов */
+}
+
+.modal-content {
+    background-color: #fff;
+    padding: 25px 30px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    width: 90%;
+    max-width: 500px;
+    text-align: left;
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.4em;
+    color: #333;
+}
+
+.modal-content p {
+    font-size: 0.95em;
+    color: #555;
+    margin-bottom: 15px;
+    line-height: 1.5;
+}
+
+#reworkCommentTextarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 1em;
+    min-height: 80px;
+    margin-bottom: 20px;
+}
+
+.modal-actions {
+    text-align: right;
+    margin-top: 10px;
+}
+
+.modal-actions .button-primary,
+.modal-actions .button-secondary {
+    padding: 10px 20px;
+    font-size: 0.95em;
+    margin-left: 10px;
+    min-width: 100px;
+}
+
+.button-secondary {
+    background-image: none;
+    background-color: #6c757d; /* Серый */
+    color: white;
+    border: 1px solid #6c757d;
+}
+.button-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+    transform: translateY(-2px); /* Небольшой эффект приподнятия */
+}
+
 /* Карточки задач */
 .task-item {
     background-color: #fff;
