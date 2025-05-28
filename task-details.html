@@ -25,7 +25,7 @@
                 <div id="task-details-content">
                     </div>
 
-                <div id="task-actions-details-placeholder" class="task-detail-actions-container" style="margin-top: 20px; margin-bottom: 20px;">
+                 <div id="taskDetailActionsPlaceholder" class="task-detail-actions-container" style="margin-top: 20px; margin-bottom: 20px;">
                     </div>
                 <h2>Прикрепленные файлы</h2>
                 <div class="expandable-file-list-container">
@@ -59,15 +59,24 @@
     <textarea id="chat-message-input" placeholder="Введите сообщение..." rows="1"></textarea>
     <button id="chat-send-button" class="chat-send-button" title="Отправить">
         <i class="fas fa-paper-plane"></i>
-    </button>
-</div>
-<div id="chat-selected-file-info" class="selected-file-info" style="display: none;">
-    Выбран файл: <span id="selected-file-name"></span>
-    <button id="chat-remove-selected-file" class="remove-file-button" title="Удалить файл">&times;</button>
-</div>
-            </div>
+    </div>
+        <div id="chat-selected-file-info" class="selected-file-info" style="display: none;">
+            Выбран файл: <span id="selected-file-name"></span>
+            <button id="chat-remove-selected-file" class="remove-file-button" title="Удалить файл">&times;</button>
         </div>
     </div>
+</div> <div id="reworkCommentModalDetails" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <h3>Отправка задачи на доработку</h3>
+        <p>Пожалуйста, укажите причину отправки задачи на доработку. Этот комментарий будет добавлен в чат по задаче.</p>
+        <textarea id="reworkCommentTextareaDetails" placeholder="Введите ваш комментарий..." rows="4"></textarea>
+        <div class="modal-actions">
+            <button id="submitReworkCommentBtnDetails" class="button-primary">Отправить</button>
+            <button id="cancelReworkCommentBtnDetails" class="button-secondary">Отмена</button>
+        </div>
+    </div>
+</div>
+</div> 
 
 <script>
     // Глобальные переменные для чата и файлов
