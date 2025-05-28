@@ -260,53 +260,67 @@
         }
     }
 
-    window.onload = function() {
+   window.onload = async function() { // <--- СДЕЛАЛИ ФУНКЦИЮ АСИНХРОННОЙ (async)
         const userCode = localStorage.getItem('userCode');
         if (!userCode) {
             alert("Ошибка: Код пользователя не найден. Пожалуйста, войдите снова.");
             window.location.href = 'index.html';
             return;
         }
-        loadClientConfigurations(userCode); // Вызываем функцию, определенную выше
+        loadClientConfigurations(userCode); 
         setupDragAndDrop();
         setupPasteListener();
 
-        // ***** НАЧАЛО: Логика для автоматического добавления скриншота *****
+        // ***** НАЧАЛО: Обновленная логика для автоматического добавления скриншота *****
         if (window.electronAPI && typeof window.electronAPI.getInitialScreenshotData === 'function') {
-            const screenshotData = window.electronAPI.getInitialScreenshotData();
-            if (screenshotData && screenshotData.data && screenshotData.name && screenshotData.type) {
-                console.log("Получены данные скриншота из preload:", screenshotData);
-                try {
-                    // screenshotData.data здесь должен быть ArrayBuffer
-                    const blob = new Blob([screenshotData.data], { type: screenshotData.type });
-                    const screenshotFile = new File([blob], screenshotData.name, { type: screenshotData.type });
-                    
-                    if (addFileToUploadList(screenshotFile)) {
-                        updateFilesDisplayAndInput(); 
-                        initialScreenshotFilePath = screenshotData.path; 
-                        console.log("Скриншот успешно добавлен в список файлов для загрузки. Путь для удаления:", initialScreenshotFilePath);
-                    } else {
-                        console.warn("Не удалось добавить скриншот в список (возможно, дубликат или лимит).");
+            console.log("Запрашиваем данные начального скриншота из preload...");
+            try {
+                const screenshotData = await window.electronAPI.getInitialScreenshotData(); // <--- ОЖИДАЕМ PROMISE
+                
+                if (screenshotData && screenshotData.data && screenshotData.name && screenshotData.type) {
+                    console.log("Данные скриншота из preload получены:", screenshotData);
+                    try {
+                        const blob = new Blob([screenshotData.data], { type: screenshotData.type });
+                        const screenshotFile = new File([blob], screenshotData.name, { type: screenshotData.type });
+                        
+                        if (addFileToUploadList(screenshotFile)) { // Используем вашу существующую функцию
+                            updateFilesDisplayAndInput(); // Обновляем отображение списка файлов
+                            initialScreenshotFilePath = screenshotData.path; 
+                            console.log("Скриншот успешно добавлен в список файлов для загрузки. Путь для удаления:", initialScreenshotFilePath);
+                        } else {
+                            console.warn("Не удалось добавить скриншот в список (возможно, дубликат или лимит).");
+                            if (screenshotData.path && window.electronAPI && typeof window.electronAPI.deleteFile === 'function') {
+                                console.log("Удаляем временный скриншот (не добавлен в список):", screenshotData.path);
+                                window.electronAPI.deleteFile(screenshotData.path);
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Ошибка при создании File объекта из данных скриншота:", error);
                         if (screenshotData.path && window.electronAPI && typeof window.electronAPI.deleteFile === 'function') {
-                            console.log("Удаляем временный скриншот, так как он не был добавлен в список:", screenshotData.path);
-                            window.electronAPI.deleteFile(screenshotData.path);
+                             console.log("Удаляем временный скриншот из-за ошибки обработки:", screenshotData.path);
+                             window.electronAPI.deleteFile(screenshotData.path);
                         }
                     }
-                } catch (error) {
-                    console.error("Ошибка при создании File объекта из данных скриншота:", error);
-                    if (screenshotData.path && window.electronAPI && typeof window.electronAPI.deleteFile === 'function') {
-                         console.log("Удаляем временный скриншот из-за ошибки обработки:", screenshotData.path);
-                         window.electronAPI.deleteFile(screenshotData.path); // Удаляем, если была ошибка
+                } else {
+                    console.log("Данные скриншота из preload не получены или некорректны после ожидания.", screenshotData);
+                     // Если screenshotData это null, но путь был, возможно, файл не прочитался в preload
+                    if (screenshotData && screenshotData.path && window.electronAPI && typeof window.electronAPI.deleteFile === 'function') {
+                        console.log("Данные скриншота null, возможно, файл не прочитался в preload. Удаляем:", screenshotData.path);
+                        window.electronAPI.deleteFile(screenshotData.path);
+                    } else if (!screenshotData && initialScreenshotFilePath) { 
+                        // Эта ветка маловероятна с новой логикой preload, но на всякий случай
+                        console.log("screenshotData не получены, но initialScreenshotFilePath был (старая логика?). Пытаемся удалить, если API есть.", initialScreenshotFilePath);
+                        if (window.electronAPI && typeof window.electronAPI.deleteFile === 'function') {
+                           // window.electronAPI.deleteFile(initialScreenshotFilePath); // Осторожно с этим, initialScreenshotFilePath может быть неактуальным
+                        }
                     }
                 }
-            } else {
-                if(screenshotData) console.log("Данные скриншота из preload неполные или некорректны:", screenshotData);
-                else console.log("Данные скриншота из preload не получены.");
+            } catch (error) {
+                 console.error("Ошибка при вызове getInitialScreenshotData:", error);
             }
         } else {
             console.log("API Electron (electronAPI.getInitialScreenshotData) не доступно. Скриншот не будет автоматически добавлен.");
         }
-        // ***** КОНЕЦ: Логика для автоматического добавления скриншота *****
     };
 
     const createTaskForm = document.getElementById('createTaskForm');
