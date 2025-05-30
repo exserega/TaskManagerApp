@@ -1,5 +1,6 @@
 // main.js
 const { app, BrowserWindow, Tray, Menu, desktopCapturer, screen, ipcMain, Notification, shell, dialog, nativeImage } = require('electron');
+const { autoUpdater } = require("electron-updater");
 const path = require('path');
 const fs = require('fs');
 
@@ -12,19 +13,24 @@ function logToFile(message) {
   const logMessage = `${timestamp} - ${message}\n`;
   try {
     fs.appendFileSync(logFilePath, logMessage, 'utf8');
-    // Дублируем в консоль для режима разработки, если это не сообщение от autoUpdater.logger
-    if (typeof message === 'string' && !message.startsWith('Updater:')) {
+    if (typeof message === 'string') {
         console.log(`(Logged to file) ${message}`);
-    } else if (typeof message !== 'string' && message) { 
+    } else if (message) { 
         console.log(`(Logged to file) ${JSON.stringify(message)}`);
-    } else if (message) {
-        console.log(`(Logged to file) ${message}`);
     }
   } catch (err) {
     console.error('CRITICAL: Failed to write to log file!', err);
     console.error('Original log message was:', message);
   }
 }
+
+autoUpdater.logger = {
+  info: (message) => { logToFile(`Updater INFO: ${typeof message === 'object' ? JSON.stringify(message) : message}`); console.info('Updater INFO:', message); },
+  warn: (message) => { logToFile(`Updater WARN: ${typeof message === 'object' ? JSON.stringify(message) : message}`); console.warn('Updater WARN:', message); },
+  error: (message) => { logToFile(`Updater ERROR: ${typeof message === 'object' ? JSON.stringify(message) : message}`); console.error('Updater ERROR:', message); },
+  debug: (message) => { logToFile(`Updater DEBUG: ${typeof message === 'object' ? JSON.stringify(message) : message}`); console.debug('Updater DEBUG:', message); }
+};
+logToFile('autoUpdater.logger configured.');
 
 let mainWindow = null;
 let tray = null;
@@ -279,50 +285,37 @@ app.whenReady().then(() => {
   logToFile('Application menu created and set.');
 
   logToFile('Attempting to create tray icon...');
-  const iconPath = path.join(process.resourcesPath, 'icon.png'); 
-  
-  logToFile(`Calculated icon path for tray: ${iconPath}`);
-  logToFile(`Checking if icon file exists at path (using fs.existsSync): ${fs.existsSync(iconPath)}`);
-  
-  let trayIcon = null; 
+  const iconPathTray = path.join(process.resourcesPath, 'icon.png'); 
+  logToFile(`Calculated icon path for tray: ${iconPathTray}`);
+  logToFile(`Checking if icon file exists at path (using fs.existsSync for tray): ${fs.existsSync(iconPathTray)}`);
+  let trayIconObject = null; 
   try {
-    logToFile(`Attempting to create nativeImage from path: ${iconPath}`);
-    const image = nativeImage.createFromPath(iconPath);
-
+    logToFile(`Attempting to create nativeImage from path for tray: ${iconPathTray}`);
+    const image = nativeImage.createFromPath(iconPathTray);
     if (image.isEmpty()) {
-      logToFile(`ERROR: nativeImage.createFromPath('${iconPath}') returned an empty image.`);
+      logToFile(`ERROR: nativeImage.createFromPath for tray ('${iconPathTray}') returned an empty image.`);
     } else {
-      logToFile(`SUCCESS: nativeImage.createFromPath('${iconPath}') created a non-empty image.`);
-      trayIcon = image;
+      logToFile(`SUCCESS: nativeImage.createFromPath for tray ('${iconPathTray}') created a non-empty image.`);
+      trayIconObject = image;
     }
   } catch (e) {
-      logToFile(`ERROR during nativeImage.createFromPath: ${e.toString()}`);
+      logToFile(`ERROR during nativeImage.createFromPath for tray: ${e.toString()}`);
   }
 
-  if (trayIcon && !trayIcon.isEmpty()) {
+  if (trayIconObject && !trayIconObject.isEmpty()) {
     try {
-      tray = new Tray(trayIcon); 
+      tray = new Tray(trayIconObject); 
       logToFile('Tray object created successfully using NativeImage.');
-    } catch (error) {
-      logToFile(`ERROR creating Tray object from NativeImage: ${error.toString()} | Stack: ${error.stack}`);
-      console.error("Error creating Tray object from NativeImage:", error);
-    }
-  } else {
-      logToFile('Failed to create a valid NativeImage for the tray icon (from process.resourcesPath). Path attempted: ' + iconPath);
-  }
-  
-  if (tray) {
-    logToFile('Tray initialized, setting tooltip and context menu.');
-    const contextMenu = Menu.buildFromTemplate([
+      const contextMenu = Menu.buildFromTemplate([
         { label: 'Открыть приложение', click: () => { logToFile('Tray Menu: Open App clicked.'); createWindow(); } },
         { label: 'Создать новую задачу', click: () => { logToFile('Tray Menu: Create New Task clicked.'); createCreateTaskWindow(); } },
         { label: 'Создать задачу (скриншот)', click: () => { logToFile('Tray Menu: Create Task with Screenshot clicked.'); captureScreenAndCreateTask(); }},
         { type: 'separator' },
         { label: 'Выход', click: () => { logToFile('Tray Menu: Exit clicked.'); appIsQuitting = true; app.quit(); } }
-    ]);
-    tray.setToolTip('Менеджер Задач Клиента');
-    tray.setContextMenu(contextMenu);
-    tray.on('click', () => { 
+      ]);
+      tray.setToolTip('Менеджер Задач Клиента');
+      tray.setContextMenu(contextMenu);
+      tray.on('click', () => { 
         logToFile('Tray icon direct click.');
         if (mainWindow && !mainWindow.isDestroyed()) {
             if (mainWindow.isVisible() && !mainWindow.isMinimized()) {
@@ -337,11 +330,73 @@ app.whenReady().then(() => {
             logToFile('Main window does not exist or destroyed, creating new.');
             createWindow();
         }
-    });
-    logToFile('Tray setup complete.');
+      });
+      logToFile('Tray setup complete.');
+    } catch (error) { 
+        logToFile(`ERROR creating Tray object from NativeImage: ${error.toString()} | Stack: ${error.stack}`);
+        console.error("Error creating Tray object from NativeImage:", error);
+    }
   } else {
-    logToFile('Tray object is NULL after creation attempt (NativeImage was empty or Tray creation failed). Tray icon not shown.');
+      logToFile('Failed to create a valid NativeImage for tray. Tray icon not shown.');
   }
+
+  // ***** НАЧАЛО: Инициализация и настройка АВТООБНОВЛЕНИЯ *****
+  logToFile('Initializing auto-updater system.');
+  
+  autoUpdater.checkForUpdatesAndNotify()
+    .then(updateCheckResult => {
+      if (updateCheckResult && updateCheckResult.updateInfo) {
+        logToFile(`Initial update check result: version ${updateCheckResult.updateInfo.version} available.`);
+      } else {
+        logToFile('Initial update check: No update available or no result from checkForUpdatesAndNotify.');
+      }
+    })
+    .catch(err => {
+      logToFile(`Error in initial checkForUpdatesAndNotify: ${err == null ? "null" : (err.stack || err).toString()}`);
+    });
+
+  setInterval(() => {
+    logToFile('Inside setInterval: Triggering autoUpdater.checkForUpdates().');
+    autoUpdater.checkForUpdates(); 
+  }, 60 * 1000); 
+
+  autoUpdater.on('checking-for-update', () => { logToFile('Updater Event: checking-for-update'); });
+  autoUpdater.on('update-available', (info) => { logToFile('Updater Event: update-available. Info: ' + JSON.stringify(info)); });
+  autoUpdater.on('update-not-available', (info) => { logToFile('Updater Event: update-not-available. Info: ' + JSON.stringify(info)); });
+  autoUpdater.on('error', (err) => { logToFile('Updater Event: error. Error: ' + (err == null ? "null" : (err.stack || err).toString())); });
+  autoUpdater.on('download-progress', (progressObj) => {
+    let log_message = `Updater Event: download-progress. Speed: ${progressObj.bytesPerSecond} B/s. Downloaded ${progressObj.percent}% (${progressObj.transferred}/${progressObj.total})`;
+    logToFile(log_message);
+    if (mainWindow && !mainWindow.isDestroyed() && mainWindow.webContents) {
+      mainWindow.webContents.send('download-progress', { percent: Math.round(progressObj.percent) });
+    }
+  });
+  autoUpdater.on('update-downloaded', (info) => {
+    logToFile('Updater Event: update-downloaded. Info: ' + JSON.stringify(info));
+    const currentWin = BrowserWindow.getFocusedWindow() || mainWindow; 
+    if (currentWin && !currentWin.isDestroyed()){
+        dialog.showMessageBox(currentWin, {
+            type: 'info',
+            buttons: ['Перезапустить сейчас', 'Позже'],
+            title: 'Доступно обновление',
+            message: `Новая версия ${info.version} загружена.`,
+            detail: 'Перезапустите приложение, чтобы применить изменения.'
+        }).then((returnValue) => {
+            if (returnValue.response === 0) {
+                logToFile('User chose to restart and install update.');
+                appIsQuitting = true; 
+                autoUpdater.quitAndInstall();
+            } else {
+                logToFile('User chose to install update later.');
+            }
+        }).catch(err => {
+            logToFile(`Error showing update downloaded dialog: ${err.toString()}`);
+        });
+    } else {
+        logToFile('No suitable window to show update downloaded dialog.');
+    }
+  });
+  // ***** КОНЕЦ: Инициализация и настройка АВТООБНОВЛЕНИЯ *****
 
   app.on('activate', function () {
     logToFile('App "activate" event triggered.');
