@@ -1,7 +1,7 @@
 {
   "name": "task-app-desktop",
   "productName": "Менеджер Задач Клиента",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Менеджер задач для клиентов",
   "main": "main.js",
   "scripts": {
@@ -50,10 +50,11 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
     },
-    "publish": { 
+    "publish": {
       "provider": "github",
       "owner": "exserega",
-      "repo": "TaskManagerApp"
+      "repo": "TaskManagerApp",
+      "releaseType": "release" 
     },
     "mac": { 
       "icon": "build/icon.icns",
