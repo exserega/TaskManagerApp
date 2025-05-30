@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Select Area</title>
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; cursor: crosshair; user-select: none; }
+        .overlay-div {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.3); /* Степень затемнения */
+            pointer-events: none; /* Чтобы не мешали выделению мыши на body/html */
+        }
+        /* Изначально прямоугольник выделения (осветленная область) не виден */
+        #selectionRectangleVisual { 
+            position: absolute;
+            border: 1px dashed #fff; /* Тонкая белая рамка вокруг выделения */
+            box-sizing: border-box;
+            display: none;
+            /* фон не нужен, так как это будет "просвет" */
+        }
+        .instructions { 
+            position: absolute; 
+            top: 20px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            background-color: rgba(0,0,0,0.7); 
+            color: white; 
+            padding: 10px 15px; 
+            border-radius: 5px; 
+            font-family: Arial, sans-serif; 
+            font-size: 14px; 
+            z-index: 10; /* Поверх оверлеев */
+        }
+    </style>
+</head>
+<body>
+    <div id="overlayTop" class="overlay-div"></div>
+    <div id="overlayBottom" class="overlay-div"></div>
+    <div id="overlayLeft" class="overlay-div"></div>
+    <div id="overlayRight" class="overlay-div"></div>
+
+    <div id="selectionRectangleVisual"></div> <div class="instructions">Кликните и потяните для выделения области. Нажмите Esc для отмены.</div>
+
+    <script>
+        const overlayTop = document.getElementById('overlayTop');
+        const overlayBottom = document.getElementById('overlayBottom');
+        const overlayLeft = document.getElementById('overlayLeft');
+        const overlayRight = document.getElementById('overlayRight');
+        const selectionRectangleVisual = document.getElementById('selectionRectangleVisual'); // Для рамки
+        const instructionsDiv = document.querySelector('.instructions');
+
+        let isSelecting = false;
+        let startX, startY, currentX, currentY;
+
+        // Инициализация оверлеев (полное затемнение)
+        function setInitialOverlay() {
+            overlayTop.style.left = '0px';
+            overlayTop.style.top = '0px';
+            overlayTop.style.width = '100%';
+            overlayTop.style.height = '100%';
+            overlayBottom.style.height = '0px'; // Остальные скрыты или нулевого размера
+            overlayLeft.style.width = '0px';
+            overlayRight.style.width = '0px';
+            selectionRectangleVisual.style.display = 'none';
+        }
+        setInitialOverlay(); // Устанавливаем при загрузке
+
+        document.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return;
+            isSelecting = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            
+            // Визуальный прямоугольник (рамка)
+            selectionRectangleVisual.style.left = startX + 'px';
+            selectionRectangleVisual.style.top = startY + 'px';
+            selectionRectangleVisual.style.width = '0px';
+            selectionRectangleVisual.style.height = '0px';
+            selectionRectangleVisual.style.display = 'block';
+
+            if(instructionsDiv) instructionsDiv.style.display = 'none';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isSelecting) return;
+            currentX = e.clientX;
+            currentY = e.clientY;
+
+            const x = Math.min(startX, currentX);
+            const y = Math.min(startY, currentY);
+            const width = Math.abs(currentX - startX);
+            const height = Math.abs(currentY - startY);
+
+            // Обновляем 4 оверлея, чтобы "вырезать" прямоугольник
+            overlayTop.style.left = '0px';
+            overlayTop.style.top = '0px';
+            overlayTop.style.width = '100%';
+            overlayTop.style.height = y + 'px';
+
+            overlayBottom.style.left = '0px';
+            overlayBottom.style.top = (y + height) + 'px';
+            overlayBottom.style.width = '100%';
+            overlayBottom.style.height = `calc(100% - ${y + height}px)`;
+
+            overlayLeft.style.left = '0px';
+            overlayLeft.style.top = y + 'px';
+            overlayLeft.style.width = x + 'px';
+            overlayLeft.style.height = height + 'px';
+
+            overlayRight.style.left = (x + width) + 'px';
+            overlayRight.style.top = y + 'px';
+            overlayRight.style.width = `calc(100% - ${x + width}px)`;
+            overlayRight.style.height = height + 'px';
+            
+            // Обновляем визуальный прямоугольник (рамку)
+            selectionRectangleVisual.style.left = x + 'px';
+            selectionRectangleVisual.style.top = y + 'px';
+            selectionRectangleVisual.style.width = width + 'px';
+            selectionRectangleVisual.style.height = height + 'px';
+        });
+
+        document.addEventListener('mouseup', (e) => {
+            if (e.button !== 0 || !isSelecting) return;
+            isSelecting = false;
+            
+            // Возвращаем полное затемнение перед закрытием (или можно не делать, окно сразу закроется)
+            // setInitialOverlay(); 
+            // selectionRectangleVisual.style.display = 'none';
+
+
+            const x = Math.min(startX, currentX);
+            const y = Math.min(startY, currentY);
+            const width = Math.abs(currentX - startX);
+            const height = Math.abs(currentY - startY);
+
+            if (width > 5 && height > 5) {
+                window.electronSelectionAPI.sendSelection({ x, y, width, height });
+            } else {
+                window.electronSelectionAPI.cancelSelection();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                window.electronSelectionAPI.cancelSelection();
+            }
+        });
+    </script>
+</body>
+</html>
