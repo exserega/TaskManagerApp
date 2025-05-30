@@ -12,7 +12,14 @@ function logToFile(message) {
   const logMessage = `${timestamp} - ${message}\n`;
   try {
     fs.appendFileSync(logFilePath, logMessage, 'utf8');
-    console.log(`(Logged to file) ${message}`);
+    // Дублируем в консоль для режима разработки, если это не сообщение от autoUpdater.logger
+    if (typeof message === 'string' && !message.startsWith('Updater:')) {
+        console.log(`(Logged to file) ${message}`);
+    } else if (typeof message !== 'string' && message) { 
+        console.log(`(Logged to file) ${JSON.stringify(message)}`);
+    } else if (message) {
+        console.log(`(Logged to file) ${message}`);
+    }
   } catch (err) {
     console.error('CRITICAL: Failed to write to log file!', err);
     console.error('Original log message was:', message);
@@ -38,7 +45,7 @@ function createWindow () {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
-    icon: path.join(process.resourcesPath, 'icon.png'), // <--- ИЗМЕНЕНИЕ ЗДЕСЬ
+    icon: path.join(process.resourcesPath, 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'), 
       contextIsolation: true,
@@ -50,7 +57,7 @@ function createWindow () {
   logToFile(`Loading main window content from: ${mainHtmlPath}`);
   mainWindow.loadFile(mainHtmlPath);
 
- //mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools(); 
 
   mainWindow.on('close', (event) => {
     logToFile(`Main window 'close' event. appIsQuitting: ${appIsQuitting}`);
@@ -72,7 +79,7 @@ function createWindow () {
 
 function createCreateTaskWindow(screenshotInfo = null) {
   logToFile(`createCreateTaskWindow called. Screenshot info provided: ${!!screenshotInfo}`);
-  if (screenshotInfo && screenshotInfo.path) {
+  if (screenshotInfo && screenshotInfo.path) { 
     logToFile(`Screenshot path: ${screenshotInfo.path}`); 
   }
   
@@ -80,7 +87,7 @@ function createCreateTaskWindow(screenshotInfo = null) {
     width: 800, height: 750,
     parent: (mainWindow && !mainWindow.isDestroyed()) ? mainWindow : null, 
     modal: false, 
-    icon: path.join(process.resourcesPath, 'icon.png'), // <--- ИЗМЕНЕНИЕ ЗДЕСЬ
+    icon: path.join(process.resourcesPath, 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload-create-task.js'),
       contextIsolation: true, nodeIntegration: false
@@ -99,7 +106,6 @@ function createCreateTaskWindow(screenshotInfo = null) {
       createTaskWin.webContents.send('initial-screenshot-data', screenshotInfo);
     }
   });
-  // Раскомментируйте, если нужна отладка окна создания задачи:
   // createTaskWin.webContents.openDevTools(); 
   createTaskWin.on('closed', () => { logToFile('Create-task window closed.'); createTaskWin = null; });
   logToFile('Create-task window created.');
@@ -168,8 +174,6 @@ ipcMain.on('request-show-notification', (event, data) => {
       const notification = new Notification({
         title: data.title || 'Менеджер Задач Клиента',
         body: data.body || 'Есть новые события.',
-        // Используем __dirname для иконки уведомления, если она внутри asar, 
-        // или process.resourcesPath если она как extraResource
         icon: path.join(process.resourcesPath, 'icon.png') 
       });
       notification.on('click', () => {
@@ -278,7 +282,7 @@ app.whenReady().then(() => {
   const iconPath = path.join(process.resourcesPath, 'icon.png'); 
   
   logToFile(`Calculated icon path for tray: ${iconPath}`);
-  logToFile(`Checking if icon file exists at path: ${fs.existsSync(iconPath)}`);
+  logToFile(`Checking if icon file exists at path (using fs.existsSync): ${fs.existsSync(iconPath)}`);
   
   let trayIcon = null; 
   try {
