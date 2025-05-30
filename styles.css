@@ -1,0 +1,1373 @@
+/* styles.css */
+
+/* --- Глобальные сбросы и основные стили --- */
+body {
+    font-family: 'Open Sans', sans-serif; /* Убедитесь, что шрифт подключен в <head> ваших HTML */
+    background-color: #eef1f5; /* Светлый серо-голубой фон */
+    color: #37474f; /* Темно-сине-серый текст */
+    line-height: 1.6; 
+    margin: 0;
+    padding: 20px; /* Общий padding для body */
+}
+
+/* --- Общий контейнер для контента страниц --- */
+.container {
+    max-width: 1000px; /* Общий для tasks, можно будет сузить для других страниц при необходимости */
+    margin: 40px auto;
+    background-color: #ffffff;
+    padding: 40px 50px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
+}
+
+/* --- Стили для заголовков --- */
+h1 { 
+    color: #37474f;
+    font-weight: 700;
+    text-align: center;
+}
+
+/* --- Верхняя панель (если используется на нескольких страницах) --- */
+#topBar { 
+    display: flex; 
+    justify-content: flex-end;
+    align-items: center; /* Добавлено для вертикального выравнивания */
+    padding-bottom: 15px;
+    margin-bottom: 30px;
+    font-size: 0.95em;
+    border-bottom: 1px solid #dfe4ea;
+}
+#userNameDisplay { color: #546e7a; margin-right: 15px; }
+#userNameDisplay strong { color: #263238; font-weight: 600; }
+.logout-link-top { color: #4527a0; font-weight: 600; text-decoration: none; }
+.logout-link-top:hover { text-decoration: underline; }
+
+/* ================================================================ */
+/* =================== СТИЛИ ДЛЯ TASKS.HTML ===================== */
+/* ================================================================ */
+
+/* Контейнер специфичный для страницы tasks.html, если нужно переопределить max-width */
+/* body.tasks-page .container { max-width: 1000px; } */
+
+.tasks-page .main-header { /* Используем класс на body для специфичности */
+    text-align: center;
+    margin-bottom: 45px;
+}
+
+.tasks-page .main-header h1 {
+    font-size: 2.8em; 
+    margin-bottom: 0; /* У h1 внутри .main-header */
+}
+
+/* Кнопка "Новая Задача +" */
+.tasks-page .create-task-button {
+    display: inline-block;
+    padding: 18px 55px; 
+    background-image: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); 
+    color: white;
+    text-decoration: none; 
+    border-radius: 10px; 
+    font-size: 1.3em; 
+    font-weight: 600;
+    box-shadow: 0 6px 20px rgba(155, 89, 182, 0.3); 
+    transition: all 0.3s ease;
+    margin-bottom: 30px;
+    border: none;
+}
+.tasks-page .create-task-button:hover {
+    background-image: linear-gradient(135deg, #8e44ad 0%, #9b59b6 100%);
+    box-shadow: 0 8px 25px rgba(155, 89, 182, 0.4);
+    transform: translateY(-3px) scale(1.02);
+}
+.tasks-page .create-task-button:active {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(155, 89, 182, 0.3);
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Должно быть выше других элементов */
+}
+
+.modal-content {
+    background-color: #fff;
+    padding: 25px 30px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    width: 90%;
+    max-width: 500px;
+    text-align: left;
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.4em;
+    color: #333;
+}
+
+.modal-content p {
+    font-size: 0.95em;
+    color: #555;
+    margin-bottom: 15px;
+    line-height: 1.5;
+}
+
+.modal-comment-textarea { 
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 1em;
+    min-height: 80px;
+    margin-bottom: 20px;
+}
+
+.modal-actions {
+    text-align: right;
+    margin-top: 10px;
+}
+
+.modal-actions .button-primary,
+.modal-actions .button-secondary {
+    padding: 10px 20px;
+    font-size: 0.95em;
+    margin-left: 10px;
+    min-width: 100px;
+}
+
+.button-secondary {
+    background-image: none;
+    background-color: #6c757d; /* Серый */
+    color: white;
+    border: 1px solid #6c757d;
+}
+.button-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+    transform: translateY(-2px); /* Небольшой эффект приподнятия */
+}
+
+/* Карточки задач */
+.task-item {
+    background-color: #fff;
+    border: none; 
+    align-items: flex-start;
+    padding: 25px; 
+    margin-bottom: 25px;
+    border-radius: 12px; 
+    box-shadow: 0 8px 16px rgba(55, 71, 79, 0.08); 
+    display: flex;
+    justify-content: space-between;
+    align-items: center; 
+    cursor: pointer;
+    transition: all 0.25s ease-in-out;
+position: relative;
+}
+.task-item:hover {
+    box-shadow: 0 12px 22px rgba(55, 71, 79, 0.12);
+    transform: translateY(-5px) scale(1.01); 
+}
+.task-info h3 {
+    font-size: 1.5em; 
+    color: #263238;
+    font-weight: 600;
+    margin-top: 0; /* Сброс верхнего отступа у заголовка карточки */
+    margin-bottom: 12px;
+}
+.task-info p {
+    font-size: 1.1em; 
+    color: #546e7a;
+    margin-top: 0;
+    margin-bottom: 8px;
+}
+.task-status {
+    padding: 8px 20px;
+    border-radius: 10px;
+    font-size: 0.95em;
+    font-weight: 600;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
+
+.task-main-info {
+    display: flex; /* Чтобы основная инфо и статус были в строку */
+    justify-content: space-between;
+    align-items: center;
+    width: 100%; /* Занимает всю ширину, если task-actions ниже */
+    cursor: pointer; /* Сохраняем курсор для основной области */
+}
+
+.task-actions {
+    margin-top: 15px; /* Отступ сверху от основной информации о задаче */
+    padding-top: 10px;
+    border-top: 1px solid #f0f0f0; /* Легкий разделитель */
+    display: flex;
+    gap: 10px; /* Пространство между кнопками */
+    width: 100%; /* Занимает всю ширину */
+    justify-content: flex-end; /* Выравнивание кнопок вправо */
+}
+
+.task-action-button {
+    padding: 8px 12px;
+    font-size: 0.85em;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.task-action-button.cancel-task-btn {
+    background-color: #dc3545; /* Красный цвет для отмены */
+    color: white;
+    border-color: #dc3545;
+}
+
+.task-action-button.cancel-task-btn:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+.approve-task-btn {
+    background-color: #28a745; /* Зеленый */
+    color: white;
+    border-color: #28a745;
+}
+.approve-task-btn:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+.rework-task-btn {
+    background-color: #ffc107; /* Желтый/Оранжевый */
+    color: #212529;
+    border-color: #ffc107;
+}
+.rework-task-btn:hover {
+    background-color: #e0a800;
+    border-color: #d39e00;
+}
+
+.task-action-button:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+/* Цвета для статусов */
+.status-new { background-color: #fff3cd; color: #856404; border-color: #ffeeba; }
+.status-in-progress { background-color: #cce5ff; color: #004085; border-color: #b8daff; }
+.status-completed { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
+.status-согласование-оценки { background-color: #ffe8cc; color: #995400; border-color: #ffdabb; }
+.status-default { background-color: #e2e3e5; color: #383d41; border-color: #d6d8db; }
+.status-ожидает-ответа-клиента { background-color: #e6ddeb; color: #521b8a; border-color: #d9c6ec; }
+
+/* Сообщения (loading, error, noTasks) на tasks.html */
+#loadingMessage, #errorMessage, #noTasksMessage { /* Эти ID используются в JS tasks.html */
+    text-align: center;
+    padding: 30px;
+    font-size: 1.25em; 
+    margin-top: 25px;
+    border-radius: 8px;
+}
+#errorMessage { /* Это для tasks.html, для create-task.html есть .message.error */
+    color: #721c24; 
+    border: 1px solid #f5c6cb;
+    background-color: #f8d7da; 
+}
+#noTasksMessage {
+    color: #004085;
+    background-color: #cce5ff;
+    border: 1px solid #b8daff;
+}
+
+/* Ссылка "Выйти" внизу tasks.html (если есть) */
+.tasks-page .logout-link { /* Уточняем для tasks.html */
+    display: block;
+    margin-top: 30px;
+    text-align: center;
+    color: #007bff; /* Можно заменить на #4527a0 для единообразия с .logout-link-top */
+    font-size: 1em;
+}
+.tasks-page .logout-link:hover {
+    text-decoration: underline;
+}
+
+/* Стили для контейнера индикатора и самого индикатора */
+.unread-indicator-container {
+    /* Этот контейнер может помочь с позиционированием, если индикатор не просто часть потока */
+    /* Например, если вы хотите его абсолютно спозиционировать относительно task-item */
+    /* Для простого варианта (кружок перед статусом или после информации) он может быть не нужен, 
+       и .unread-indicator можно вставить прямо в .task-item */
+    margin-right: 15px; /* Отступ от статуса, если индикатор рядом с ним */
+    display: flex; /* Для выравнивания кружка по центру, если нужно */
+    align-items: center;
+}
+
+.unread-indicator {
+    display: none; /* По умолчанию скрыт */
+    width: 12px;   /* Размер кружка */
+    height: 12px;
+    background-color: #8e44ad; /* Фиолетовый цвет (или ваш цвет для уведомлений, напр. красный #e53935) */
+    border-radius: 50%; /* Делает его круглым */
+    /* Можно добавить анимацию пульсации для привлечения внимания */
+    /* box-shadow: 0 0 0 0 rgba(142, 68, 173, 0.7); */
+    /* animation: pulse-purple 1.5s infinite; */
+}
+
+.task-item.has-unread-messages .unread-indicator {
+    display: inline-block; /* Показываем индикатор, если есть класс */
+}
+
+@keyframes pulse-purple {
+    0% {
+        transform: scale(0.9);
+        box-shadow: 0 0 0 0 rgba(142, 68, 173, 0.5);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 10px rgba(142, 68, 173, 0);
+    }
+    100% {
+        transform: scale(0.9);
+        box-shadow: 0 0 0 0 rgba(142, 68, 173, 0);
+    }
+}
+
+
+.filter-buttons {
+    display: flex;
+    justify-content: center; 
+    margin-bottom: 30px;
+    gap: 10px; 
+}
+
+.filter-button {
+    padding: 10px 20px;
+    position: relative; /* <--- Убедитесь, что это свойство есть у .filter-button */
+    font-size: 0.95em;
+    font-weight: 600;
+    color: #546e7a; 
+    background-color: #f0f4f8; 
+    border: 1px solid #dfe4ea; 
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    outline: none;
+}
+
+.filter-button:hover {
+    background-color: #e4e9ed;
+    border-color: #c8d0d8;
+    color: #37474f;
+}
+
+.filter-button.active {
+    background-color: #8e44ad; 
+    color: white;
+    border-color: #8e44ad; 
+    box-shadow: 0 2px 8px rgba(142, 68, 173, 0.3);
+}
+
+.filter-button.active:hover {
+    background-color: #7a3b97; 
+    border-color: #7a3b97;
+}
+
+/* --- ДОБАВЬТЕ ЭТИ СТИЛИ НИЖЕ --- */
+.filter-button.has-new-items::before {
+    content: '';
+    position: absolute;
+    top: 5px;       /* Отступ сверху для точки-индикатора */
+    right: 7px;     /* Отступ справа для точки-индикатора */
+    width: 9px;     /* Ширина точки */
+    height: 9px;    /* Высота точки */
+    background-color: #e53935; /* Ярко-красный цвет */
+    border-radius: 50%; /* Делает элемент круглым */
+    box-shadow: 0 0 4px rgba(229, 57, 53, 0.7); /* Небольшая тень для объема */
+    /* Опциональная анимация для привлечения внимания */
+    /* animation: pulseIndicator 1.5s infinite ease-in-out; */ 
+}
+
+
+@keyframes pulseIndicator {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+
+/* --- Стили для пагинации на tasks.html --- */
+.pagination-controls-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px 0;
+    margin-top: 20px; /* Отступ от списка задач */
+    border-top: 1px solid #dfe4ea; /* Разделитель сверху */
+}
+
+.pagination-button {
+    padding: 8px 16px;
+    margin: 0 8px;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: #546e7a;
+    background-color: #f0f4f8;
+    border: 1px solid #dfe4ea;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.pagination-button:hover:not(:disabled) {
+    background-color: #e4e9ed;
+    border-color: #c8d0d8;
+    color: #37474f;
+}
+
+.pagination-button:disabled {
+    background-color: #f8f9fa;
+    color: #b0bec5;
+    border-color: #eef1f5;
+    cursor: not-allowed;
+}
+
+.pagination-info {
+    font-size: 0.95em;
+    color: #546e7a;
+    margin: 0 10px;
+    font-weight: 500;
+}
+
+/* ================================================================ */
+/* ================ СТИЛИ ДЛЯ CREATE-TASK.HTML ================== */
+/* ================================================================ */
+
+/* Контейнер специфичный для страницы create-task.html */
+/* body.create-task-page .container { max-width: 750px; } */
+
+.create-task-page h1 { /* Заголовок "Создание новой задачи" */
+    font-size: 2.4em;
+    margin-bottom: 40px;
+}
+
+.form-group {
+    margin-bottom: 28px;
+}
+.form-group label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 600;
+    font-size: 1em;
+    color: #4a5568; 
+}
+.form-group label .required-star {
+    color: #e53e3e;
+    margin-left: 3px;
+}
+
+.form-group input[type="text"],
+.form-group textarea,
+.form-group select,
+.form-group input[type="file"] {
+    width: 100%;
+    padding: 15px 20px;
+    border: 1px solid #dfe4ea;
+    border-radius: 12px;
+    box-sizing: border-box;
+    font-size: 1em;
+    color: #37474f;
+    background-color: #f8f9fa;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    box-shadow: 0 4px 8px rgba(55, 71, 79, 0.04);
+}
+.form-group input[type="text"]:focus,
+.form-group textarea:focus,
+.form-group select:focus,
+.form-group input[type="file"]:focus {
+    border-color: #8e44ad;
+    background-color: #fff;
+    box-shadow: 0 6px 12px rgba(142, 68, 173, 0.1), 0 0 0 3px rgba(142, 68, 173, 0.15);
+    outline: none;
+}
+.form-group textarea {
+    min-height: 150px; 
+    resize: vertical;
+}
+.form-group input[type="file"] {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    line-height: 1.5;
+}
+
+/* Кнопка "Создать задачу" - можно использовать общий .button-primary и добавить .submit-button для специфики */
+.submit-button.button-primary { /* Комбинируем классы */
+    width: 100%;   
+    font-size: 1.2em; 
+    margin-top: 35px;
+}
+
+/* Сообщения об ошибках/успехе на create-task.html и task-details.html */
+.message { /* Общий класс для сообщений */
+    padding: 18px 25px;
+    margin-top: 25px; /* Отступ сверху по умолчанию */
+    border-radius: 10px;
+    text-align: center; /* или left, если нужно */
+    display: none;
+    font-size: 0.95em;
+    border-width: 1px;
+    border-style: solid;
+    box-shadow: 0 4px 8px rgba(55, 71, 79, 0.04); /* Легкая тень как у полей */
+}
+.message.success {
+    background-color: #e6fffa; 
+    color: #1a7f4f;
+    border-color: #b2f5ea;
+}
+.message.error {
+    background-color: #fff5f5; 
+    color: #c53030;
+    border-color: #f7d9d9;
+}
+
+/* Ссылка "Назад" на create-task.html и task-details.html */
+.back-link {
+    display: inline-block; 
+    text-align: center;
+    margin-top: 35px;
+    color: #5a67d8; 
+    font-weight: 600;
+    text-decoration: none;
+    padding: 8px 15px;
+    border-radius: 8px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+.back-link:hover {
+    background-color: #eef1f5; 
+    color: #434190;
+}
+.back-link i { /* Если используете иконку в ссылке назад */
+    margin-right: 5px;
+}
+
+
+/* Для информации о загрузке конфигураций на create-task.html */
+#configInfo {
+    font-size: 0.9em;
+    color: #546e7a;
+    margin-top: 8px;
+    padding-left: 5px;
+    display: block; 
+}
+
+.drop-zone {
+    border: 2px dashed #dfe4ea; /* Пунктирная рамка */
+    border-radius: 12px; /* Скругление как у других полей */
+    padding: 30px 20px;
+    text-align: center;
+    cursor: pointer;
+    background-color: #f8f9fa; /* Очень светлый фон */
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    position: relative; /* Для позиционирования скрытого input */
+    margin-bottom: 10px; /* Отступ снизу, если нужно */
+}
+
+.drop-zone.drag-over {
+    background-color: #e9f5ff; /* Светло-голубой фон при перетаскивании */
+    border-color: #8e44ad; /* Фиолетовая рамка при перетаскивании */
+}
+
+.drop-zone-prompt {
+    color: #546e7a; /* Цвет текста подсказки */
+    font-size: 0.95em;
+}
+.drop-zone-prompt u { /* Подчеркивание для "кликните" */
+    text-decoration: underline;
+    color: #8e44ad;
+}
+
+.drop-zone-input {
+    display: none; /* Скрываем стандартный input type="file" */
+}
+
+.file-name-display { /* Этот класс уже есть, обновляем/дополняем */
+    font-size: 0.9em;
+    color: #37474f;
+    margin-top: 10px;
+    /* padding: 8px 12px; */ /* Убираем общий padding, если используем список */
+    /* background-color: #eef1f5; */ /* Убираем общий фон, если используем список */
+    /* border-radius: 6px; */
+    display: none; /* Изначально скрыт */
+}
+.file-name-display strong {
+    font-weight: 600;
+}
+.remove-file-link {
+    color: #e53e3e; /* Красный цвет для кнопки удаления */
+    font-weight: bold;
+    text-decoration: none;
+    margin-left: 10px;
+    padding: 2px 5px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+.remove-file-link:hover {
+    background-color: #fed7d7; /* Светло-красный фон при наведении */
+}
+
+.file-name-display ul.file-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 10;
+}
+
+.file-name-display ul.file-list li {
+    background-color: #eef1f5;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9em;
+}
+
+.file-name-display ul.file-list li span {
+    word-break: break-all;
+    margin-right: 10px;
+}
+
+.remove-file-link { /* Этот класс уже есть, стили остаются */
+    color: #e53e3e; 
+    font-weight: bold;
+    text-decoration: none;
+    /* margin-left: 10px; */ /* Убрали, так как flex расставит */
+    padding: 2px 5px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+    cursor: pointer; /* Добавим курсор */
+}
+.remove-file-link:hover {
+    background-color: #fed7d7; 
+}
+
+
+.drop-zone.has-files {
+    /* Можно немного изменить стиль, когда файлы уже есть, но лимит не достигнут */
+    /* Например, менее яркая рамка или фон */
+    border-style: solid; /* Меняем на сплошную, если хотим */
+    padding: 20px; /* Можно уменьшить padding */
+}
+
+.drop-zone.limit-reached {
+    background-color: #f8f9fa; /* Возвращаем стандартный фон или делаем его сероватым */
+    border-color: #e0e0e0;   /* Серая рамка */
+    border-style: solid;
+    opacity: 0.7; /* Делаем полупрозрачным, показывая неактивность */
+}
+
+.drop-zone.limit-reached .drop-zone-prompt u {
+    text-decoration: none; /* Убираем подчеркивание у текста, если он не кликабелен */
+    color: inherit;
+}
+
+
+/* ... (ваши существующие глобальные стили, стили для tasks.html, create-task.html, login.html) ... */
+
+/* ================================================================ */
+/* =============== СТИЛИ ДЛЯ TASK-DETAILS.HTML ================== */
+/* ================================================================ */
+
+body.task-details-page {
+    padding: 0; 
+    margin: 0;
+    height: 100vh; 
+    overflow: hidden; /* ЗАПРЕЩАЕМ ПРОКРУТКУ BODY */
+}
+
+body.task-details-page .container {
+    margin: 0 auto; 
+    height: 100%; 
+    max-width: none; 
+    border-radius: 0; 
+    box-shadow: none; 
+    padding: 0; 
+    display: flex; 
+    flex-direction: column; 
+}
+
+/* --- Заголовок страницы Task Details --- */
+.task-details-page .page-header {
+    display: flex;
+    flex-direction: row; /* Элементы в строку */
+    justify-content: space-between; /* Распределяем пространство между элементами */
+    align-items: center; /* Выравниваем элементы по центру вертикально */
+    padding: 15px 25px;
+    background-color: #ffffff; 
+    border-bottom: 1px solid #e0e0e0;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    position: relative; 
+    z-index: 10; 
+    margin-bottom: 0; /* Убедитесь, что этот отступ вам подходит или настройте */
+}
+
+.task-details-page .page-header h1#task-title {
+    font-size: 1.5em; 
+    font-weight: 600; 
+    color: #37474f;
+    margin: 0; /* Убираем внешние отступы */
+    /* text-align: center; Это центрирует текст ВНУТРИ блока h1. */
+    /* Для центрирования самого блока h1 относительно .page-header, используем flex-свойства родителя */
+    flex-grow: 1; /* Позволяет заголовку занять все доступное центральное пространство */
+    text-align: center; /* Центрируем текст внутри этого растянутого блока */
+}
+
+.task-details-page a.back-link-header {
+    /* display: inline-block; убираем, так как flex-элемент уже ведет себя похоже */
+    /* margin-bottom: 10px; убираем, так как элементы теперь в строку */
+    /* Стили для самой ссылки (цвет, размер шрифта и т.д.) остаются из вашего предыдущего кода */
+    font-size: 0.9em;
+    color: #8e44ad; 
+    text-decoration: none;
+    font-weight: 600;
+    padding: 10px 12px; /* Можно оставить или настроить */
+    border-radius: 8px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    display: inline-flex; /* Для выравнивания иконки внутри ссылки */
+    align-items: center; /* Для выравнивания иконки внутри ссылки */
+    flex-shrink: 0; /* Чтобы ссылка не сжималась, если заголовок длинный */
+}
+
+.task-details-page a.back-link-header:hover {
+    background-color: #f0e9f7; 
+    color: #7a3b97;
+    text-decoration: none;
+}
+.task-details-page a.back-link-header i.fa-arrow-left {
+    margin-right: 7px;
+}
+
+/* --- Основная обертка для деталей и чата --- */
+.task-chat-wrapper {
+    display: flex;
+    flex-direction: column; /* По умолчанию для мобильных */
+    flex-grow: 1; /* Занимает все оставшееся место в .container */
+    overflow: hidden; /* Важно: предотвращает растягивание из-за контента */
+    background-color: #f4f7f6; 
+    min-height: 0; /* ДОБАВЛЕНО: Для корректной работы flex-grow и overflow */
+}
+
+/* --- Секция с деталями задачи (ЛЕВАЯ КОЛОНКА) --- */
+.task-details-section {
+    background-color: #fff;
+    padding: 20px 25px; 
+    overflow-y: auto; /* Включаем прокрутку для этой колонки, если контент не помещается */
+    flex-shrink: 0; 
+    border-bottom: 1px solid #dfe4ea; 
+    /* min-height: 0; */ /* Обычно не нужно здесь, если высота задается через % или flex-basis в media-query */
+}
+
+.task-details-section h2 {
+    font-size: 1.25em; 
+    color: #8e44ad; 
+    margin-top: 0;
+    margin-bottom: 18px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #f0e9f7; 
+}
+
+
+/* ----- Стили для истории статусов ----- */
+#taskStatusHistoryContainer {
+    margin-top: 15px; /* Отступ от предыдущего блока */
+    margin-bottom: 20px;
+}
+
+.status-history-list {
+    list-style: none;
+    padding-left: 0;
+    margin-top: 10px;
+}
+
+.status-history-item {
+    padding: 10px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.85em;
+    line-height: 1.5;
+    color: #555;
+}
+
+.status-history-item:last-child {
+    border-bottom: none;
+}
+
+.status-history-item .history-date {
+    display: block;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.status-history-item .history-status {
+    display: block;
+    margin-bottom: 2px;
+}
+
+.status-history-item .history-status strong {
+    color: #007bff; /* Цвет для выделения нового статуса */
+}
+
+.status-history-item .history-author {
+    display: block;
+    font-style: italic;
+    color: #777;
+    font-size: 0.9em;
+    margin-bottom: 2px;
+}
+
+.status-history-item .history-old-status {
+    display: block;
+    color: #999;
+    font-size: 0.9em;
+}
+
+#taskStatusHistoryContainer .error-message-placeholder {
+    font-size: 0.9em;
+    color: #c53030;
+    padding: 10px;
+    background-color: #fff5f5;
+    border: 1px solid #f7d9d9;
+    border-radius: 4px;
+}
+
+.status-history-item.hidden-history-entry {
+    display: none; /* Скрываем элементы по умолчанию */
+}
+
+.toggle-history-button {
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.85em;
+    margin-top: 10px;
+    display: inline-block; /* Чтобы margin-top сработал */
+    transition: background-color 0.2s ease;
+}
+
+.toggle-history-button:hover {
+    background-color: #e0e0e0;
+}
+
+
+
+.detail-item {
+    margin-bottom: 14px; 
+    font-size: 0.9em; 
+    display: flex;
+    flex-wrap: nowrap; 
+    line-height: 1.45;
+}
+.detail-item strong {
+    font-weight: 600;
+    color: #4a5568; 
+    margin-right: 10px;
+    flex-basis: 120px; 
+    flex-shrink: 0; 
+}
+.detail-item span {
+    color: #2c3e50; 
+    flex-grow: 1;
+    word-break: break-word;
+}
+
+.task-status-detail {
+    padding: 4px 10px; 
+    border-radius: 14px; 
+    font-size: 0.75em; 
+    font-weight: 700; 
+}
+
+.expandable-file-list-container {
+    margin-bottom: 15px;
+}
+.attached-files-list {
+    list-style: none;
+    padding-left: 0;
+    margin-top: 5px;
+    margin-bottom: 10px; 
+    overflow: hidden; 
+}
+.attached-files-list li {
+    margin-bottom: 6px;
+    padding: 7px 10px;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 5px;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    font-size: 0.85em; 
+}
+.attached-files-list li.hidden-file {
+    display: none;
+}
+.attached-files-list li:hover {
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+}
+.attached-files-list a.task-file-link {
+    color: #4527a0; 
+    text-decoration: none;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+}
+.attached-files-list a.task-file-link:hover {
+    text-decoration: underline;
+    color: #311b92;
+}
+.attached-files-list a.task-file-link i.fa-paperclip {
+    margin-right: 7px;
+    color: #8e44ad;
+    font-size: 0.95em; 
+}
+
+.toggle-files-button {
+    background-color: transparent;
+    color: #8e44ad;
+    border: 1px solid #e0c5f0;
+    padding: 6px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.8em;
+    font-weight: 600;
+    margin-top: 5px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+.toggle-files-button:hover {
+    background-color: #f0e9f7;
+    border-color: #d3b6e6;
+}
+
+/* --- Секция чата (ПРАВАЯ КОЛОНКА) --- */
+.chat-container {
+    display: flex;
+    flex-direction: column; /* Сообщения сверху, поле ввода снизу */
+    flex-grow: 1; 
+    background-color: #e5ddd5; 
+    overflow: hidden; /* Важно: сам контейнер чата не должен скроллиться */
+    position: relative; 
+    min-height: 0; /* ДОБАВЛЕНО: Для корректной работы flex-grow и overflow */
+}
+
+.chat-messages { /* Этот блок будет скроллиться */
+    flex-grow: 1; /* Занимает все доступное место над полем ввода */
+    padding: 15px 12px; 
+    overflow-y: auto; /* ВКЛЮЧАЕМ ВНУТРЕННЮЮ ПРОКРУТКУ */
+    display: flex; 
+    flex-direction: column; 
+    min-height: 0; /* ДОБАВЛЕНО: Позволяет flex-grow корректно работать с overflow */
+}
+
+.message-bubble {
+    max-width: 75%; 
+    padding: 8px 12px; 
+    border-radius: 7px; 
+    margin-bottom: 10px; 
+    font-size: 0.92em; 
+    line-height: 1.4;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.1); 
+    word-wrap: break-word; 
+    position: relative; 
+    color: #303030; 
+}
+.message-bubble.sent { 
+    background-color: #dcf8c6; 
+    align-self: flex-end; 
+    border-bottom-right-radius: 4px; 
+}
+.message-bubble.received { 
+    background-color: #ffffff; 
+    align-self: flex-start; 
+    border-bottom-left-radius: 4px; 
+}
+.message-content p {
+    margin: 0; 
+    padding: 0; 
+    font-weight: 400; 
+}
+.message-timestamp {
+    font-size: 0.7em; 
+    color: rgba(0,0,0,0.45); 
+    text-align: right;
+    margin-top: 4px; 
+    display: block; 
+    user-select: none; 
+}
+.message-bubble.sent .message-timestamp { 
+    color: #77936c; 
+}
+.message-attachment {
+    margin-top: 8px; 
+    padding: 10px 12px; 
+    background-color: rgba(0,0,0,0.04); 
+    border-radius: 8px;
+    font-size: 0.9em;
+    line-height: 1.3;
+    border: 1px solid rgba(0,0,0,0.06);
+}
+.message-attachment i.fa-file-alt {
+    margin-right: 8px;
+    color: #5f727f; 
+}
+.message-attachment a {
+    color: #0056b3; 
+    text-decoration: none;
+    font-weight: 500; 
+}
+.message-attachment a:hover {
+    text-decoration: underline;
+}
+
+.chat-input-area {
+    display: flex;
+    padding: 8px 12px; 
+    background-color: #f0f0f0; 
+    border-top: 1px solid #d1d1d1;
+    align-items: flex-end; 
+    flex-shrink: 0; /* Поле ввода не должно сжиматься */
+}
+.chat-input-area textarea#chat-message-input {
+    flex-grow: 1;
+    border: 1px solid #ccc; 
+    padding: 8px 12px; 
+    border-radius: 18px; 
+    resize: none;
+    font-size: 0.95em;
+    font-family: 'Open Sans', sans-serif;
+    min-height: 20px; 
+    max-height: 90px; 
+    overflow-y: auto; 
+    line-height: 1.35;
+    margin: 0 8px; 
+    background-color: #fff; 
+}
+.chat-input-area textarea#chat-message-input:focus {
+    outline: none;
+    border-color: #8e44ad; 
+    box-shadow: 0 0 0 1px rgba(142, 68, 173, 0.2); 
+}
+.chat-attach-button, .chat-send-button {
+    background: none;
+    border: none;
+    color: #546e7a; 
+    font-size: 1.3em; 
+    padding: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    width: 40px; 
+    height: 40px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    flex-shrink: 0; /* Кнопки не должны сжиматься */
+}
+.chat-attach-button:hover, .chat-send-button:hover {
+    background-color: #e0e0e0; 
+    color: #333;
+}
+.chat-send-button {
+    color: #8e44ad; 
+}
+.chat-send-button:hover {
+    background-color: #f0e9f7; 
+    color: #7a3b97;
+}
+.chat-send-button:disabled {
+    color: #b0b0b0;
+    cursor: default;
+}
+.chat-send-button:disabled:hover {
+    background-color: transparent;
+}
+.selected-file-info {
+    font-size: 0.8em;
+    padding: 4px 12px; 
+    color: #555;
+    background-color: #f0f0f0; 
+    border-top: 1px solid #e0e0e0; 
+    flex-shrink: 0; /* Эта плашка также не должна сжиматься */
+}
+.selected-file-info .remove-file-button {
+    background: none;
+    border: none;
+    color: #999;
+    font-size: 1.1em;
+    cursor: pointer;
+    margin-left: 8px;
+    padding: 0 4px;
+    font-weight: bold;
+}
+.selected-file-info .remove-file-button:hover {
+    color: #e53935; 
+}
+
+
+/* ----- Стили для экрана загрузки ----- */
+.loading-overlay {
+    position: fixed; /* Или absolute, если родитель .container имеет position: relative и вы хотите перекрыть только его */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.85); /* Полупрозрачный белый фон */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000; /* Должен быть выше всего остального контента */
+    flex-direction: column; /* Чтобы текст был под спиннером */
+}
+
+.loading-spinner-container i.fa-spinner {
+    color: #8e44ad; /* Цвет спиннера, подберите под ваш дизайн */
+    /* fa-3x делает иконку в 3 раза больше, можно изменить */
+}
+
+.loading-spinner-container p {
+    margin-top: 15px;
+    font-size: 1.1em;
+    color: #333;
+    font-weight: 600;
+}
+
+
+
+/* --- Медиа-запрос для десктопной версии (двухколоночный макет) --- */
+@media (min-width: 992px) { 
+    .task-chat-wrapper {
+        flex-direction: row; 
+    }
+    .task-details-section { /* Левая колонка */
+        width: 380px; 
+        flex-shrink: 0; 
+        height: 100%; /* Занимает всю высоту .task-chat-wrapper */
+        overflow-y: auto; /* Внутренняя прокрутка для этой колонки */
+        border-bottom: none; 
+        border-right: 1px solid #d1d7db; 
+    }
+    .chat-container { /* Правая колонка */
+        flex-grow: 1; 
+        height: 100%; /* Занимает всю высоту .task-chat-wrapper */
+        /* min-height: 0; уже установлено выше для .chat-container */
+    }
+}
+
+/* Спиннеры и сообщения об ошибках на task-details.html */
+.task-details-page .loading-spinner, 
+.task-details-page .error-message-placeholder { 
+    text-align: center;
+    padding: 25px 15px; 
+    font-size: 1em; 
+    color: #546e7a;
+}
+.task-details-page .error-message-placeholder {
+    color: #c53030; 
+    background-color: #fff5f5;
+    border: 1px solid #f7d9d9;
+    border-radius: 8px;
+    margin: 15px; 
+}
+.chat-messages div[style*="text-align: center"] { /* Для "В этом чате пока нет сообщений." */
+    font-size: 0.9em;
+    padding: 35px 15px !important; 
+}
+
+
+
+.task-detail-actions-container {
+    display: flex;
+    gap: 10px; /* Расстояние между кнопками */
+    justify-content: flex-start; /* Или center, flex-end по вашему выбору */
+    padding-bottom: 15px; /* Немного отступа снизу */
+}
+
+/* Можно использовать общие стили .task-action-button, если они подходят,
+   или определить специфичные для _details, если нужно другое оформление */
+
+.approve-task-btn-details, .rework-task-btn-details {
+    padding: 10px 18px;
+    font-size: 0.9em;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.approve-task-btn-details {
+    background-color: #28a745; /* Зеленый */
+    color: white;
+    border-color: #28a745;
+}
+.approve-task-btn-details:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+.approve-task-btn-details:disabled {
+    background-color: #5cb85c;
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.rework-task-btn-details {
+    background-color: #ffc107; /* Желтый/Оранжевый */
+    color: #212529;
+    border-color: #ffc107;
+}
+.rework-task-btn-details:hover {
+    background-color: #e0a800;
+    border-color: #d39e00;
+}
+.rework-task-btn-details:disabled {
+    background-color: #ffca2c;
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* ================================================================ */
+/* =================== СТИЛИ ДЛЯ INDEX.HTML (ВХОД) ================ */
+/* ================================================================ */
+
+body.login-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh; /* Используем min-height для гибкости */
+    padding: 20px; /* Отступы от краев экрана */
+    box-sizing: border-box; /* Чтобы padding не влиял на общую высоту 100vh */
+}
+
+.login-page .login-container { /* Класс для основного блока на странице входа */
+    background-color: #ffffff;
+    padding: 40px 50px;
+    border-radius: 20px; /* Сильно скругленные углы */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07); /* Мягкая объемная тень */
+    width: 100%; /* Адаптивная ширина */
+    max-width: 420px; /* Максимальная ширина контейнера входа */
+    text-align: center; 
+    box-sizing: border-box;
+}
+
+.login-page .login-container h2 {
+    font-size: 1.9em; /* Размер заголовка "Вход в систему" */
+    color: #37474f;
+    font-weight: 700;
+    margin-top: 0; 
+    margin-bottom: 35px; /* Увеличил отступ */
+}
+
+.login-page .login-container input[type="text"],
+.login-page .login-container input[type="password"] {
+    width: 100%;
+    padding: 16px 20px; /* Увеличил padding для более "воздушного" вида */
+    margin-bottom: 22px; /* Увеличил отступ между полями */
+    border: 1px solid #dfe4ea; /* Светлая рамка */
+    border-radius: 12px; /* Более скругленные углы */
+    box-sizing: border-box;
+    font-size: 1em;
+    color: #37474f;
+    background-color: #f8f9fa; /* Очень светлый фон */
+    box-shadow: 0 4px 8px rgba(55, 71, 79, 0.04); /* Легкая внутренняя тень */
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.login-page .login-container input[type="text"]:focus,
+.login-page .login-container input[type="password"]:focus {
+    border-color: #8e44ad; /* Фиолетовый при фокусе, как у кнопок */
+    background-color: #fff;
+    margin-bottom: 5px; 
+    box-shadow: 0 6px 12px rgba(142, 68, 173, 0.1), 0 0 0 3px rgba(142, 68, 173, 0.15); /* Тень при фокусе */
+    outline: none;
+}
+
+
+.login-page .login-container .phone-hint {
+    display: block; /* Чтобы подсказка была на новой строке */
+    font-size: 0.8em;
+    color: #6c757d; /* Серый цвет для подсказки */
+    text-align: left; /* Выравнивание по левому краю поля */
+    margin-bottom: 18px; /* Отступ после подсказки до следующего поля */
+    padding-left: 5px; /* Небольшой отступ слева для выравнивания с текстом поля */
+}
+
+
+/* Стили для кнопки "Войти" - используем общий класс .button-primary */
+.login-page .login-container .button-primary { 
+    width: 100%; 
+    font-size: 1.15em; /* Чуть крупнее шрифт */
+    padding-top: 16px; /* Увеличил вертикальный padding */
+    padding-bottom: 16px;
+    margin-top: 25px; /* Отступ над кнопкой */
+}
+
+/* Стили для сообщения об ошибке на странице входа */
+.login-page .login-container p.error { 
+    padding: 15px 20px; 
+    margin-top: 25px; /* Увеличил отступ */
+    border-radius: 10px;
+    text-align: center; 
+    display: none; /* Изначально скрыто */
+    font-size: 0.95em;
+    border-width: 1px;
+    border-style: solid;
+    box-shadow: 0 4px 8px rgba(55, 71, 79, 0.04);
+    background-color: #fff5f5; /* Мягкий красный фон */
+    color: #c53030; /* Темно-красный текст */
+    border-color: #f7d9d9; /* Светло-красная рамка */
+}
+
+/* Общие стили для кнопок - убедитесь, что они есть в вашем CSS */
+/* Если их нет, добавьте этот блок */
+.button-primary { 
+    display: inline-block;
+    padding: 15px 30px; 
+    background-image: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); 
+    color: white !important;
+    text-decoration: none !important; 
+    border-radius: 10px; 
+    font-weight: 600;
+    font-size: 1em; 
+    box-shadow: 0 6px 20px rgba(155, 89, 182, 0.3); 
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+}
+.button-primary:hover {
+    background-image: linear-gradient(135deg, #8e44ad 0%, #9b59b6 100%);
+    box-shadow: 0 8px 25px rgba(155, 89, 182, 0.4);
+    transform: translateY(-3px);
+    color: white !important;
+}
+.button-primary:active {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(155, 89, 182, 0.3);
+}
+.button-primary:disabled {
+    background-image: linear-gradient(135deg, #c7a5d9 0%, #b989cc 100%);
+    box-shadow: 0 6px 20px rgba(199, 165, 217, 0.2);
+    cursor: not-allowed;
+    transform: translateY(0);
+}

@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход в систему задач</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="login-page"> 
+    <div class="login-container">
+       <h2>Вход в систему</h2>
+
+        <div id="phoneStep">
+            <input type="text" id="phoneNumber" placeholder="Номер телефона" required>
+            <small class="phone-hint">Введите 11 цифр, начиная с 7 (без + и без 8, например 77071233211)</small>
+            <button type="button" class="button-primary" id="checkPhoneButton">Продолжить</button>
+        </div>
+
+        <div id="passwordStep" style="display: none;">
+            <p>Для номера <strong id="displayPhoneNumberPassword"></strong> введите пароль:</p>
+            <input type="password" id="password" placeholder="Пароль" required>
+            <button type="button" class="button-primary" id="loginButton">Войти</button>
+        </div>
+
+        <div id="createPasswordStep" style="display: none;">
+            <p>Для номера <strong id="displayPhoneNumberCreate"></strong> необходимо создать пароль:</p>
+            <input type="password" id="newPassword" placeholder="Создайте пароль" required>
+            <input type="password" id="confirmPassword" placeholder="Повторите пароль" required>
+            <button type="button" class="button-primary" id="createPasswordButton">Создать и войти</button>
+        </div>
+        
+        <p id="errorMessage" class="error" style="display: none;"></p>
+    </div>
+    </body>
+
+    <script>
+     const BASE_URL = 'https://1c.c-r.kz/Registrator_test/hs/auth';
+
+        // Элементы UI
+        let phoneNumberInput, passwordInput, newPasswordInput, confirmPasswordInput;
+        let checkPhoneButton, loginButton, createPasswordButton;
+        let phoneStepDiv, passwordStepDiv, createPasswordStepDiv;
+        let errorMessageParagraph;
+        let displayPhoneNumberPasswordSpan, displayPhoneNumberCreateSpan;
+
+        // Данные между шагами
+        let currentPhoneNumber = '';
+        let currentUserCodeForPasswordCreation = ''; // Для случая passwordNotExists
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Инициализация элементов UI
+            phoneNumberInput = document.getElementById('phoneNumber');
+            passwordInput = document.getElementById('password');
+            newPasswordInput = document.getElementById('newPassword');
+            confirmPasswordInput = document.getElementById('confirmPassword');
+
+            checkPhoneButton = document.getElementById('checkPhoneButton');
+            loginButton = document.getElementById('loginButton');
+            createPasswordButton = document.getElementById('createPasswordButton');
+
+            phoneStepDiv = document.getElementById('phoneStep');
+            passwordStepDiv = document.getElementById('passwordStep');
+            createPasswordStepDiv = document.getElementById('createPasswordStep');
+            errorMessageParagraph = document.getElementById('errorMessage');
+            
+            displayPhoneNumberPasswordSpan = document.getElementById('displayPhoneNumberPassword');
+            displayPhoneNumberCreateSpan = document.getElementById('displayPhoneNumberCreate');
+
+            // Начальное состояние UI
+            updateUIState('initial');
+
+            // Обработчики событий
+            if (checkPhoneButton) {
+                checkPhoneButton.addEventListener('click', handleCheckPhone);
+            }
+            if (loginButton) {
+                loginButton.addEventListener('click', handleLogin);
+            }
+            if (createPasswordButton) {
+                createPasswordButton.addEventListener('click', handleCreatePassword);
+            }
+            
+            // Обработка Enter в поле номера телефона
+            if (phoneNumberInput) {
+                phoneNumberInput.addEventListener('keypress', function(event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        if (checkPhoneButton && !checkPhoneButton.disabled) {
+                            checkPhoneButton.click();
+                        }
+                    }
+                });
+            }
+            // Обработка Enter в поле пароля (существующего)
+            if (passwordInput) {
+                 passwordInput.addEventListener('keypress', function(event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        if (loginButton && !loginButton.disabled) {
+                            loginButton.click();
+                        }
+                    }
+                });
+            }
+            // Обработка Enter в полях создания пароля
+            if (newPasswordInput) {
+                newPasswordInput.addEventListener('keypress', function(event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        if (confirmPasswordInput) confirmPasswordInput.focus(); // Перевод фокуса на следующее поле
+                    }
+                });
+            }
+            if (confirmPasswordInput) {
+                confirmPasswordInput.addEventListener('keypress', function(event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        if (createPasswordButton && !createPasswordButton.disabled) {
+                            createPasswordButton.click();
+                        }
+                    }
+                });
+            }
+        });
+
+        function updateUIState(state, message = '', phoneNumberForDisplay = '') {
+            // Скрываем все шаги и сообщение об ошибке по умолчанию
+            phoneStepDiv.style.display = 'none';
+            passwordStepDiv.style.display = 'none';
+            createPasswordStepDiv.style.display = 'none';
+            errorMessageParagraph.style.display = 'none';
+            errorMessageParagraph.textContent = '';
+
+            // Включаем кнопки по умолчанию, если они существуют
+            if(checkPhoneButton) checkPhoneButton.disabled = false;
+            if(loginButton) loginButton.disabled = false;
+            if(createPasswordButton) createPasswordButton.disabled = false;
+
+            switch (state) {
+                case 'initial':
+                    phoneStepDiv.style.display = 'block';
+                    phoneNumberInput.disabled = false;
+                    phoneNumberInput.focus();
+                    break;
+                case 'enterPassword':
+                    passwordStepDiv.style.display = 'block';
+                    if(displayPhoneNumberPasswordSpan) displayPhoneNumberPasswordSpan.textContent = phoneNumberForDisplay;
+                    passwordInput.value = ''; // Очищаем поле пароля
+                    passwordInput.focus();
+                    break;
+                case 'createPassword':
+                    createPasswordStepDiv.style.display = 'block';
+                    if(displayPhoneNumberCreateSpan) displayPhoneNumberCreateSpan.textContent = phoneNumberForDisplay;
+                    newPasswordInput.value = ''; // Очищаем поля
+                    confirmPasswordInput.value = '';
+                    newPasswordInput.focus();
+                    break;
+                case 'loading':
+                    errorMessageParagraph.style.display = 'none'; // Убираем ошибку на время загрузки
+                    // Можно добавить спиннер или изменить текст кнопки
+                    if (phoneStepDiv.style.display === 'block' && checkPhoneButton) checkPhoneButton.disabled = true;
+                    if (passwordStepDiv.style.display === 'block' && loginButton) loginButton.disabled = true;
+                    if (createPasswordStepDiv.style.display === 'block' && createPasswordButton) createPasswordButton.disabled = true;
+                    break;
+                case 'error':
+                    errorMessageParagraph.textContent = message;
+                    errorMessageParagraph.style.display = 'block';
+                    // Возвращаем к активному шагу с возможностью исправить ошибку
+                    if (passwordStepDiv.style.display === 'block' || createPasswordStepDiv.style.display === 'block') {
+                        // Если ошибка на шаге ввода пароля или создания, оставляем эти шаги видимыми
+                        if(passwordStepDiv.style.display === 'block') {
+                             passwordStepDiv.style.display = 'block'; // Убедимся, что он видим
+                             if(loginButton) loginButton.disabled = false;
+                        }
+                        if(createPasswordStepDiv.style.display === 'block') {
+                             createPasswordStepDiv.style.display = 'block'; // Убедимся, что он видим
+                             if(createPasswordButton) createPasswordButton.disabled = false;
+                        }
+                    } else {
+                        phoneStepDiv.style.display = 'block'; // По умолчанию возвращаем на шаг ввода телефона
+                        if(checkPhoneButton) checkPhoneButton.disabled = false;
+                        phoneNumberInput.focus();
+                    }
+                    break;
+            }
+        }
+        
+        function isValidPhoneNumber(number) {
+            // Простая проверка: 11 цифр, начинается с 7
+            return /^[7]\d{10}$/.test(number);
+        }
+
+        async function handleCheckPhone() {
+            currentPhoneNumber = phoneNumberInput.value.trim();
+
+            if (!isValidPhoneNumber(currentPhoneNumber)) {
+                updateUIState('error', 'Номер телефона должен состоять из 11 цифр и начинаться с 7.');
+                return;
+            }
+            
+            updateUIState('loading');
+
+            try {
+                const response = await fetch(`${BASE_URL}/checkUserStatus`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phoneNumber: currentPhoneNumber })
+                });
+
+                if (!response.ok) {
+                    let errorMsg = `Ошибка сервера: ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMsg = errorData.message || errorMsg;
+                    } catch (e) { /* не JSON */ }
+                    throw new Error(errorMsg);
+                }
+
+                const result = await response.json();
+
+                if (result.status === 'userNotFound') {
+                    updateUIState('error', 'Пользователь с таким номером телефона не найден.');
+                } else if (result.status === 'passwordExists') {
+                    updateUIState('enterPassword', '', currentPhoneNumber);
+                } else if (result.status === 'passwordNotExists') {
+                    currentUserCodeForPasswordCreation = result.userCode; // Сохраняем userCode
+                    updateUIState('createPassword', '', currentPhoneNumber);
+                } else {
+                    throw new Error('Неожиданный ответ от сервера при проверке телефона.');
+                }
+            } catch (error) {
+                console.error('Ошибка при проверке номера телефона:', error);
+                updateUIState('error', error.message || 'Не удалось проверить номер телефона. Попробуйте позже.');
+            }
+        }
+
+        async function handleLogin() {
+            const password = passwordInput.value;
+
+            if (!password) {
+                // Технически, ошибка должна отображаться под полем, но errorMessageParagraph глобальный
+                errorMessageParagraph.textContent = 'Пожалуйста, введите пароль.';
+                errorMessageParagraph.style.display = 'block';
+                // updateUIState('error', 'Пожалуйста, введите пароль.'); // Это сбросит UI не так, как нужно
+                passwordInput.focus();
+                return;
+            }
+            
+            updateUIState('loading');
+
+            try {
+                const response = await fetch(`${BASE_URL}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phoneNumber: currentPhoneNumber, password: password })
+                });
+
+                if (!response.ok) {
+                    let errorMsg = `Ошибка входа: ${response.status}`;
+                     try {
+                        const errorData = await response.json();
+                        errorMsg = errorData.message || errorMsg;
+                    } catch (e) { /* не JSON */ }
+                    throw new Error(errorMsg);
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    localStorage.setItem('userName', result.userName);
+                    localStorage.setItem('userId', result.userId);
+                    localStorage.setItem('userCode', result.userCode);
+                    window.location.href = 'tasks.html';
+                } else {
+                    // Оставляем пользователя на том же шаге (ввода пароля) и показываем ошибку
+                    updateUIState('enterPassword', '', currentPhoneNumber); // Сначала UI в нужное состояние
+                    errorMessageParagraph.textContent = result.message || 'Ошибка входа. Проверьте данные.'; // Потом текст ошибки
+                    errorMessageParagraph.style.display = 'block';
+                    passwordInput.focus(); // Фокус обратно на пароль
+                }
+            } catch (error) {
+                console.error('Ошибка при входе в систему:', error);
+                // Оставляем пользователя на том же шаге (ввода пароля) и показываем ошибку
+                updateUIState('enterPassword', '', currentPhoneNumber);
+                errorMessageParagraph.textContent = error.message || 'Не удалось войти. Попробуйте позже.';
+                errorMessageParagraph.style.display = 'block';
+                passwordInput.focus();
+            }
+        }
+
+        async function handleCreatePassword() {
+            const newPass = newPasswordInput.value;
+            const confirmPass = confirmPasswordInput.value;
+
+            if (!newPass || !confirmPass) {
+                errorMessageParagraph.textContent = 'Оба поля пароля должны быть заполнены.';
+                errorMessageParagraph.style.display = 'block';
+                return;
+            }
+            if (newPass !== confirmPass) {
+                errorMessageParagraph.textContent = 'Пароли не совпадают.';
+                errorMessageParagraph.style.display = 'block';
+                confirmPasswordInput.focus();
+                return;
+            }
+            // Можно добавить проверку сложности пароля здесь, если требуется
+
+            updateUIState('loading');
+
+            try {
+                const payload = {
+                    // phoneNumber: currentPhoneNumber, // Отправляем или номер, или userCode. userCode предпочтительнее, если есть.
+                    newPassword: newPass
+                };
+                // Если мы получили userCode на шаге проверки телефона, используем его
+                if (currentUserCodeForPasswordCreation) {
+                    payload.userCode = currentUserCodeForPasswordCreation;
+                } else {
+                    // В крайнем случае, если userCode не был получен (не должен быть такой сценарий по логике /checkUserStatus)
+                    // Можно было бы снова найти пользователя по currentPhoneNumber на сервере, но лучше передавать userCode.
+                    // Сейчас, если userCode нет, сервер /createPassword должен будет его найти по phoneNumber, если мы его передадим.
+                    // Для надежности, /createPassword должен принимать userCode.
+                    // Если бэкенд /createPassword будет искать по номеру телефона, то:
+                    payload.phoneNumber = currentPhoneNumber; 
+                    console.warn("Отправка phoneNumber в /createPassword, userCode не был получен ранее. Это нештатная ситуация.");
+                }
+
+
+                const response = await fetch(`${BASE_URL}/createPassword`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    let errorMsg = `Ошибка создания пароля: ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMsg = errorData.message || errorMsg;
+                    } catch (e) { /* не JSON */ }
+                    throw new Error(errorMsg);
+                }
+
+                const result = await response.json();
+
+                if (result.success) { // /createPassword должен возвращать такой же формат, как /login при успехе
+                    localStorage.setItem('userName', result.userName);
+                    localStorage.setItem('userId', result.userId);
+                    localStorage.setItem('userCode', result.userCode);
+                    window.location.href = 'tasks.html';
+                } else {
+                     // Оставляем пользователя на том же шаге (создания пароля) и показываем ошибку
+                    updateUIState('createPassword', '', currentPhoneNumber);
+                    errorMessageParagraph.textContent = result.message || 'Не удалось создать пароль.';
+                    errorMessageParagraph.style.display = 'block';
+                    newPasswordInput.focus();
+                }
+            } catch (error) {
+                console.error('Ошибка при создании пароля:', error);
+                // Оставляем пользователя на том же шаге (создания пароля) и показываем ошибку
+                updateUIState('createPassword', '', currentPhoneNumber);
+                errorMessageParagraph.textContent = error.message || 'Не удалось создать пароль. Попробуйте позже.';
+                errorMessageParagraph.style.display = 'block';
+                newPasswordInput.focus();
+            }
+        }
+    </script>
+</body>
+</html>
+
