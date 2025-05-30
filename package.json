@@ -1,7 +1,7 @@
 {
   "name": "task-app-desktop",
   "productName": "Менеджер Задач Клиента",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Менеджер задач для клиентов",
   "main": "main.js",
   "scripts": {
