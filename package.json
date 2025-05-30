@@ -1,0 +1,82 @@
+﻿{
+  "name": "task-app-desktop",
+  "productName": "Менеджер Задач Клиента",
+  "version": "1.0.0",
+  "description": "Менеджер задач для клиентов",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dist": "electron-builder --win"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/exserega/TaskManagerApp.git"
+  },
+  "keywords": [],
+  "author": "Центр Разработок", 
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^36.3.2",           
+    "electron-builder": "^24.13.3"    
+  },
+  "build": {
+    "appId": "CenterITRazrabotok.kz",
+    "productName": "Менеджер Задач Клиента",
+    "files": [
+      "main.js",
+      "preload.js",
+      "preload-create-task.js",
+      "webapp/**/*",
+      "package.json" 
+      
+    ],
+    "extraResources": [
+      {
+        "from": "assets/icon.png",
+        "to": "icon.png"
+      }
+    ],
+    "directories": {
+      "output": "dist_electron"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "publish": { 
+      "provider": "github",
+      "owner": "exserega",
+      "repo": "TaskManagerApp"
+    },
+    "mac": { 
+      "icon": "build/icon.icns",
+      "target": "dmg",
+      "extraResources": [
+        {
+          "from": "assets/icon.png",
+          "to": "icon.png"
+        }
+      ]
+    },
+    "linux": { 
+      "icon": "build/icons",
+      "target": "AppImage",
+      "extraResources": [
+        {
+          "from": "assets/icon.png",
+          "to": "icon.png"
+        }
+      ]
+    }
+  }, 
+  "dependencies": {
+    "electron-updater": "^6.6.2" 
+  }
+}

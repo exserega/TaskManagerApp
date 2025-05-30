@@ -1,0 +1,518 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Создание новой задачи</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner-container">
+            <i class="fas fa-spinner fa-spin fa-3x"></i> <p>Создание задачи...</p>
+        </div>
+    </div>
+    <div class="container create-task-page">
+    <div class="container">
+        <h1>Создание новой задачи</h1>
+        <form id="createTaskForm">
+            <div class="form-group">
+                <label for="summary">Тема задачи (кратко)<span class="required-star">*</span></label>
+                <input type="text" id="summary" name="summary" required>
+            </div>
+
+            <div class="form-group">
+                <label for="configuration">Конфигурация</label>
+                <select id="configuration" name="configurationCode">
+                    <option value="">-- Выберите конфигурацию --</option>
+                    </select>
+                <small id="configInfo"></small>
+            </div>
+
+            <div class="form-group">
+                <label for="details">Детальное описание</label>
+                <textarea id="details" name="details"></textarea>
+            </div>
+
+            <div class="form-group">
+                 <label for="taskFile">Прикрепить файл (до 30МБ)</label>
+            <div id="dropZone" class="drop-zone">
+                <span class="drop-zone-prompt">Перетащите файл сюда или <u>кликните для выбора</u></span>
+               <input type="file" id="taskFile" name="taskFile" class="drop-zone-input" multiple>
+            </div>
+            <div id="fileNameDisplay" class="file-name-display"></div>
+
+           
+            <button type="submit" class="button-primary submit-button">Создать задачу</button>
+        </form>
+        <div id="formMessage" class="message"></div>
+        <a href="tasks.html" class="back-link"><i class="fas fa-arrow-left"></i> К списку задач</a> 
+    </div>
+<body>
+
+<script>
+    let initialScreenshotFilePath = null; // Для хранения пути к скриншоту для последующего удаления
+    let currentFilesForUpload = []; // Массив для хранения до 3-х файлов
+    const MAX_FILES = 3;
+
+    // Эти функции должны быть доступны глобально в пределах скрипта или переданы, если нужны внутри onload
+    // Судя по вашему коду, они объявлены в глобальной области видимости этого скрипта, что нормально.
+
+    function escapeHTML(str) {
+        if (typeof str !== 'string') return '';
+        const div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+    }
+
+    function addFileToUploadList(file) {
+        if (currentFilesForUpload.length >= MAX_FILES) {
+            alert(`Можно прикрепить не более ${MAX_FILES} файлов.`);
+            return false;
+        }
+        const newFileNameLower = file.name.toLowerCase();
+        const newFileSize = file.size;
+        const isDuplicate = currentFilesForUpload.some(existingFile => 
+            existingFile.name.toLowerCase() === newFileNameLower && existingFile.size === newFileSize
+        );
+        if (isDuplicate) {
+            alert(`Файл с именем "${escapeHTML(file.name)}" уже добавлен.`);
+            return false; 
+        }
+        currentFilesForUpload.push(file);
+        return true;
+    }
+
+    function removeFileFromUploadList(fileIndex) {
+        if (fileIndex >= 0 && fileIndex < currentFilesForUpload.length) {
+            currentFilesForUpload.splice(fileIndex, 1);
+            updateFilesDisplayAndInput();
+        } else {
+            console.error("Попытка удалить файл с некорректным индексом:", fileIndex);
+        }
+    }
+
+    function updateFilesDisplayAndInput() {
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const dropZone = document.getElementById('dropZone'); 
+        const dropZonePrompt = dropZone.querySelector('.drop-zone-prompt'); 
+        const taskFileInput = document.getElementById('taskFile');
+
+        if (!fileNameDisplay || !dropZonePrompt || !taskFileInput || !dropZone) {
+            console.error("Не найден один из DOM элементов для обновления списка файлов.");
+            return;
+        }
+        fileNameDisplay.innerHTML = ''; 
+        if (currentFilesForUpload.length === 0) {
+            dropZonePrompt.innerHTML = `Перетащите файлы сюда или <u>кликните для выбора</u> (до ${MAX_FILES})`;
+            dropZone.classList.remove('has-files', 'limit-reached');
+            dropZone.style.cursor = 'pointer';
+            fileNameDisplay.style.display = 'none'; 
+        } else {
+            const ul = document.createElement('ul');
+            ul.className = 'file-list';
+            currentFilesForUpload.forEach((file, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span>${escapeHTML(file.name)}</span> <a href="#" class="remove-file-link" data-index="${index}" title="Удалить файл">&times;</a>`;
+                ul.appendChild(li);
+            });
+            fileNameDisplay.appendChild(ul);
+            fileNameDisplay.style.display = 'block';
+            if (currentFilesForUpload.length < MAX_FILES) {
+                const remaining = MAX_FILES - currentFilesForUpload.length;
+                dropZonePrompt.innerHTML = `Добавить еще (осталось ${remaining}) или перетащите`;
+                dropZone.classList.add('has-files');
+                dropZone.classList.remove('limit-reached');
+                dropZone.style.cursor = 'pointer';
+            } else { 
+                dropZonePrompt.innerHTML = `Достигнут лимит в ${MAX_FILES} файла(ов)`;
+                dropZone.classList.add('has-files', 'limit-reached');
+                dropZone.style.cursor = 'not-allowed';
+            }
+            dropZonePrompt.style.display = 'block';
+            fileNameDisplay.querySelectorAll('.remove-file-link').forEach(linkEl => {
+                linkEl.addEventListener('click', function(e) { 
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const indexToRemove = parseInt(this.dataset.index, 10);
+                    if (!isNaN(indexToRemove)) {
+                        removeFileFromUploadList(indexToRemove);
+                    } else {
+                        console.error("Не удалось получить индекс для удаления файла:", this.dataset.index);
+                    }
+                });
+            });
+        }
+        const dataTransfer = new DataTransfer();
+        currentFilesForUpload.forEach(file => dataTransfer.items.add(file));
+        taskFileInput.files = dataTransfer.files;
+    }
+
+    function setupDragAndDrop() {
+        const dropZone = document.getElementById('dropZone');
+        const taskFileInput = document.getElementById('taskFile');
+        if (!dropZone || !taskFileInput) return;
+        dropZone.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-file-link') || (e.target.parentElement && e.target.parentElement.classList.contains('remove-file-link'))) {
+                return; 
+            }
+            taskFileInput.click();
+        });
+        taskFileInput.addEventListener('change', () => {
+            const filesFromDialog = Array.from(taskFileInput.files);
+            for (const file of filesFromDialog) {
+                if (!addFileToUploadList(file)) break; 
+            }
+            updateFilesDisplayAndInput();
+        });
+        dropZone.addEventListener('dragenter', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+        dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); dropZone.classList.remove('drag-over'); });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            if (e.dataTransfer.files.length > 0) {
+                const filesFromDrop = Array.from(e.dataTransfer.files);
+                for (const file of filesFromDrop) {
+                     if (!addFileToUploadList(file)) break;
+                }
+                updateFilesDisplayAndInput();
+            }
+        });
+    }
+    
+    function setupPasteListener() {
+        const dropZone = document.getElementById('dropZone'); 
+        const detailsTextarea = document.getElementById('details');
+        document.addEventListener('paste', (event) => {
+            const items = (event.clipboardData || window.clipboardData)?.items;
+            if (!items) return;
+            let pastedImageFile = null;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    pastedImageFile = items[i].getAsFile();
+                    break;
+                }
+            }
+            if (pastedImageFile) { 
+                const activeElement = document.activeElement;
+                if ( (activeElement && activeElement.id === 'details') || 
+                     !(activeElement && ((activeElement.tagName === 'INPUT' && activeElement.type !== 'file') || activeElement.tagName === 'TEXTAREA'))
+                   ) {
+                    event.preventDefault(); 
+                    console.log('Изображение из буфера обмена для прикрепления:', pastedImageFile);
+                    const timestamp = new Date().toISOString().replace(/[-:.]/g, '').substring(0,14);
+                    const extension = pastedImageFile.type.split('/')[1] || 'png';
+                    const fileName = `clipboard-${timestamp}.${extension}`;
+                    const fileToAdd = new File([pastedImageFile], fileName, {type: pastedImageFile.type});
+                    if (addFileToUploadList(fileToAdd)) {
+                        updateFilesDisplayAndInput();
+                        if (dropZone) { 
+                            dropZone.classList.add('drag-over'); 
+                            setTimeout(() => { dropZone.classList.remove('drag-over'); }, 200);
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Функция loadClientConfigurations теперь определяется здесь, до ее вызова в window.onload
+    async function loadClientConfigurations(userCode) {
+        const selectElement = document.getElementById('configuration');
+        const configInfoElement = document.getElementById('configInfo');
+        if (selectElement) selectElement.disabled = true;
+        if (configInfoElement) {
+            configInfoElement.textContent = 'Загрузка конфигураций...';
+            configInfoElement.style.display = 'block';
+        }
+        try {
+            const response = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/clientconfigurations/${userCode}`);
+            if (!response.ok) {
+                throw new Error(`Ошибка загрузки конфигураций: ${response.status}`);
+            }
+            const configurations = await response.json();
+            if (selectElement && configInfoElement) {
+                if (configurations && configurations.length > 0) {
+                    selectElement.innerHTML = '<option value="">-- Выберите конфигурацию --</option>';
+                    configurations.forEach(config => {
+                        const option = document.createElement('option');
+                        option.value = config.code;
+                        option.textContent = config.name;
+                        selectElement.appendChild(option);
+                    });
+                    if (configurations.length === 1) {
+                        selectElement.value = configurations[0].code;
+                        configInfoElement.textContent = 'Конфигурация выбрана автоматически.';
+                    } else {
+                        configInfoElement.textContent = 'Выберите конфигурацию, если задача к ней относится.';
+                    }
+                    selectElement.disabled = false;
+                } else {
+                    configInfoElement.textContent = 'Доступных конфигураций не найдено. Можно создать задачу без указания конфигурации.';
+                    selectElement.innerHTML = '<option value="">-- Конфигурации не найдены --</option>';
+                    selectElement.disabled = true;
+                }
+            }
+        } catch (error) {
+            console.error('Ошибка при загрузке конфигураций:', error);
+            if (configInfoElement) configInfoElement.textContent = 'Не удалось загрузить конфигурации.';
+            if (selectElement) selectElement.disabled = true;
+        }
+    }
+
+
+// Новая вспомогательная функция для конвертации Data URL в File
+    async function dataURLtoFile(dataurl, filename) {
+        const arr = dataurl.split(',');
+        if (arr.length < 2) return null; // Некорректный dataURL
+        const mimeMatch = arr[0].match(/:(.*?);/);
+        if (!mimeMatch || mimeMatch.length < 2) return null; // Не удалось извлечь MIME тип
+        
+        const mime = mimeMatch[1];
+        const bstr = atob(arr[1]); // Декодируем base64
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while(n--){
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new File([u8arr], filename, {type:mime});
+    }
+
+
+
+   window.onload = async function() { // Функция остается async
+        const userCode = localStorage.getItem('userCode');
+        if (!userCode) {
+            alert("Ошибка: Код пользователя не найден. Пожалуйста, войдите снова.");
+            window.location.href = 'index.html';
+            return;
+        }
+        loadClientConfigurations(userCode); 
+        setupDragAndDrop();
+        setupPasteListener();
+
+        if (window.electronAPI && typeof window.electronAPI.getInitialScreenshotData === 'function') {
+            console.log("Запрашиваем данные начального скриншота из preload...");
+            try {
+                const screenshotInfo = await window.electronAPI.getInitialScreenshotData(); 
+                
+                if (screenshotInfo && screenshotInfo.dataUrl && screenshotInfo.name && screenshotInfo.type && screenshotInfo.path) {
+                    console.log("Данные скриншота из preload получены:", screenshotInfo.name, screenshotInfo.type);
+                    try {
+                        // Конвертируем Data URL в File объект
+                        const screenshotFile = await dataURLtoFile(screenshotInfo.dataUrl, screenshotInfo.name);
+                        
+                        if (screenshotFile) {
+                            if (addFileToUploadList(screenshotFile)) {
+                                updateFilesDisplayAndInput(); 
+                                initialScreenshotFilePath = screenshotInfo.path; 
+                                console.log("Скриншот успешно добавлен в список файлов для загрузки. Путь для удаления:", initialScreenshotFilePath);
+                            } else {
+                                console.warn("Не удалось добавить скриншот в список (возможно, дубликат или лимит).");
+                                if (screenshotInfo.path && window.electronAPI && typeof window.electronAPI.deleteFile === 'function') {
+                                    console.log("Удаляем временный скриншот (не добавлен в список):", screenshotInfo.path);
+                                    window.electronAPI.deleteFile(screenshotInfo.path);
+                                }
+                            }
+                        } else {
+                             console.error("Не удалось создать File объект из dataUrl скриншота.");
+                             if (screenshotInfo.path && window.electronAPI && typeof window.electronAPI.deleteFile === 'function') {
+                                console.log("Удаляем временный скриншот из-за ошибки конвертации dataUrl:", screenshotInfo.path);
+                                window.electronAPI.deleteFile(screenshotInfo.path);
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Ошибка при обработке данных скриншота (dataUrl to File):", error);
+                        if (screenshotInfo.path && window.electronAPI && typeof window.electronAPI.deleteFile === 'function') {
+                             console.log("Удаляем временный скриншот из-за ошибки обработки:", screenshotInfo.path);
+                             window.electronAPI.deleteFile(screenshotInfo.path);
+                        }
+                    }
+                } else {
+                    console.log("Данные скриншота из preload не получены или некорректны после ожидания.", screenshotInfo);
+                }
+            } catch (error) {
+                 console.error("Ошибка при вызове getInitialScreenshotData:", error);
+            }
+        } else {
+            console.log("API Electron (electronAPI.getInitialScreenshotData) не доступно. Скриншот не будет автоматически добавлен.");
+        }
+    };
+
+
+  const createTaskForm = document.getElementById('createTaskForm');
+    if (createTaskForm) {
+        createTaskForm.addEventListener('submit', async function(event) {
+            event.preventDefault(); 
+
+            const formMessageDiv = document.getElementById('formMessage');
+            const loadingOverlay = document.getElementById('loadingOverlay'); // Получаем элемент экрана загрузки
+
+            if(formMessageDiv) {
+                formMessageDiv.style.display = 'none';
+                formMessageDiv.className = 'message'; 
+            }
+
+            const userCode = localStorage.getItem('userCode');
+            const summaryInput = document.getElementById('summary');
+            const detailsInput = document.getElementById('details');
+            const configurationSelect = document.getElementById('configuration');
+
+            const summary = summaryInput ? summaryInput.value.trim() : '';
+            const details = detailsInput ? detailsInput.value.trim() : ''; // Убедимся, что получаем значение и для details
+            const configurationCode = configurationSelect ? configurationSelect.value : '';
+            
+            if (!summary) { // Проверка, что summary не пустое
+                if (formMessageDiv) {
+                    formMessageDiv.textContent = 'Пожалуйста, укажите тему задачи.';
+                    formMessageDiv.classList.add('error');
+                    formMessageDiv.style.display = 'block';
+                }
+                return;
+            }
+
+            const submitButton = this.querySelector('button[type="submit"]');
+            if(submitButton) {
+                submitButton.disabled = true;
+                // Текст на кнопке можно не менять, так как будет оверлей
+            }
+
+            // Показываем экран загрузки
+            if (loadingOverlay) {
+                const loadingTextEl = loadingOverlay.querySelector('p');
+                if (loadingTextEl) loadingTextEl.textContent = 'Подготовка данных...';
+                loadingOverlay.style.display = 'flex';
+            }
+
+            let uploadedFileInfos = [];
+
+            try {
+                if (currentFilesForUpload.length > 0) {
+                    if (loadingOverlay) {
+                        const loadingTextEl = loadingOverlay.querySelector('p');
+                        if (loadingTextEl) loadingTextEl.textContent = 'Загрузка файлов...';
+                    }
+                    for (let i = 0; i < currentFilesForUpload.length; i++) {
+                        const fileToUpload = currentFilesForUpload[i];
+                        if (loadingOverlay) {
+                            const loadingTextEl = loadingOverlay.querySelector('p');
+                            if (loadingTextEl) loadingTextEl.textContent = `Загрузка файла ${i + 1} из ${currentFilesForUpload.length}...`;
+                        }
+                        
+                        const fileUploadResponse = await fetch('https://1c.c-r.kz/Registrator_test/hs/auth/files/upload', {
+                            method: 'POST',
+                            body: fileToUpload, 
+                            headers: { 'X-File-Name': encodeURIComponent(fileToUpload.name) }
+                        });
+
+                        if (!fileUploadResponse.ok) {
+                            let errorMsg = `Ошибка загрузки файла "${escapeHTML(fileToUpload.name)}": ${fileUploadResponse.status}`;
+                            try { 
+                                const errorData = await fileUploadResponse.json(); 
+                                errorMsg = errorData.message || errorMsg; 
+                            } catch (e) { /* не JSON */ }
+                            throw new Error(errorMsg);
+                        }
+
+                        const fileResult = await fileUploadResponse.json();
+                        if (fileResult.success) {
+                            uploadedFileInfos.push({
+                                tempFileId: fileResult.tempFileId,
+                                fileName: fileResult.fileName 
+                            });
+                            console.log(`Файл "${escapeHTML(fileResult.fileName)}" успешно загружен:`, fileResult);
+                        } else {
+                            throw new Error(fileResult.message || `Не удалось загрузить файл "${escapeHTML(fileToUpload.name)}".`);
+                        }
+                    }
+                }
+
+                if (loadingOverlay) {
+                    const loadingTextEl = loadingOverlay.querySelector('p');
+                    if (loadingTextEl) loadingTextEl.textContent = 'Создание задачи...';
+                }
+                const taskData = {
+                    userCode: userCode,
+                    summary: summary,
+                    details: details,
+                    configurationCode: configurationCode || "" 
+                };
+
+                if (uploadedFileInfos.length > 0) {
+                    taskData.attachedFiles = uploadedFileInfos; 
+                    console.log("Данные для создания задачи с файлами:", taskData);
+                }
+
+                const taskCreateResponse = await fetch('https://1c.c-r.kz/Registrator_test/hs/auth/tasks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(taskData)
+                });
+
+                if (!taskCreateResponse.ok) {
+                    let errorMsg = `Ошибка создания задачи: ${taskCreateResponse.status}`;
+                    try { 
+                        const errorData = await taskCreateResponse.json(); 
+                        errorMsg = errorData.message || errorMsg; 
+                    } catch (e) { /* не JSON */ }
+                    throw new Error(errorMsg);
+                }
+
+                const taskResult = await taskCreateResponse.json();
+
+                if (taskResult.success) {
+                    if(formMessageDiv) { 
+                        formMessageDiv.textContent = `Задача №${taskResult.taskNumber} успешно создана! Перенаправление...`;
+                        formMessageDiv.classList.remove('error'); // Убираем класс ошибки, если он был
+                        formMessageDiv.classList.add('success');
+                        formMessageDiv.style.display = 'block';
+                    }
+                    // Не сбрасываем форму и файлы здесь, если будет редирект
+                    // currentFilesForUpload = []; 
+                    // updateFilesDisplayAndInput();
+                    // if(createTaskForm) createTaskForm.reset(); 
+                    
+                    if (initialScreenshotFilePath && window.electronAPI && typeof window.electronAPI.deleteFile === 'function') {
+                        console.log("Задача создана, удаляем временный скриншот:", initialScreenshotFilePath);
+                        window.electronAPI.deleteFile(initialScreenshotFilePath);
+                        initialScreenshotFilePath = null; 
+                    }
+                    
+                    // Оставляем оверлей видимым до редиректа, чтобы пользователь видел сообщение
+                    // Редирект скроет оверлей автоматически при переходе на новую страницу
+                    setTimeout(() => { 
+                        window.location.href = 'tasks.html'; 
+                    }, 1500); // Небольшая задержка, чтобы пользователь успел увидеть сообщение на оверлее
+
+                } else {
+                    throw new Error(taskResult.message || 'Неизвестная ошибка при создании задачи.');
+                }
+
+            } catch (error) {
+                 console.error('Ошибка при создании задачи:', error);
+                 if(formMessageDiv) {
+                     formMessageDiv.textContent = 'Ошибка: ' + error.message;
+                     formMessageDiv.classList.remove('success'); // Убираем класс успеха
+                     formMessageDiv.classList.add('error');
+                     formMessageDiv.style.display = 'block';
+                 }
+                 if (loadingOverlay) { // Скрываем оверлей при ошибке
+                    loadingOverlay.style.display = 'none';
+                 }
+                 if(submitButton) { // Включаем кнопку обратно только при ошибке
+                    submitButton.disabled = false;
+                 }
+            } 
+            // Блок finally не нужен, если мы управляем кнопкой и оверлеем внутри try/catch
+            // и при успехе делаем редирект
+        });
+    }
+</script>
+</body>
+</html>
