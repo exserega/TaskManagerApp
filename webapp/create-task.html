@@ -60,9 +60,9 @@
 <body>
 
 <script>
-    let initialScreenshotFilePath = null;
-    let initialScreenshotFileName = null; // Для отслеживания, прикреплен ли еще исходный скриншот
-    let currentFilesForUpload = [];
+    let initialScreenshotFilePath = null; 
+    let initialScreenshotFileName = null; // Для отслеживания, является ли файл в превью исходным авто-скриншотом
+    let currentFilesForUpload = []; 
     const MAX_FILES = 3;
 
     function escapeHTML(str) {
@@ -72,39 +72,41 @@
         return div.innerHTML;
     }
 
-    // Генерируем уникальный ID для файла, чтобы связать его с превью
     function getFileTempId(file) {
-        return `${file.name}_${file.lastModified}_${file.size}`;
+        // Генерируем более надежный временный ID, так как lastModified может быть не всегда уникальным или доступным
+        return `${file.name}_${file.size}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     }
 
     function addPreviewElement(file, dataUrl) {
         const previewsContainer = document.getElementById('imagePreviewsContainer');
-        if (!previewsContainer) return;
-
+        if (!previewsContainer) {
+            console.error("[addPreviewElement] Контейнер #imagePreviewsContainer не найден.");
+            return;
+        }
         console.log(`[addPreviewElement] Создание превью для: ${file.name} (ID: ${file.fileTempId})`);
 
         const wrapper = document.createElement('div');
         wrapper.className = 'img-preview-wrapper';
-        wrapper.dataset.fileTempId = file.fileTempId; // Связываем превью с файлом
+        wrapper.dataset.fileTempId = file.fileTempId; 
 
         const img = document.createElement('img');
         img.src = dataUrl;
         img.alt = `Предпросмотр ${escapeHTML(file.name)}`;
         
         const removeBtn = document.createElement('button');
-        removeBtn.type = 'button';
+        removeBtn.type = 'button'; 
         removeBtn.className = 'remove-preview-btn';
         removeBtn.innerHTML = '&times;';
         removeBtn.title = 'Удалить этот файл';
         removeBtn.onclick = function() {
-            console.log(`[removePreviewBtn.onclick] Попытка удаления файла по ID превью: ${file.fileTempId}`);
+            console.log(`[removePreviewBtn.onclick] Клик для удаления файла по ID превью: ${file.fileTempId}`);
             const fileIndexToRemove = currentFilesForUpload.findIndex(f => f.fileTempId === file.fileTempId);
             if (fileIndexToRemove !== -1) {
                 removeFileFromUploadList(fileIndexToRemove);
             } else {
-                console.warn(`[removePreviewBtn.onclick] Файл с tempId ${file.fileTempId} не найден в currentFilesForUpload для удаления через превью.`);
-                wrapper.remove();
-                 updateFilesDisplayAndInput(); 
+                console.warn(`[removePreviewBtn.onclick] Файл с tempId ${file.fileTempId} не найден в currentFilesForUpload для удаления через превью. Удаляем только DOM элемент превью.`);
+                this.closest('.img-preview-wrapper').remove(); // this здесь - это кнопка, ее родитель - wrapper
+                updateFilesDisplayAndInput(); // Обновляем текстовый список и состояние UI
             }
         };
 
@@ -120,11 +122,14 @@
             console.warn(`[addFileToUploadList] Лимит ${MAX_FILES} файлов достигнут.`);
             return false;
         }
-        const newFileTempId = getFileTempId(file);
-        const isDuplicate = currentFilesForUpload.some(existingFile => getFileTempId(existingFile) === newFileTempId);
+        
+        const newFileTempId = getFileTempId(file); // Генерируем ID до проверки на дубликат
+        const isDuplicate = currentFilesForUpload.some(existingFile => 
+            existingFile.name.toLowerCase() === file.name.toLowerCase() && existingFile.size === file.size
+        );
         
         if (isDuplicate) {
-            alert(`Файл с именем "${escapeHTML(file.name)}" (и таким же размером/датой) уже добавлен.`);
+            alert(`Файл с именем "${escapeHTML(file.name)}" уже добавлен.`);
             console.warn(`[addFileToUploadList] Дубликат файла "${file.name}" не добавлен.`);
             return false; 
         }
@@ -136,7 +141,7 @@
         if (file.type.startsWith('image/')) {
             const reader = new FileReader();
             reader.onloadend = function() {
-                addPreviewElement(file, reader.result);
+                addPreviewElement(file, reader.result); 
             }
             reader.onerror = function() {
                 console.error("Ошибка чтения файла для предпросмотра:", file.name);
@@ -160,18 +165,18 @@
                     console.log(`[removeFileFromUploadList] Удаление элемента превью для: ${removedFile.name}`);
                     previewWrapperToRemove.remove();
                 } else {
-                     console.warn(`[removeFileFromUploadList] Элемент превью для ${removedFile.name} (ID: ${removedFile.fileTempId}) не найден для удаления.`);
+                     console.warn(`[removeFileFromUploadList] Элемент превью для ${removedFile.name} (ID: ${removedFile.fileTempId}) не найден для удаления в DOM.`);
                 }
             }
             
-            if (initialScreenshotFilePath && removedFile.name === path.basename(initialScreenshotFilePath)) { 
+            if (initialScreenshotFilePath && removedFile.name === initialScreenshotFileName) { 
                  console.log("Удален исходный авто-скриншот из списка:", removedFile.name);
                  if (window.electronAPI && typeof window.electronAPI.deleteFile === 'function') {
                     console.log("Удаляем временный файл авто-скриншота (убран из списка до отправки):", initialScreenshotFilePath);
                     window.electronAPI.deleteFile(initialScreenshotFilePath);
                  }
                  initialScreenshotFilePath = null;
-                 initialScreenshotFileName = null; // Добавил сброс
+                 initialScreenshotFileName = null; 
             }
             updateFilesDisplayAndInput(); 
         } else {
@@ -180,6 +185,7 @@
     }
 
     function updateFilesDisplayAndInput() {
+        console.log('[updateFilesDisplayAndInput] Начало. Файлов в currentFilesForUpload:', currentFilesForUpload.length, JSON.stringify(currentFilesForUpload.map(f => f.name)));
         const fileNameDisplay = document.getElementById('fileNameDisplay');
         const dropZone = document.getElementById('dropZone'); 
         const dropZonePrompt = dropZone ? dropZone.querySelector('.drop-zone-prompt') : null; 
@@ -196,9 +202,13 @@
             dropZone.classList.remove('has-files', 'limit-reached');
             dropZone.style.cursor = 'pointer';
             fileNameDisplay.style.display = 'none'; 
-            // Если список файлов пуст, также очищаем контейнер превью
+            // Если список файлов пуст, убедимся, что контейнер превью тоже пуст
+            // (хотя удаление превью теперь в removeFileFromUploadList)
             const previewsContainer = document.getElementById('imagePreviewsContainer');
-            if (previewsContainer) previewsContainer.innerHTML = '';
+            if (previewsContainer && previewsContainer.children.length === 0) { // Проверяем, что он действительно пуст
+                 previewsContainer.innerHTML = ''; // На всякий случай, если вдруг что-то осталось
+            }
+            console.log('[updateFilesDisplayAndInput] Список файлов пуст, скрываем fileNameDisplay.');
         } else {
             const ul = document.createElement('ul');
             ul.className = 'file-list';
@@ -209,6 +219,7 @@
             });
             fileNameDisplay.appendChild(ul);
             fileNameDisplay.style.display = 'block';
+            console.log('[updateFilesDisplayAndInput] Создан новый текстовый список UL:', ul.innerHTML);
             
             if (currentFilesForUpload.length < MAX_FILES) {
                 const remaining = MAX_FILES - currentFilesForUpload.length;
@@ -233,6 +244,7 @@
         const dataTransfer = new DataTransfer();
         currentFilesForUpload.forEach(file => dataTransfer.items.add(file));
         if (taskFileInput) taskFileInput.files = dataTransfer.files;
+        console.log('[updateFilesDisplayAndInput] Конец.');
     }
 
     async function loadClientConfigurations(userCode) {
@@ -284,8 +296,8 @@
         if (!dropZone || !taskFileInput) return;
 
         dropZone.addEventListener('click', (e) => {
-            // Предотвращаем клик по input если кликнули на ссылку удаления внутри dropZone (хотя их там не должно быть)
-            if (e.target.classList.contains('remove-file-link') || (e.target.parentElement && e.target.parentElement.classList.contains('remove-file-link'))) {
+            if (e.target.classList.contains('remove-file-link') || (e.target.parentElement && e.target.parentElement.classList.contains('remove-file-link')) ||
+                e.target.classList.contains('remove-preview-btn') || (e.target.parentElement && e.target.parentElement.classList.contains('remove-preview-btn'))) {
                 return; 
             }
             if (currentFilesForUpload.length < MAX_FILES) {
@@ -295,15 +307,17 @@
 
         taskFileInput.addEventListener('change', () => {
             const filesFromDialog = Array.from(taskFileInput.files);
+            let filesActuallyAdded = 0;
             for (const file of filesFromDialog) {
-                if (addFileToUploadList(file)) { // addFileToUploadList теперь создает превью
-                    // нет необходимости вызывать updateFilesDisplayAndInput здесь для каждого файла,
-                    // так как addFileToUploadList уже делает это через создание превью, а текстовый список обновится в конце
-                } else {
-                    break; // Если лимит достигнут или дубликат
+                if (addFileToUploadList(file)) {
+                    filesActuallyAdded++;
                 }
+                if (currentFilesForUpload.length >= MAX_FILES) break;
             }
-            updateFilesDisplayAndInput(); // Обновляем текстовый список и состояние dropZone один раз
+            if (filesActuallyAdded > 0) {
+                updateFilesDisplayAndInput();
+            }
+            taskFileInput.value = ''; // Сбрасываем значение input, чтобы событие change срабатывало даже если выбран тот же файл
         });
 
         dropZone.addEventListener('dragenter', (e) => { e.preventDefault(); if (currentFilesForUpload.length < MAX_FILES) dropZone.classList.add('drag-over'); });
@@ -353,8 +367,8 @@
                     const extension = pastedImageFile.type.split('/')[1] || 'png';
                     const fileName = `clipboard-${timestamp}.${extension}`;
                     const fileToAdd = new File([pastedImageFile], fileName, {type: pastedImageFile.type});
-                    if (addFileToUploadList(fileToAdd)) { // addFileToUploadList создаст превью
-                        updateFilesDisplayAndInput(); // Обновит текстовый список
+                    if (addFileToUploadList(fileToAdd)) { 
+                        updateFilesDisplayAndInput(); 
                         if (dropZone) { 
                             dropZone.classList.add('drag-over'); 
                             setTimeout(() => { dropZone.classList.remove('drag-over'); }, 200);
@@ -366,12 +380,12 @@
     }
 
     async function dataURLtoFile(dataurl, filename) {
-        if (!dataurl) return null;
+        if (!dataurl) { console.error("dataURLtoFile: dataurl is null or undefined"); return null; }
         try {
             const arr = dataurl.split(',');
             if (arr.length < 2) { console.error("dataURLtoFile: Invalid dataURL format (no comma)"); return null; }
             const mimeMatch = arr[0].match(/:(.*?);/);
-            if (!mimeMatch || mimeMatch.length < 2) { console.error("dataURLtoFile: Could not extract MIME type"); return null; }
+            if (!mimeMatch || mimeMatch.length < 2) { console.error("dataURLtoFile: Could not extract MIME type from", arr[0]); return null; }
             const mime = mimeMatch[1];
             const bstr = atob(arr[1]); 
             let n = bstr.length;
@@ -379,7 +393,7 @@
             while(n--){ u8arr[n] = bstr.charCodeAt(n); }
             return new File([u8arr], filename, {type:mime});
         } catch (e) {
-            console.error("dataURLtoFile: Error converting data URL to File:", e);
+            console.error("dataURLtoFile: Error converting data URL to File:", e, "DataURL was:", dataurl.substring(0,100));
             return null;
         }
     }
@@ -394,7 +408,7 @@
         loadClientConfigurations(userCode); 
         setupDragAndDrop();
         setupPasteListener();
-        updateFilesDisplayAndInput(); // Первоначальное обновление UI для файлов
+        updateFilesDisplayAndInput(); 
 
         if (window.electronAPI && typeof window.electronAPI.getInitialScreenshotData === 'function') {
             console.log("Запрашиваем данные начального скриншота из preload...");
@@ -407,29 +421,26 @@
                     const screenshotFile = await dataURLtoFile(screenshotInfo.dataUrl, screenshotInfo.name);
                     
                     if (screenshotFile) {
-                        if (addFileToUploadList(screenshotFile)) { // Эта функция теперь должна создать и превью
+                        if (addFileToUploadList(screenshotFile)) { 
                             initialScreenshotFilePath = screenshotInfo.path; 
-                            // initialScreenshotFileName не нужен, если используем file.fileTempId для связи
+                            // initialScreenshotFileName не нужен, так как превью теперь для всех картинок
                             console.log("Скриншот успешно добавлен в список файлов. Путь для удаления:", initialScreenshotFilePath);
                         } else {
-                            console.warn("Не удалось добавить скриншот в список (возможно, дубликат или лимит).");
+                            console.warn("Не удалось добавить скриншот в список.");
                             if (screenshotInfo.path && window.electronAPI && typeof window.electronAPI.deleteFile === 'function') {
-                                console.log("Удаляем временный скриншот (не добавлен в список):", screenshotInfo.path);
                                 window.electronAPI.deleteFile(screenshotInfo.path);
                             }
                         }
                     } else { 
                         console.error("Не удалось создать File объект из dataUrl скриншота.");
                         if (screenshotInfo.path && window.electronAPI && typeof window.electronAPI.deleteFile === 'function') {
-                             console.log("Удаляем временный скриншот из-за ошибки конвертации dataUrl:", screenshotInfo.path);
                              window.electronAPI.deleteFile(screenshotInfo.path);
                         }
                     }
-                    updateFilesDisplayAndInput(); // Обновляем текстовый список после попытки добавления
+                    updateFilesDisplayAndInput(); // Обновляем текстовый список и состояние UI после попытки добавления
                 } else {
                     console.log("Данные скриншота из preload не получены или некорректны после ожидания.", screenshotInfo);
                     if (screenshotInfo && screenshotInfo.path && window.electronAPI && typeof window.electronAPI.deleteFile === 'function') {
-                         console.log("Данные скриншота null или неполные, но путь есть. Удаляем:", screenshotInfo.path);
                          window.electronAPI.deleteFile(screenshotInfo.path);
                     }
                 }
@@ -523,7 +534,8 @@
                     }
                     if(createTaskForm) createTaskForm.reset(); 
                     currentFilesForUpload = []; 
-                    document.getElementById('imagePreviewsContainer').innerHTML = ''; // Очищаем превью
+                    const previewsContainer = document.getElementById('imagePreviewsContainer');
+                    if(previewsContainer) previewsContainer.innerHTML = ''; 
                     updateFilesDisplayAndInput(); 
                     setTimeout(() => { window.location.href = 'tasks.html'; }, 1500); 
                 } else { throw new Error(taskResult.message || 'Неизвестная ошибка при создании задачи.'); }
