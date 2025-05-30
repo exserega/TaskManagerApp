@@ -663,6 +663,54 @@ position: relative;
 }
 
 
+.image-previews-container {
+    margin-top: 15px;
+    display: flex; /* Уже установлено инлайн, но можно и здесь */
+    flex-wrap: wrap;
+    gap: 10px; /* Пространство между миниатюрами */
+}
+
+.img-preview-wrapper {
+    position: relative; /* Для позиционирования кнопки удаления */
+    border: 1px solid #ddd;
+    padding: 5px;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+    display: flex; /* Для центрирования изображения, если оно меньше */
+    align-items: center;
+    justify-content: center;
+    width: 100px;  /* Фиксированный размер миниатюры */
+    height: 100px; /* Фиксированный размер миниатюры */
+}
+
+.img-preview-wrapper img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.remove-preview-btn { /* Кнопка удаления для каждой миниатюры */
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: rgba(200, 0, 0, 0.8);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    line-height: 20px; /* Выровнять крестик по центру */
+    text-align: center;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 0 5px rgba(0,0,0,0.3);
+}
+ .remove-preview-btn:hover {
+     background-color: rgba(255, 0, 0, 0.9);
+ }
+
+
 .drop-zone.has-files {
     /* Можно немного изменить стиль, когда файлы уже есть, но лимит не достигнут */
     /* Например, менее яркая рамка или фон */

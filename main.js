@@ -1,4 +1,4 @@
-﻿// main.js
+// main.js
 const { app, BrowserWindow, Tray, Menu, desktopCapturer, screen, ipcMain, Notification, shell, dialog, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
