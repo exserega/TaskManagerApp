@@ -11,7 +11,13 @@
     
     <link rel="stylesheet" href="styles.css">
 </head>
-<body class="create-task-page"> 
+<body>
+<div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner-container">
+            <i class="fas fa-spinner fa-spin fa-3x"></i> <p>Создание задачи...</p>
+        </div>
+    </div>
+    <div class="container create-task-page">
     <div class="container">
         <h1>Создание новой задачи</h1>
         <form id="createTaskForm">
@@ -340,12 +346,14 @@
     };
 
 
-    const createTaskForm = document.getElementById('createTaskForm');
+  const createTaskForm = document.getElementById('createTaskForm');
     if (createTaskForm) {
         createTaskForm.addEventListener('submit', async function(event) {
             event.preventDefault(); 
 
             const formMessageDiv = document.getElementById('formMessage');
+            const loadingOverlay = document.getElementById('loadingOverlay'); // Получаем элемент экрана загрузки
+
             if(formMessageDiv) {
                 formMessageDiv.style.display = 'none';
                 formMessageDiv.className = 'message'; 
@@ -356,11 +364,11 @@
             const detailsInput = document.getElementById('details');
             const configurationSelect = document.getElementById('configuration');
 
-            const summary = summaryInput ? summaryInput.value : '';
-            const details = detailsInput ? detailsInput.value : '';
+            const summary = summaryInput ? summaryInput.value.trim() : '';
+            const details = detailsInput ? detailsInput.value.trim() : ''; // Убедимся, что получаем значение и для details
             const configurationCode = configurationSelect ? configurationSelect.value : '';
             
-            if (!summary.trim()) {
+            if (!summary) { // Проверка, что summary не пустое
                 if (formMessageDiv) {
                     formMessageDiv.textContent = 'Пожалуйста, укажите тему задачи.';
                     formMessageDiv.classList.add('error');
@@ -372,16 +380,30 @@
             const submitButton = this.querySelector('button[type="submit"]');
             if(submitButton) {
                 submitButton.disabled = true;
-                submitButton.textContent = 'Обработка...';
+                // Текст на кнопке можно не менять, так как будет оверлей
+            }
+
+            // Показываем экран загрузки
+            if (loadingOverlay) {
+                const loadingTextEl = loadingOverlay.querySelector('p');
+                if (loadingTextEl) loadingTextEl.textContent = 'Подготовка данных...';
+                loadingOverlay.style.display = 'flex';
             }
 
             let uploadedFileInfos = [];
 
             try {
                 if (currentFilesForUpload.length > 0) {
+                    if (loadingOverlay) {
+                        const loadingTextEl = loadingOverlay.querySelector('p');
+                        if (loadingTextEl) loadingTextEl.textContent = 'Загрузка файлов...';
+                    }
                     for (let i = 0; i < currentFilesForUpload.length; i++) {
                         const fileToUpload = currentFilesForUpload[i];
-                        if(submitButton) submitButton.textContent = `Загрузка файла ${i + 1} из ${currentFilesForUpload.length}...`;
+                        if (loadingOverlay) {
+                            const loadingTextEl = loadingOverlay.querySelector('p');
+                            if (loadingTextEl) loadingTextEl.textContent = `Загрузка файла ${i + 1} из ${currentFilesForUpload.length}...`;
+                        }
                         
                         const fileUploadResponse = await fetch('https://1c.c-r.kz/Registrator_test/hs/auth/files/upload', {
                             method: 'POST',
@@ -391,7 +413,10 @@
 
                         if (!fileUploadResponse.ok) {
                             let errorMsg = `Ошибка загрузки файла "${escapeHTML(fileToUpload.name)}": ${fileUploadResponse.status}`;
-                            try { const errorData = await fileUploadResponse.json(); errorMsg = errorData.message || errorMsg; } catch (e) { /* не JSON */ }
+                            try { 
+                                const errorData = await fileUploadResponse.json(); 
+                                errorMsg = errorData.message || errorMsg; 
+                            } catch (e) { /* не JSON */ }
                             throw new Error(errorMsg);
                         }
 
@@ -408,7 +433,10 @@
                     }
                 }
 
-                if(submitButton) submitButton.textContent = 'Создание задачи...';
+                if (loadingOverlay) {
+                    const loadingTextEl = loadingOverlay.querySelector('p');
+                    if (loadingTextEl) loadingTextEl.textContent = 'Создание задачи...';
+                }
                 const taskData = {
                     userCode: userCode,
                     summary: summary,
@@ -429,48 +457,60 @@
 
                 if (!taskCreateResponse.ok) {
                     let errorMsg = `Ошибка создания задачи: ${taskCreateResponse.status}`;
-                    try { const errorData = await taskCreateResponse.json(); errorMsg = errorData.message || errorMsg; } catch (e) { /* не JSON */ }
+                    try { 
+                        const errorData = await taskCreateResponse.json(); 
+                        errorMsg = errorData.message || errorMsg; 
+                    } catch (e) { /* не JSON */ }
                     throw new Error(errorMsg);
                 }
 
                 const taskResult = await taskCreateResponse.json();
 
                 if (taskResult.success) {
-                    if(formMessageDiv) {
-                        formMessageDiv.textContent = `Задача №${taskResult.taskNumber} успешно создана!`;
+                    if(formMessageDiv) { 
+                        formMessageDiv.textContent = `Задача №${taskResult.taskNumber} успешно создана! Перенаправление...`;
+                        formMessageDiv.classList.remove('error'); // Убираем класс ошибки, если он был
                         formMessageDiv.classList.add('success');
+                        formMessageDiv.style.display = 'block';
                     }
-                    if(createTaskForm) createTaskForm.reset(); 
+                    // Не сбрасываем форму и файлы здесь, если будет редирект
+                    // currentFilesForUpload = []; 
+                    // updateFilesDisplayAndInput();
+                    // if(createTaskForm) createTaskForm.reset(); 
                     
-                    currentFilesForUpload = []; 
-                    updateFilesDisplayAndInput();
-
-                    // ***** НАЧАЛО: Удаление временного скриншота после успешного создания задачи *****
                     if (initialScreenshotFilePath && window.electronAPI && typeof window.electronAPI.deleteFile === 'function') {
                         console.log("Задача создана, удаляем временный скриншот:", initialScreenshotFilePath);
                         window.electronAPI.deleteFile(initialScreenshotFilePath);
-                        initialScreenshotFilePath = null; // Сбрасываем путь, чтобы не удалить его снова
+                        initialScreenshotFilePath = null; 
                     }
-                    // ***** КОНЕЦ: Удаление временного скриншота *****
+                    
+                    // Оставляем оверлей видимым до редиректа, чтобы пользователь видел сообщение
+                    // Редирект скроет оверлей автоматически при переходе на новую страницу
+                    setTimeout(() => { 
+                        window.location.href = 'tasks.html'; 
+                    }, 1500); // Небольшая задержка, чтобы пользователь успел увидеть сообщение на оверлее
 
-                    setTimeout(() => { window.location.href = 'tasks.html'; }, 2500);
                 } else {
                     throw new Error(taskResult.message || 'Неизвестная ошибка при создании задачи.');
                 }
 
             } catch (error) {
-                console.error('Ошибка при создании задачи с файлом(ами):', error);
-                if(formMessageDiv) {
-                    formMessageDiv.textContent = 'Ошибка: ' + error.message;
-                    formMessageDiv.classList.add('error');
-                }
-            } finally {
-                if(formMessageDiv) formMessageDiv.style.display = 'block';
-                if(submitButton) {
+                 console.error('Ошибка при создании задачи:', error);
+                 if(formMessageDiv) {
+                     formMessageDiv.textContent = 'Ошибка: ' + error.message;
+                     formMessageDiv.classList.remove('success'); // Убираем класс успеха
+                     formMessageDiv.classList.add('error');
+                     formMessageDiv.style.display = 'block';
+                 }
+                 if (loadingOverlay) { // Скрываем оверлей при ошибке
+                    loadingOverlay.style.display = 'none';
+                 }
+                 if(submitButton) { // Включаем кнопку обратно только при ошибке
                     submitButton.disabled = false;
-                    submitButton.textContent = 'Создать задачу';
-                }
-            }
+                 }
+            } 
+            // Блок finally не нужен, если мы управляем кнопкой и оверлеем внутри try/catch
+            // и при успехе делаем редирект
         });
     }
 </script>
