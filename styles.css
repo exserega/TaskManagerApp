@@ -228,6 +228,17 @@ position: relative;
     border: 1px solid transparent;
 }
 
+.task-action-button.cancel-task-btn {
+    background-color: #dc3545; /* Красный цвет для отмены */
+    color: white;
+    border-color: #dc3545;
+}
+
+.task-action-button.cancel-task-btn:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
 .approve-task-btn {
     background-color: #28a745; /* Зеленый */
     color: white;
@@ -699,34 +710,45 @@ body.task-details-page .container {
 /* --- Заголовок страницы Task Details --- */
 .task-details-page .page-header {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: row; /* Элементы в строку */
+    justify-content: space-between; /* Распределяем пространство между элементами */
+    align-items: center; /* Выравниваем элементы по центру вертикально */
     padding: 15px 25px;
     background-color: #ffffff; 
     border-bottom: 1px solid #e0e0e0;
     box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-    flex-shrink: 0; /* Заголовок не сжимается по высоте */
     position: relative; 
     z-index: 10; 
+    margin-bottom: 0; /* Убедитесь, что этот отступ вам подходит или настройте */
 }
 
 .task-details-page .page-header h1#task-title {
     font-size: 1.5em; 
     font-weight: 600; 
-    margin: 0;
     color: #37474f;
-    text-align: left; 
+    margin: 0; /* Убираем внешние отступы */
+    /* text-align: center; Это центрирует текст ВНУТРИ блока h1. */
+    /* Для центрирования самого блока h1 относительно .page-header, используем flex-свойства родителя */
+    flex-grow: 1; /* Позволяет заголовку занять все доступное центральное пространство */
+    text-align: center; /* Центрируем текст внутри этого растянутого блока */
 }
 
 .task-details-page a.back-link-header {
+    /* display: inline-block; убираем, так как flex-элемент уже ведет себя похоже */
+    /* margin-bottom: 10px; убираем, так как элементы теперь в строку */
+    /* Стили для самой ссылки (цвет, размер шрифта и т.д.) остаются из вашего предыдущего кода */
     font-size: 0.9em;
     color: #8e44ad; 
     text-decoration: none;
     font-weight: 600;
-    padding: 8px 12px;
+    padding: 10px 12px; /* Можно оставить или настроить */
     border-radius: 8px;
     transition: background-color 0.2s ease, color 0.2s ease;
+    display: inline-flex; /* Для выравнивания иконки внутри ссылки */
+    align-items: center; /* Для выравнивания иконки внутри ссылки */
+    flex-shrink: 0; /* Чтобы ссылка не сжималась, если заголовок длинный */
 }
+
 .task-details-page a.back-link-header:hover {
     background-color: #f0e9f7; 
     color: #7a3b97;
@@ -764,6 +786,92 @@ body.task-details-page .container {
     padding-bottom: 8px;
     border-bottom: 2px solid #f0e9f7; 
 }
+
+
+/* ----- Стили для истории статусов ----- */
+#taskStatusHistoryContainer {
+    margin-top: 15px; /* Отступ от предыдущего блока */
+    margin-bottom: 20px;
+}
+
+.status-history-list {
+    list-style: none;
+    padding-left: 0;
+    margin-top: 10px;
+}
+
+.status-history-item {
+    padding: 10px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.85em;
+    line-height: 1.5;
+    color: #555;
+}
+
+.status-history-item:last-child {
+    border-bottom: none;
+}
+
+.status-history-item .history-date {
+    display: block;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.status-history-item .history-status {
+    display: block;
+    margin-bottom: 2px;
+}
+
+.status-history-item .history-status strong {
+    color: #007bff; /* Цвет для выделения нового статуса */
+}
+
+.status-history-item .history-author {
+    display: block;
+    font-style: italic;
+    color: #777;
+    font-size: 0.9em;
+    margin-bottom: 2px;
+}
+
+.status-history-item .history-old-status {
+    display: block;
+    color: #999;
+    font-size: 0.9em;
+}
+
+#taskStatusHistoryContainer .error-message-placeholder {
+    font-size: 0.9em;
+    color: #c53030;
+    padding: 10px;
+    background-color: #fff5f5;
+    border: 1px solid #f7d9d9;
+    border-radius: 4px;
+}
+
+.status-history-item.hidden-history-entry {
+    display: none; /* Скрываем элементы по умолчанию */
+}
+
+.toggle-history-button {
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.85em;
+    margin-top: 10px;
+    display: inline-block; /* Чтобы margin-top сработал */
+    transition: background-color 0.2s ease;
+}
+
+.toggle-history-button:hover {
+    background-color: #e0e0e0;
+}
+
+
 
 .detail-item {
     margin-bottom: 14px; 
@@ -1015,6 +1123,36 @@ body.task-details-page .container {
 .selected-file-info .remove-file-button:hover {
     color: #e53935; 
 }
+
+
+/* ----- Стили для экрана загрузки ----- */
+.loading-overlay {
+    position: fixed; /* Или absolute, если родитель .container имеет position: relative и вы хотите перекрыть только его */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.85); /* Полупрозрачный белый фон */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000; /* Должен быть выше всего остального контента */
+    flex-direction: column; /* Чтобы текст был под спиннером */
+}
+
+.loading-spinner-container i.fa-spinner {
+    color: #8e44ad; /* Цвет спиннера, подберите под ваш дизайн */
+    /* fa-3x делает иконку в 3 раза больше, можно изменить */
+}
+
+.loading-spinner-container p {
+    margin-top: 15px;
+    font-size: 1.1em;
+    color: #333;
+    font-weight: 600;
+}
+
+
 
 /* --- Медиа-запрос для десктопной версии (двухколоночный макет) --- */
 @media (min-width: 992px) { 
