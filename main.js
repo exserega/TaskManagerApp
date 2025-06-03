@@ -66,7 +66,7 @@ function createWindow () {
   logToFile(`Loading main window content from: ${mainHtmlPath}`);
   mainWindow.loadFile(mainHtmlPath);
 
-  mainWindow.webContents.openDevTools();
+ // mainWindow.webContents.openDevTools();
 
   mainWindow.on('close', (event) => {
     logToFile(`Main window 'close' event. appIsQuitting: ${appIsQuitting}`);
