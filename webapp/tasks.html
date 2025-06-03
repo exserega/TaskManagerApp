@@ -37,23 +37,30 @@
         </div>
         <div id="noTasksMessage" style="display: none;">У вас пока нет задач.</div>
 
+
+<div id="customAlertOverlay" class="custom-alert-overlay" style="display: none;">
+    <div class="custom-alert-box">
+        <p id="customAlertMessage"></p>
+        <button id="customAlertOkButton">OK</button>
+    </div>
+</div>
+
+
     <div id="reworkCommentModal" class="modal-overlay" style="display: none;">
         <div class="modal-content">
             <h3>Отправка задачи на доработку</h3>
             <p>Пожалуйста, укажите причину отправки задачи на доработку. Этот комментарий будет добавлен в чат по задаче.</p>
-            <textarea id="reworkCommentTextarea" class="modal-comment-textarea" placeholder="Введите ваш комментарий..." rows="4"></textarea>
+            <textarea id="reworkCommentTextarea" class="modal-comment-textarea" ...></textarea>
 
-            <div class="form-group" style="margin-top: 15px; margin-bottom: 10px;">
-                <label for="reworkFileTaskPageInput">Прикрепить файл (1 шт.)</label>
-                <div id="dropZoneReworkTaskPage" class="drop-zone" style="padding: 15px 10px; min-height: 50px;">
-                    <span class="drop-zone-prompt" style="font-size: 0.9em;">Перетащите файл сюда или <u>кликните для выбора</u></span>
-                    <input type="file" id="reworkFileTaskPageInput" class="drop-zone-input" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar">
-                </div>
-                <div id="fileNameDisplayReworkTaskPage" class="file-name-display" style="margin-top: 5px; font-size: 0.85em;">
-                    </div>
-                <div id="imagePreviewReworkTaskPage" class="image-previews-container" style="margin-top: 10px; display: flex; justify-content: center; max-height: 80px;">
-                    </div>
-            </div>
+<div class="form-group" ...>
+    <label for="reworkFileTaskPageInput">Прикрепить файл (1 шт.)</label>
+    <div id="dropZoneReworkTaskPage" class="drop-zone" ...> 
+        <span class="drop-zone-prompt" ...>Перетащите файл сюда или <u>кликните для выбора</u></span>
+        <input type="file" id="ReworkTaskPageInput" class="drop-zone-input" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar">
+    <div id="fileNameDisplayReworkTaskPage" class="file-name-display" ...> </div>
+    <div id="imagePreviewReworkTaskPage" class="image-previews-container" ...> </div>
+</div>
+
             <div class="modal-actions">
                 <button id="submitReworkCommentBtn" class="button-primary">Отправить</button>
                 <button id="cancelReworkCommentBtn" class="button-secondary">Отмена</button>
@@ -63,21 +70,19 @@
     </div> 
 	<script>
     let tasksUpdateIntervalId = null;
-    const TASKS_UPDATE_INTERVAL = 20000; 
-    let currentStatusFilter = 'all'; 
-    const INITIAL_COMPLETED_LIMIT = 10; 
+    const TASKS_UPDATE_INTERVAL = 20000;
+    let currentStatusFilter = 'all';
+    const INITIAL_COMPLETED_LIMIT = 10;
 
     let loadMoreCompletedContainerDiv, loadAllCompletedButton;
     let currentReworkFileForModal = null;
-    // Ваша функция escapeHTML
+
     function escapeHTML(str) {
         if (typeof str !== 'string') return '';
         const div = document.createElement('div');
         div.appendChild(document.createTextNode(str));
         return div.innerHTML;
     }
-	
-
 
      window.onload = function() {
         const userName = localStorage.getItem('userName');
@@ -91,7 +96,7 @@
 
         if (!userCode) {
             if (tasksUpdateIntervalId) clearInterval(tasksUpdateIntervalId);
-            window.location.href = 'index.html'; 
+            window.location.href = 'index.html';
             return;
         }
         
@@ -111,13 +116,11 @@
             taskListContainer.addEventListener('click', handleTaskActionButtons);
         }
 
-        // ***** НАЧАЛО: Логика для восстановления фильтра *****
         const savedFilter = localStorage.getItem('lastActiveTaskFilter');
         if (savedFilter) {
             currentStatusFilter = savedFilter;
-            localStorage.removeItem('lastActiveTaskFilter'); // Удаляем после использования
+            localStorage.removeItem('lastActiveTaskFilter'); 
 
-            // Устанавливаем активное состояние для кнопки фильтра
             document.querySelectorAll('.filter-button').forEach(btn => {
                 btn.classList.remove('active');
                 if (btn.dataset.filter === currentStatusFilter) {
@@ -125,8 +128,6 @@
                 }
             });
         } else {
-            // Если сохраненного фильтра нет, устанавливаем "Все активные" по умолчанию
-            // и обновляем кнопку (на случай, если она не была активна)
             currentStatusFilter = 'all';
              document.querySelectorAll('.filter-button').forEach(btn => {
                 btn.classList.remove('active');
@@ -135,18 +136,17 @@
                 }
             });
         }
-        // ***** КОНЕЦ: Логика для восстановления фильтра *****
         
-        loadTasks(userCode, false, currentStatusFilter, false); 
-        setupFilterButtons(userCode); // setupFilterButtons должен учитывать currentStatusFilter при инициализации
+        loadTasks(userCode, false, currentStatusFilter, false);
+        setupFilterButtons(userCode); 
 
-        if (tasksUpdateIntervalId) clearInterval(tasksUpdateIntervalId); 
+        if (tasksUpdateIntervalId) clearInterval(tasksUpdateIntervalId);
         tasksUpdateIntervalId = setInterval(() => {
             let fetchAllForPolling = false;
             if (currentStatusFilter === 'completed' && loadMoreCompletedContainerDiv && loadMoreCompletedContainerDiv.style.display === 'none' && loadAllCompletedButton) {
                 fetchAllForPolling = true;
             }
-            loadTasks(userCode, true, currentStatusFilter, fetchAllForPolling); 
+            loadTasks(userCode, true, currentStatusFilter, fetchAllForPolling);
         }, TASKS_UPDATE_INTERVAL);
     };
 
@@ -169,17 +169,17 @@
                 filterButtons.forEach(btn => btn.classList.remove('active'));
                 this.classList.add('active');
                 
-                currentStatusFilter = this.dataset.filter; 
-                this.classList.remove('has-new-items'); 
+                currentStatusFilter = this.dataset.filter;
+                this.classList.remove('has-new-items');
 
                 if (tasksUpdateIntervalId) clearInterval(tasksUpdateIntervalId);
                 
-                loadTasks(userCode, false, currentStatusFilter, false); 
+                loadTasks(userCode, false, currentStatusFilter, false);
                 
                 tasksUpdateIntervalId = setInterval(() => {
                     let fetchAllForPolling = false;
                     if (currentStatusFilter === 'completed' && loadMoreCompletedContainerDiv && loadMoreCompletedContainerDiv.style.display === 'none' && loadAllCompletedButton) {
-                        fetchAllForPolling = true; 
+                        fetchAllForPolling = true;
                     }
                     loadTasks(userCode, true, currentStatusFilter, fetchAllForPolling);
                 }, TASKS_UPDATE_INTERVAL);
@@ -188,29 +188,25 @@
     }
 
      async function loadTasks(userCode, isPollingUpdate = false, statusFilter = 'all', fetchAllCompleted = false) {
-        // Этот лог у вас уже есть, оставляем для отладки
-        console.log(`loadTasks вызван: statusFilter=${statusFilter}, fetchAllCompleted=${fetchAllCompleted}, isPollingUpdate=${isPollingUpdate}`); 
+        console.log(`loadTasks вызван: statusFilter=${statusFilter}, fetchAllCompleted=${fetchAllCompleted}, isPollingUpdate=${isPollingUpdate}`);
     
         const loadingMessageDiv = document.getElementById('loadingMessage');
         const errorMessageDiv = document.getElementById('errorMessage');
         const taskListContainer = document.getElementById('taskListContainer');
         const noTasksMessageDiv = document.getElementById('noTasksMessage');
-        // Переменные для кнопки пагинации, предполагаем, что они инициализированы в window.onload
-        // let loadMoreCompletedContainerDiv, loadAllCompletedButton; (они уже глобальные)
 
-        if (!isPollingUpdate) { 
+        if (!isPollingUpdate) {
             if (loadingMessageDiv) loadingMessageDiv.style.display = 'block';
             if (noTasksMessageDiv) noTasksMessageDiv.style.display = 'none';
-            if (taskListContainer) taskListContainer.innerHTML = ''; 
-            if (errorMessageDiv) errorMessageDiv.style.display = 'none'; 
+            if (taskListContainer) taskListContainer.innerHTML = '';
+            if (errorMessageDiv) errorMessageDiv.style.display = 'none';
         } else {
             if (errorMessageDiv) errorMessageDiv.style.display = 'none';
         }
         
-        // Управление видимостью кнопки "Загрузить все" в начале
-        if (loadMoreCompletedContainerDiv) { 
+        if (loadMoreCompletedContainerDiv) {
             if (!isPollingUpdate && !fetchAllCompleted && statusFilter === 'completed') {
-                // Видимость будет определена ответом сервера
+                // Visibility determined by server response
             } else if (statusFilter !== 'completed') {
                 loadMoreCompletedContainerDiv.style.display = 'none';
             }
@@ -248,42 +244,37 @@
                 try {
                     const errorData = await response.json();
                     if (errorData && errorData.message) { errorMsg += ` - ${errorData.message}`; }
-                } catch (e) { /* Не JSON */ }
-                if (!isPollingUpdate && errorMessageDiv) { 
+                } catch (e) { /* Not JSON */ }
+                if (!isPollingUpdate && errorMessageDiv) {
                     errorMessageDiv.textContent = errorMsg;
                     errorMessageDiv.style.display = 'block';
                 }
                 if (loadMoreCompletedContainerDiv) loadMoreCompletedContainerDiv.style.display = 'none';
-                return; 
+                return;
             }
 
             const result = await response.json();
-            // Этот лог у вас уже есть, оставляем для отладки
-            console.log('Ответ от сервера (taskslist):', JSON.stringify(result, null, 2)); 
+            console.log('Ответ от сервера (taskslist):', JSON.stringify(result, null, 2));
             
-            // Логи проверки переменных для кнопки пагинации, если вы их добавляли
-            // console.log('Проверка переменных для кнопки: loadMoreCompletedContainerDiv =', loadMoreCompletedContainerDiv);
-            // console.log('Проверка переменных для кнопки: loadAllCompletedButton =', loadAllCompletedButton);
 
             if (result && result.success) {
-                let hasAnyUnreadByEmployee = false; 
-                let firstUnreadTaskInfo = null;     
+                let hasAnyUnreadByEmployee = false;
+                let firstUnreadTaskInfo = null;
 
                 if (result.tasks && result.tasks.length > 0) {
                     if (noTasksMessageDiv) noTasksMessageDiv.style.display = 'none';
                     displayTasks(result.tasks);
 
-                    // ***** НАЧАЛО: Логика для запроса уведомления *****
                     for (const task of result.tasks) {
                         if (task.hasUnreadByEmployee) {
                             hasAnyUnreadByEmployee = true;
-                            if (!firstUnreadTaskInfo) { 
-                                firstUnreadTaskInfo = { 
-                                    summary: task.summary || 'Без темы', 
-                                    number: task.number || 'б/н' 
+                            if (!firstUnreadTaskInfo) {
+                                firstUnreadTaskInfo = {
+                                    summary: task.summary || 'Без темы',
+                                    number: task.number || 'б/н'
                                 };
                             }
-                            break; 
+                            break;
                         }
                     }
 
@@ -304,10 +295,9 @@
                             console.warn('electronApp API for notifications not available.');
                         }
                     }
-                    // ***** КОНЕЦ: Логика для запроса уведомления *****
 
                 } else {
-                    if (taskListContainer) taskListContainer.innerHTML = ''; 
+                    if (taskListContainer) taskListContainer.innerHTML = '';
                     if (noTasksMessageDiv) noTasksMessageDiv.style.display = 'block';
                 }
                 
@@ -317,25 +307,18 @@
                     updateFilterButtonIndicators({});
                 }
 
-                // Управление кнопкой пагинации "Загрузить все"
-                // console.log(`Логика кнопки: statusFilter='${statusFilter}', result.hasMoreCompleted=${result.hasMoreCompleted}, fetchAllCompleted=${fetchAllCompleted}`); // Этот лог у вас уже есть
-
                 if (loadMoreCompletedContainerDiv && loadAllCompletedButton) {
-                    // console.log('Элементы кнопки (контейнер и сама кнопка) найдены в DOM.'); // Этот лог у вас уже есть
                     if (statusFilter === 'completed') {
                         if (result.hasMoreCompleted === true && !fetchAllCompleted) {
-                            // console.log('ПОКАЗЫВАЕМ кнопку "Загрузить все". Условие (...) истинно.'); // Этот лог у вас уже есть
-                            loadMoreCompletedContainerDiv.style.display = 'flex'; 
+                            loadMoreCompletedContainerDiv.style.display = 'flex';
                         } else {
-                            // console.log('СКРЫВАЕМ кнопку "Загрузить все". Условие для показа не выполнено (...).'); // Этот лог у вас уже есть
                             loadMoreCompletedContainerDiv.style.display = 'none';
                         }
-                    } else { 
-                        // console.log('СКРЫВАЕМ кнопку "Загрузить все". Фильтр не "completed".'); // Этот лог у вас уже есть
+                    } else {
                         loadMoreCompletedContainerDiv.style.display = 'none';
                     }
                 } else {
-                    // console.error('ОШИБКА: Элементы для кнопки "Загрузить все" (...) НЕ НАЙДЕНЫ в DOM!'); // Этот лог у вас уже есть
+                    // console.error('ОШИБКА: Элементы для кнопки "Загрузить все" (...) НЕ НАЙДЕНЫ в DOM!');
                 }
 
             } else {
@@ -347,12 +330,12 @@
             }
         } catch (error) {
             if (!isPollingUpdate && loadingMessageDiv) { loadingMessageDiv.style.display = 'none'; }
-            if (!isPollingUpdate && errorMessageDiv) { 
+            if (!isPollingUpdate && errorMessageDiv) {
                 errorMessageDiv.textContent = 'Сетевая ошибка: ' + error.message;
                 errorMessageDiv.style.display = 'block';
             }
              if (loadMoreCompletedContainerDiv) loadMoreCompletedContainerDiv.style.display = 'none';
-            console.error('Ошибка в функции loadTasks:', error); // Добавил лог ошибки
+            console.error('Ошибка в функции loadTasks:', error);
         }
     }
 
@@ -361,7 +344,7 @@
         if (!taskListContainer) {
             return;
         }
-        taskListContainer.innerHTML = ''; 
+        taskListContainer.innerHTML = '';
 
         tasks.forEach(task => {
             const listItem = document.createElement('li');
@@ -371,29 +354,29 @@
                 listItem.classList.add('has-unread-messages');
             }
 
-            let originalStatusFromServer = String(task.status || '').trim(); 
+            let originalStatusFromServer = String(task.status || '').trim();
+            let normalizedStatusForComparison = originalStatusFromServer.toLowerCase().replace(/\s+/g, '');
             let displayStatusText = originalStatusFromServer || 'Статус не определен';
             
-            if (originalStatusFromServer.toLowerCase().replace(/\s+/g, '') === "требуетоценки") {
+            if (normalizedStatusForComparison === "требуетоценки") {
                 displayStatusText = 'Передано на оценку';
             }
             
             let statusClass = 'status-default';
-            const normalizedStatusOnCheck = "напроверке"; 
-            const normalizedStatusNew = "новая"; // Для сравнения со статусом "Новая"
+            const normalizedStatusOnCheck = "напроверке";
+            const normalizedStatusNew = "новая";
 
             if (originalStatusFromServer) {
                 const statusNormalizedForClass = originalStatusFromServer.toLowerCase().replace(/\s+/g, '-');
-                if (statusNormalizedForClass.includes(normalizedStatusNew.replace(/\s+/g, '-'))) statusClass = 'status-new'; // Используем нормализованное
+                if (statusNormalizedForClass.includes(normalizedStatusNew.replace(/\s+/g, '-'))) statusClass = 'status-new';
                 else if (statusNormalizedForClass.includes('в-работе')) statusClass = 'status-in-progress';
                 else if (statusNormalizedForClass.includes(normalizedStatusOnCheck.replace(/\s+/g, '-'))) statusClass = 'status-on-check';
                 else if (statusNormalizedForClass.includes('выполнена') || statusNormalizedForClass.includes('закрыта')) statusClass = 'status-completed';
                 else if (statusNormalizedForClass.includes('оценкасогласована') || statusNormalizedForClass.includes('оценка-согласована')) statusClass = 'status-согласование-оценки';
-                else if (originalStatusFromServer.toLowerCase().replace(/\s+/g, '') === "требуетоценки") { 
-                    statusClass = 'status-awaiting-assessment'; 
+                else if (normalizedStatusForComparison === "требуетоценки") {
+                    statusClass = 'status-awaiting-assessment';
                 }
-                // Добавим класс для отмененных задач, если такой статус будет отображаться
-                else if (statusNormalizedForClass.includes('отменена')) statusClass = 'status-cancelled'; 
+                else if (statusNormalizedForClass.includes('отменена')) statusClass = 'status-cancelled';
             }
             
             let formattedDate = task.date;
@@ -426,11 +409,9 @@
             taskMainInfoDiv.innerHTML = taskInfoHTML;
             listItem.appendChild(taskMainInfoDiv);
             
-            // Создаем контейнер для кнопок действий, если они нужны
             let actionsDiv = null;
 
-            // Кнопки для статуса "На проверке"
-            if (originalStatusFromServer.toLowerCase().replace(/\s+/g, '') === normalizedStatusOnCheck) {
+            if (normalizedStatusForComparison === normalizedStatusOnCheck) {
                 if (!actionsDiv) {
                     actionsDiv = document.createElement('div');
                     actionsDiv.className = 'task-actions';
@@ -441,19 +422,13 @@
                 `;
             }
 
-            // ***** НАЧАЛО: Добавление кнопки "Отменить задачу" для статуса "Новая" *****
-            // Убедитесь, что "Новая" - это точное строковое представление статуса с сервера
-            if (originalStatusFromServer === "Новая") { 
+            if (normalizedStatusForComparison === normalizedStatusNew) {
                 if (!actionsDiv) {
                     actionsDiv = document.createElement('div');
                     actionsDiv.className = 'task-actions';
                 }
-                // Добавляем кнопку отмены. Можно использовать += innerHTML, если actionsDiv уже содержит другие кнопки (хотя для "Новая" их не будет)
-                // Для чистоты, если это единственная кнопка, можно просто присвоить innerHTML.
-                // Если actionsDiv создается только здесь, то:
                 actionsDiv.innerHTML = `<button class="task-action-button cancel-task-btn" data-task-id="${task.id}">Отменить задачу</button>`;
             }
-            // ***** КОНЕЦ: Добавление кнопки "Отменить задачу" *****
             
             if (actionsDiv) {
                 listItem.appendChild(actionsDiv);
@@ -463,196 +438,259 @@
         });
     }
     
-    async function handleTaskActionButtons(event) {
-        const userCode = localStorage.getItem('userCode');
-        if (!userCode) {
-            alert("Пожалуйста, авторизуйтесь снова."); // Добавим сообщение
-            window.location.href = 'index.html'; // Перенаправляем, если нет userCode
+
+async function handleTaskActionButtons(event) {
+    const userCode = localStorage.getItem('userCode');
+    if (!userCode) {
+        alert("Пожалуйста, авторизуйтесь снова.");
+        window.location.href = 'index.html';
+        return;
+    }
+
+    const target = event.target;
+    const taskId = target.dataset.taskId;
+
+    const reworkModal = document.getElementById('reworkCommentModal');
+    const commentTextarea = document.getElementById('reworkCommentTextarea');
+    const submitReworkBtn = document.getElementById('submitReworkCommentBtn');
+    const cancelReworkBtn = document.getElementById('cancelReworkCommentBtn');
+
+    if (target.classList.contains('approve-task-btn')) {
+        if (!taskId) return;
+        if (!confirm("Вы уверены, что хотите подтвердить выполнение этой задачи?")) return;
+
+        target.disabled = true;
+        const originalButtonText = target.textContent;
+        target.textContent = 'Обработка...';
+
+        try {
+            const response = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/chat/${taskId}/approveCompletion`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const result = await response.json();
+            if (response.ok && result.success) {
+                alert(result.message || 'Задача успешно отмечена как выполненная!');
+                loadTasks(userCode, false, currentStatusFilter, false);
+            } else {
+                throw new Error(result.message || `Ошибка ${response.status}`);
+            }
+        } catch (error) {
+            console.error('Ошибка при подтверждении выполнения задачи:', error);
+            alert('Не удалось подтвердить выполнение задачи: ' + error.message);
+            if (target && target.parentNode) {
+                target.disabled = false;
+                target.textContent = originalButtonText;
+            }
+        }
+    }
+    else if (target.classList.contains('rework-task-btn')) {
+        if (!taskId || !reworkModal || !commentTextarea || !submitReworkBtn || !cancelReworkBtn) {
+            console.error("Не найдены элементы модального окна или taskId для доработки.");
             return;
         }
 
-        const target = event.target;
-        const taskId = target.dataset.taskId; 
+        commentTextarea.value = '';
+        reworkModal.style.display = 'flex';
+        setupReworkFileAttachment('ReworkTaskPage', 'reworkCommentTextarea');
+        commentTextarea.focus();
 
-        // Элементы модального окна (для "Отправить на доработку")
-        const reworkModal = document.getElementById('reworkCommentModal');
-        const commentTextarea = document.getElementById('reworkCommentTextarea');
-        const submitReworkBtn = document.getElementById('submitReworkCommentBtn');
-        const cancelReworkBtn = document.getElementById('cancelReworkCommentBtn');
+        const newSubmitBtn = submitReworkBtn.cloneNode(true);
+        submitReworkBtn.parentNode.replaceChild(newSubmitBtn, submitReworkBtn);
+        
+        const newCancelBtn = cancelReworkBtn.cloneNode(true);
+        cancelReworkBtn.parentNode.replaceChild(newCancelBtn, cancelReworkBtn);
 
-        // Обработка клика по кнопке "Задача выполнена"
-        if (target.classList.contains('approve-task-btn')) {
-            if (!taskId) return;
-            if (!confirm("Вы уверены, что хотите подтвердить выполнение этой задачи?")) return;
-
-            target.disabled = true;
-            const originalButtonText = target.textContent;
-            target.textContent = 'Обработка...';
-
-            try {
-                const response = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/chat/${taskId}/approveCompletion`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
+   newSubmitBtn.onclick = async () => { 
+            const comment = commentTextarea.value.trim();
+            if (comment === "") {
+                // alert("Комментарий не может быть пустым для отправки на доработку."); // Старый alert
+                showCustomAlert("Комментарий не может быть пустым для отправки на доработку.", () => {
+                    // Этот код выполнится после закрытия кастомного алерта
+                    if (commentTextarea) {
+                        if (commentTextarea.disabled) {
+                            commentTextarea.disabled = false;
+                        }
+                        commentTextarea.focus();
+                        console.log('CustomAlert closed. Attempted to focus textarea. Disabled:', commentTextarea.disabled);
+                        console.log('Active element:', document.activeElement);
+                    }
                 });
-                const result = await response.json();
-                if (response.ok && result.success) {
-                    alert(result.message || 'Задача успешно отмечена как выполненная!');
-                    loadTasks(userCode, false, currentStatusFilter, false); 
-                } else {
-                    throw new Error(result.message || `Ошибка ${response.status}`);
-                }
-            } catch (error) {
-                console.error('Ошибка при подтверждении выполнения задачи:', error);
-                alert('Не удалось подтвердить выполнение задачи: ' + error.message);
-                // Возвращаем кнопку в активное состояние при ошибке, только если она еще существует
-                if (target && target.parentNode) { 
-                    target.disabled = false; 
-                    target.textContent = originalButtonText;
-                }
-            }
-        }
-        // Обработка клика по кнопке "Отправить на доработку"
-        else if (target.classList.contains('rework-task-btn')) {
-            if (!taskId || !reworkModal || !commentTextarea || !submitReworkBtn || !cancelReworkBtn) {
-                console.error("Не найдены элементы модального окна или taskId для доработки.");
                 return;
             }
 
-            commentTextarea.value = ''; 
-            reworkModal.style.display = 'flex'; 
-			 setupReworkFileAttachment('ReworkTaskPage', 'reworkCommentTextarea'); 
-            commentTextarea.focus();
+            newSubmitBtn.disabled = true;
+            const originalSubmitText = newSubmitBtn.textContent;
+            newSubmitBtn.textContent = 'Подготовка...';
 
-            const newSubmitBtn = submitReworkBtn.cloneNode(true);
-            submitReworkBtn.parentNode.replaceChild(newSubmitBtn, submitReworkBtn);
-            
-            const newCancelBtn = cancelReworkBtn.cloneNode(true);
-            cancelReworkBtn.parentNode.replaceChild(newCancelBtn, cancelReworkBtn);
+            const originalPageReworkButton = document.querySelector(`.rework-task-btn[data-task-id="${taskId}"]`);
+            let originalReworkButtonText = '';
+            if (originalPageReworkButton) {
+                originalReworkButtonText = originalPageReworkButton.textContent;
+                originalPageReworkButton.disabled = true;
+                originalPageReworkButton.textContent = 'Обработка...';
+            }
 
-            newSubmitBtn.onclick = async () => {
-                const comment = commentTextarea.value.trim();
-                if (comment === "") {
-                    alert("Комментарий не может быть пустым для отправки на доработку.");
-                    commentTextarea.focus();
-                    return;
-                }
+            let response;
+            let result;
 
-                newSubmitBtn.onclick = async () => {
-                const comment = commentTextarea.value.trim(); // commentTextarea должно быть определено ранее в этой функции
-                if (comment === "") {
-                    alert("Комментарий не может быть пустым для отправки на доработку.");
-                    commentTextarea.focus();
-                    return;
-                }
+            try {
+                let attachedFileId = null;
+                let attachedFileName = null;
 
-                newSubmitBtn.disabled = true;
-                const originalSubmitText = newSubmitBtn.textContent;
-                newSubmitBtn.textContent = 'Подготовка...';
+                if (currentReworkFileForModal) { 
+                    newSubmitBtn.textContent = 'Загрузка файла...';
+                    console.log(`[ReworkSubmit tasks.html] Загрузка файла: ${currentReworkFileForModal.name}`);
 
-                const originalPageReworkButton = document.querySelector(`.rework-task-btn[data-task-id="${taskId}"]`);
-                let originalReworkButtonText = '';
-                if (originalPageReworkButton) {
-                    originalReworkButtonText = originalPageReworkButton.textContent;
-                    originalPageReworkButton.disabled = true;
-                    originalPageReworkButton.textContent = 'Обработка...';
-                }
-
-                try {
-                    let attachedFileId = null;
-                    let attachedFileName = null;
-
-                    if (currentReworkFileForModal) { // currentReworkFileForModal - файл, выбранный в модальном окне
-                        newSubmitBtn.textContent = 'Загрузка файла...';
-                        console.log(`[ReworkSubmit tasks.html] Загрузка файла: ${currentReworkFileForModal.name}`);
-
-                        const fileUploadResponse = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/chat/uploadfile`, {
-                            method: 'POST',
-                            body: currentReworkFileForModal,
-                            headers: {
-                                'X-File-Name': encodeURIComponent(currentReworkFileForModal.name)
-                            }
-                        });
-
-                        if (!fileUploadResponse.ok) {
-                            let errorMsg = `Ошибка загрузки файла (${currentReworkFileForModal.name}): ${fileUploadResponse.status}`;
-                            try { 
-                                const errorData = await fileUploadResponse.json(); 
-                                errorMsg = errorData.message || errorMsg; 
-                            } catch (e) { /* не JSON */ }
-                            throw new Error(errorMsg);
-                        }
-
-                        const fileResult = await fileUploadResponse.json();
-                        if (fileResult.success && fileResult.tempFileId) {
-                            attachedFileId = fileResult.tempFileId;
-                            attachedFileName = fileResult.fileName;
-                            console.log(`[ReworkSubmit tasks.html] Файл успешно загружен: tempFileId=${attachedFileId}, fileName=${attachedFileName}`);
-                        } else {
-                            throw new Error(fileResult.message || `Не удалось загрузить файл "${escapeHTML(currentReworkFileForModal.name)}".`);
-                        }
-                    }
-
-                    newSubmitBtn.textContent = 'Отправка на доработку...';
-                    
-                    const payload = { 
-                        userCode: userCode, // userCode должен быть доступен (из localStorage)
-                        comment: comment 
-                    };
-                    if (attachedFileId) {
-                        payload.attachedFileId = attachedFileId;
-                        payload.attachedFileName = attachedFileName;
-                    }
-
-                    console.log(`[ReworkSubmit tasks.html] Отправка запроса на доработку для задачи ${taskId} с payload:`, JSON.stringify(payload));
-                    const response = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/chat/${taskId}/requestRework`, {
+                    const fileUploadResponse = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/chat/uploadfile`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
+                        body: currentReworkFileForModal,
+                        headers: {
+                            'X-File-Name': encodeURIComponent(currentReworkFileForModal.name)
+                        }
                     });
 
-                    const result = await response.json().catch(() => ({ success: false, message: `Ошибка ответа сервера: ${response.status} ${response.statusText}` }));
+                    if (!fileUploadResponse.ok) {
+                        let errorMsg = `Ошибка загрузки файла (${currentReworkFileForModal.name}): ${fileUploadResponse.status}`;
+                        try {
+                            const errorData = await fileUploadResponse.json();
+                            errorMsg = errorData.message || errorMsg;
+                        } catch (e) { /* не JSON */ }
+                        throw new Error(errorMsg);
+                    }
 
-                    if (response.ok && result.success) {
-                        alert(result.message || 'Задача успешно отправлена на доработку!');
-                        
-                        commentTextarea.value = '';
-                        currentReworkFileForModal = null; 
-                        
-                        // Сброс UI файла в модальном окне tasks.html
-                        const fileInputToReset = document.getElementById('reworkFileTaskPageInput');
-                        const fileNameDisplayToReset = document.getElementById('fileNameDisplayReworkTaskPage');
-                        const imagePreviewToReset = document.getElementById('imagePreviewReworkTaskPage');
-                        if(fileInputToReset) fileInputToReset.value = '';
-                        if(fileNameDisplayToReset) { fileNameDisplayToReset.innerHTML = ''; fileNameDisplayToReset.style.display = 'none';}
-                        if(imagePreviewToReset) imagePreviewToReset.innerHTML = '';
-                        
-                        if(reworkModal) reworkModal.style.display = 'none'; // reworkModal должно быть определено ранее
-
-                        loadTasks(userCode, false, currentStatusFilter, false); // currentStatusFilter должен быть доступен
-
+                    const fileResultData = await fileUploadResponse.json();
+                    if (fileResultData.success && fileResultData.tempFileId) {
+                        attachedFileId = fileResultData.tempFileId;
+                        attachedFileName = fileResultData.fileName;
+                        console.log(`[ReworkSubmit tasks.html] Файл успешно загружен: tempFileId=${attachedFileId}, fileName=${attachedFileName}`);
                     } else {
-                        throw new Error(result.message || `Ошибка ${response.status} при отправке на доработку.`);
-                    }
-                } catch (error) {
-                    console.error('[ReworkSubmit tasks.html] Ошибка при отправке задачи на доработку:', error);
-                    alert('Не удалось отправить задачу на доработку: ' + error.message);
-                    if (originalPageReworkButton && originalPageReworkButton.parentNode) { 
-                        originalPageReworkButton.disabled = false; 
-                        originalPageReworkButton.textContent = originalReworkButtonText;
-                    }
-                } finally {
-                    newSubmitBtn.disabled = false;
-                    newSubmitBtn.textContent = originalSubmitText;
-                    // Не закрываем модальное окно при ошибке здесь, пользователь должен видеть ошибку
-                    // Закрытие происходит только при успехе
-                    if (reworkModal && reworkModal.style.display === 'flex' && !(response && response.ok && result && result.success)) {
-                        // Окно остается открытым при ошибке
-                    } else if (reworkModal) {
-                        reworkModal.style.display = 'none';
+                        throw new Error(fileResultData.message || `Не удалось загрузить файл "${escapeHTML(currentReworkFileForModal.name)}".`);
                     }
                 }
-            };
 
+                newSubmitBtn.textContent = 'Отправка на доработку...';
+                
+                const payload = {
+                    userCode: userCode,
+                    comment: comment
+                };
+                if (attachedFileId) {
+                    payload.attachedFileId = attachedFileId;
+                    payload.attachedFileName = attachedFileName;
+                }
+
+                console.log(`[ReworkSubmit tasks.html] Отправка запроса на доработку для задачи ${taskId} с payload:`, JSON.stringify(payload));
+                response = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/chat/${taskId}/requestRework`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                try {
+                   result = await response.json();
+                } catch (e) {
+                    result = { success: false, message: `Ошибка ответа сервера: ${response.status} ${response.statusText} (ответ не JSON)` };
+                }
+
+                if (response.ok && result.success) {
+                    alert(result.message || 'Задача успешно отправлена на доработку!');
+                    
+                    commentTextarea.value = '';
+                    currentReworkFileForModal = null;
+                    
+                    const fileInputToReset = document.getElementById('ReworkTaskPageInput'); // Corrected ID
+                    const fileNameDisplayToReset = document.getElementById('fileNameDisplayReworkTaskPage');
+                    const imagePreviewToReset = document.getElementById('imagePreviewReworkTaskPage');
+                    if(fileInputToReset) fileInputToReset.value = '';
+                    if(fileNameDisplayToReset) { fileNameDisplayToReset.innerHTML = ''; fileNameDisplayToReset.style.display = 'none';}
+                    if(imagePreviewToReset) imagePreviewToReset.innerHTML = '';
+                    
+                    if(reworkModal) reworkModal.style.display = 'none';
+
+                    loadTasks(userCode, false, currentStatusFilter, false); 
+
+                } else {
+                    throw new Error(result.message || `Ошибка ${response.status} при отправке на доработку.`);
+                }
+            } catch (error) {
+                console.error('[ReworkSubmit tasks.html] Ошибка при отправке задачи на доработку:', error);
+                alert('Не удалось отправить задачу на доработку: ' + error.message);
+                if (originalPageReworkButton && originalPageReworkButton.parentNode) {
+                    originalPageReworkButton.disabled = false;
+                    originalPageReworkButton.textContent = originalReworkButtonText;
+                }
+            } finally {
+                newSubmitBtn.disabled = false;
+                newSubmitBtn.textContent = originalSubmitText;
+                
+                const wasSuccessful = response && response.ok && result && result.success;
+                if (reworkModal && !wasSuccessful && reworkModal.style.display === 'flex') {
+                    // Keep modal open on error
+                } else if (reworkModal) {
+                    reworkModal.style.display = 'none';
+                }
+            }
+        }; 
+
+        newCancelBtn.onclick = () => {
+            if(reworkModal) reworkModal.style.display = 'none';
+            currentReworkFileForModal = null;
+            const fileInputToReset = document.getElementById('ReworkTaskPageInput'); // Corrected ID
+            const fileNameDisplayToReset = document.getElementById('fileNameDisplayReworkTaskPage');
+            const imagePreviewToReset = document.getElementById('imagePreviewReworkTaskPage');
+            if(fileInputToReset) fileInputToReset.value = '';
+            if(fileNameDisplayToReset) { fileNameDisplayToReset.innerHTML = ''; fileNameDisplayToReset.style.display = 'none';}
+            if(imagePreviewToReset) imagePreviewToReset.innerHTML = '';
+        };
+    } 
+    
+    else if (target.classList.contains('cancel-task-btn')) {
+        if (!taskId) return;
+
+        if (!confirm("Вы уверены, что хотите отменить эту задачу? Это действие изменит ее статус на 'Отменена'.")) return;
+
+        target.disabled = true;
+        const originalButtonText = target.textContent;
+        target.textContent = 'Отмена...';
+
+        try {
+            const response = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/task/${taskId}/cancelTask`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userCode: userCode })
+            });
+            const result = await response.json();
+            if (response.ok && result.success) {
+                alert(result.message || 'Задача успешно отменена!');
+                loadTasks(userCode, false, currentStatusFilter, false);
+            } else {
+                throw new Error(result.message || `Ошибка ${response.status}`);
+            }
+        } catch (error) {
+            console.error('Ошибка при отмене задачи:', error);
+            alert('Не удалось отменить задачу: ' + error.message);
+            if (target && target.parentNode) {
+                target.disabled = false;
+                target.textContent = originalButtonText;
+            }
+        }
+    }
+    else {
+        const clickableTaskArea = target.closest('.task-main-info');
+        if (clickableTaskArea) {
+             const taskIdClickable = clickableTaskArea.dataset.taskIdClickable;
+             const taskNumberClickable = clickableTaskArea.dataset.taskNumberClickable;
+             if (taskIdClickable && taskNumberClickable) {
+                localStorage.setItem('lastActiveTaskFilter', currentStatusFilter);
+                if (tasksUpdateIntervalId) clearInterval(tasksUpdateIntervalId);
+                localStorage.setItem('currentTaskId', taskIdClickable);
+                localStorage.setItem('currentTaskNumber', taskNumberClickable);
+                window.location.href = 'task-details.html';
+             }
+        }
+    }
+}
 
     function logout() {
         if (tasksUpdateIntervalId) clearInterval(tasksUpdateIntervalId);
@@ -668,60 +706,41 @@
         }
     });
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	/**
- * Настраивает UI для прикрепления одного файла в модальном окне доработки.
- * @param {string} modalElementsPrefix - Префикс ID для элементов этого модального окна 
- * (например, "ReworkTaskPage" или "ReworkDetailsPage")
- * @param {string} commentTextareaId - ID текстового поля для комментария, для обработки вставки.
- */
-	
-	
-	
 	function setupReworkFileAttachment(modalElementsPrefix, commentTextareaId) {
     const dropZone = document.getElementById(`dropZone${modalElementsPrefix}`);
     const fileInput = document.getElementById(`${modalElementsPrefix}Input`);
     const fileNameDisplay = document.getElementById(`fileNameDisplay${modalElementsPrefix}`);
     const imagePreviewContainer = document.getElementById(`imagePreview${modalElementsPrefix}`);
     const commentTextarea = document.getElementById(commentTextareaId);
+    const dropZonePrompt = dropZone ? dropZone.querySelector('.drop-zone-prompt') : null; // Corrected: get dropZonePrompt
 
-    if (!dropZone || !fileInput || !fileNameDisplay || !imagePreviewContainer || !commentTextarea) {
+    if (!dropZone || !fileInput || !fileNameDisplay || !imagePreviewContainer || !commentTextarea || !dropZonePrompt) { // Added dropZonePrompt check
         console.error(`[setupReworkFileAttachment] Ошибка: Не найдены все необходимые DOM-элементы для префикса: ${modalElementsPrefix}`);
         return;
     }
 
-    const resetFileInputUI = () => {
+     const resetFileInputUI = () => {
         currentReworkFileForModal = null;
-        if(fileInput) fileInput.value = ''; // Сбрасываем сам input file
+        if(fileInput) fileInput.value = '';
         if(fileNameDisplay) {
             fileNameDisplay.innerHTML = '';
             fileNameDisplay.style.display = 'none';
         }
         if(imagePreviewContainer) imagePreviewContainer.innerHTML = '';
-        console.log(`[${modalElementsPrefix}] UI выбора файла сброшен.`);
+        if(dropZonePrompt) {
+            dropZonePrompt.style.display = 'block';
+        }
+        console.log(`[${modalElementsPrefix}] UI выбора файла сброшен, подсказка должна быть видна.`);
     };
 
-    // Сбрасываем UI при каждой инициализации (например, при открытии модального окна)
     resetFileInputUI();
 
-    const processSelectedFile = (file) => {
+   const processSelectedFile = (file) => {
         if (!file) {
             resetFileInputUI();
             return;
         }
         
-        // Проверка на максимальный размер файла (например, 30МБ)
         const MAX_FILE_SIZE_MB = 30;
         const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
         if (file.size > MAX_FILE_SIZE_BYTES) {
@@ -731,10 +750,13 @@
         }
 
         currentReworkFileForModal = file;
-        
-        if(fileNameDisplay) {
+		
+         if(fileNameDisplay) {
             fileNameDisplay.innerHTML = `Выбран: <span>${escapeHTML(file.name)}</span> <a href="#" class="remove-rework-file" title="Удалить файл">&times;</a>`;
             fileNameDisplay.style.display = 'block';
+            if(dropZonePrompt) {
+                dropZonePrompt.style.display = 'none';
+            }
 
             const removeLink = fileNameDisplay.querySelector('.remove-rework-file');
             if (removeLink) {
@@ -745,13 +767,13 @@
             }
         }
 
-        if(imagePreviewContainer) imagePreviewContainer.innerHTML = ''; // Очищаем предыдущее превью
+        if(imagePreviewContainer) imagePreviewContainer.innerHTML = ''; 
         if (file.type.startsWith('image/')) {
             const reader = new FileReader();
             reader.onload = (e) => {
                 const img = document.createElement('img');
                 img.src = e.target.result;
-                img.style.maxWidth = '80px'; // Уменьшил для компактности в модалке
+                img.style.maxWidth = '80px';
                 img.style.maxHeight = '80px';
                 img.style.borderRadius = '4px';
                 img.style.objectFit = 'cover';
@@ -767,7 +789,6 @@
     };
 
     dropZone.onclick = (e) => {
-        // Предотвращаем клик по ссылке удаления от вызова диалога выбора файла
         if (e.target.classList.contains('remove-rework-file')) {
             return;
         }
@@ -778,9 +799,7 @@
         if (e.target.files && e.target.files.length > 0) {
             processSelectedFile(e.target.files[0]);
         } else {
-            // Если пользователь отменил выбор в диалоге, currentReworkFileForModal может остаться старым,
-            // но fileInput.files будет пуст. Лучше сбросить, если файлов нет.
-             if (!currentReworkFileForModal && fileInput.files.length === 0) { // только если и так не было файла
+             if (!currentReworkFileForModal && fileInput.files.length === 0) { 
                 resetFileInputUI();
              }
         }
@@ -797,13 +816,12 @@
         e.preventDefault();
         dropZone.classList.remove('drag-over');
         if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-            processSelectedFile(e.dataTransfer.files[0]); // Берем только первый файл
+            processSelectedFile(e.dataTransfer.files[0]); 
         }
     };
 
-    // Обработка вставки из буфера обмена (Ctrl+V) для поля комментария
     commentTextarea.onpaste = (event) => {
-        if (currentReworkFileForModal) { // Если файл уже выбран, не обрабатываем вставку как новый файл
+        if (currentReworkFileForModal) { 
             console.log(`[${modalElementsPrefix}] Вставка из буфера проигнорирована, т.к. файл уже выбран.`);
             return;
         }
@@ -817,7 +835,7 @@
             }
         }
         if (pastedImageFile) {
-            event.preventDefault(); // Предотвращаем вставку текста/пути к файлу в textarea
+            event.preventDefault(); 
             const timestamp = new Date().toISOString().replace(/[-:.]/g, '').substring(0,14);
             const extension = pastedImageFile.type.split('/')[1] || 'png';
             const fileName = `clipboard-${timestamp}.${extension}`;
@@ -828,6 +846,48 @@
     };
     console.log(`[setupReworkFileAttachment] Настройка UI для прикрепления файла для префикса ${modalElementsPrefix} завершена.`);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+function showCustomAlert(message, callback) {
+    const overlay = document.getElementById('customAlertOverlay');
+    const messageElement = document.getElementById('customAlertMessage');
+    const okButton = document.getElementById('customAlertOkButton');
+
+    if (!overlay || !messageElement || !okButton) {
+        console.error('Custom alert elements not found!');
+        // Fallback to system alert if custom elements are missing
+        alert(message);
+        if (callback) callback();
+        return;
+    }
+
+    messageElement.textContent = message;
+    overlay.style.display = 'flex';
+
+    // Удаляем старый обработчик, если он был, чтобы избежать многократных вызовов
+    const newOkButton = okButton.cloneNode(true);
+    okButton.parentNode.replaceChild(newOkButton, okButton);
+
+    newOkButton.onclick = function() {
+        overlay.style.display = 'none';
+        if (callback) {
+            callback(); // Выполняем callback после закрытия
+        }
+    };
+    newOkButton.focus(); // Устанавливаем фокус на кнопку "ОК" в кастомном алерте
+}
+
+
 </script>
 </body>
 </html>

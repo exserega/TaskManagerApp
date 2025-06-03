@@ -63,6 +63,16 @@
             <button id="chat-remove-selected-file" class="remove-file-button" title="Удалить файл">&times;</button>
         </div>
     </div>
+	
+	
+	<div id="customAlertOverlay" class="custom-alert-overlay" style="display: none;">
+    <div class="custom-alert-box">
+        <p id="customAlertMessage"></p>
+        <button id="customAlertOkButton">OK</button>
+    </div>
+</div>
+
+
 </div> <div id="reworkCommentModalDetails" class="modal-overlay" style="display: none;">
     <div class="modal-content">
         <h3>Отправка задачи на доработку</h3>
@@ -73,7 +83,7 @@
             <label for="reworkFileDetailsPageInput">Прикрепить файл (1 шт.)</label>
             <div id="dropZoneReworkDetailsPage" class="drop-zone" style="padding: 15px 10px; min-height: 50px;">
                 <span class="drop-zone-prompt" style="font-size: 0.9em;">Перетащите файл сюда или <u>кликните для выбора</u></span>
-                <input type="file" id="reworkFileDetailsPageInput" class="drop-zone-input" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar"> </div>
+<input type="file" id="ReworkDetailsPageInput" class="drop-zone-input" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar">
             <div id="fileNameDisplayReworkDetailsPage" class="file-name-display" style="margin-top: 5px; font-size: 0.85em;">
                 </div>
             <div id="imagePreviewReworkDetailsPage" class="image-previews-container" style="margin-top: 10px; display: flex; justify-content: center; max-height: 80px;">
@@ -170,14 +180,13 @@
         const taskDetailsContentElement = document.getElementById('task-details-content');
         const attachedFilesListElement = document.getElementById('attached-files'); 
         const taskTitleElement = document.getElementById('task-title');
-        const actionsPlaceholder = document.getElementById('taskDetailActionsPlaceholder'); // Используем ID плейсхолдера
+        const actionsPlaceholder = document.getElementById('taskDetailActionsPlaceholder');
 
         if (actionsPlaceholder) {
             actionsPlaceholder.innerHTML = ''; 
         } else {
              console.error("Плейсхолдер для кнопок действий 'taskDetailActionsPlaceholder' не найден!");
         }
-
 
         if (task.number && taskTitleElement) {
             taskTitleElement.textContent = `Задача №${escapeHTML(task.number)}`;
@@ -228,11 +237,8 @@
                     const downloadTaskFileUrl = `https://1c.c-r.kz/Registrator_test/hs/auth/taskfile/${task.id}/${file.file_guid}`;
                     const safeFileName = escapeHTML(file.name);
                     
-                    // Определяем, является ли файл изображением (простая проверка по расширению для клиентской стороны)
-                    // Бэкенд все равно решает окончательно через Content-Type
                     const isLikelyImage = /\.(jpe?g|png|gif|bmp|webp|svg)$/i.test(file.name);
-                    
-                    const targetAttribute = isLikelyImage ? 'target="_blank"' : ''; // Убираем target="_blank" для не-изображений
+                    const targetAttribute = isLikelyImage ? 'target="_blank"' : '';
 
                     filesHTML += `<li><a href="${downloadTaskFileUrl}" ${targetAttribute} class="task-file-link" title="Скачать файл ${safeFileName}"><i class="fas fa-paperclip"></i> ${safeFileName}</a></li>`;
                 });
@@ -244,10 +250,8 @@
                 if (toggleButton) toggleButton.style.display = 'none';
             }
         }
-
-        // Отображение кнопок действий, если статус "На проверке"
-        // Убедитесь, что строка "НаПроверке" точно соответствует тому, что приходит от сервера
-        if (rawTaskStatus === "НаПроверке" && actionsPlaceholder) { 
+        
+        if (rawTaskStatus.toLowerCase().replace(/\s+/g, '') === "напроверке" && actionsPlaceholder) { 
             actionsPlaceholder.innerHTML = `
                 <button class="task-action-button approve-task-btn-details" data-task-id="${task.id}">Задача выполнена</button>
                 <button class="task-action-button rework-task-btn-details" data-task-id="${task.id}">Отправить на доработку</button>
@@ -331,7 +335,6 @@
                 const noMessagesCurrentlyDisplayed = chatMessagesAreaElement.firstChild && chatMessagesAreaElement.firstChild.textContent === 'В этом чате пока нет сообщений.';
                 const spinnerCurrentlyDisplayed = chatMessagesAreaElement.firstChild && chatMessagesAreaElement.firstChild.querySelector && chatMessagesAreaElement.firstChild.querySelector('i.fa-spinner');
                 
-                // Обновляем чат только если есть новые сообщения или это первая загрузка/ошибка
                 if (!isBackgroundUpdate || result.messages.length !== currentClientMessageCount || noMessagesCurrentlyDisplayed || spinnerCurrentlyDisplayed) {
                     chatMessagesAreaElement.innerHTML = ''; 
                     if (result.messages.length === 0) {
@@ -341,14 +344,13 @@
                         chatMessagesAreaElement.appendChild(noMessagesDiv);
                     } else {
                         result.messages.forEach(message => displayChatMessage(message)); 
-                         // Условие для прокрутки вниз
                         if (!isBackgroundUpdate || (result.messages.length > currentClientMessageCount && currentClientMessageCount > 0) || (result.messages.length > 0 && (currentClientMessageCount === 0 || noMessagesCurrentlyDisplayed || spinnerCurrentlyDisplayed) ) ) {
                            chatMessagesAreaElement.scrollTop = chatMessagesAreaElement.scrollHeight;
                         }
                     }
                 }
                 if (!isBackgroundUpdate && userCode) { 
-                    const hasEmployeeMessagesToMark = result.messages.some(msg => msg.senderType === 'Employee' && !msg.isOwn); // Добавил !msg.isOwn, хотя markAsReadByClient на сервере сам разберется
+                    const hasEmployeeMessagesToMark = result.messages.some(msg => msg.senderType === 'Employee' && !msg.isOwn);
                     if (hasEmployeeMessagesToMark || result.messages.length > 0) { 
                         try {
                             fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/chat/${taskId}/markAsReadByClient`, {
@@ -402,7 +404,7 @@
                     throw new Error(fileResult.message || 'Не удалось загрузить файл для чата.');
                 }
             }
-            chatSendButtonElement.innerHTML = '<i class="fas fa-paper-plane"></i>'; // Вернем иконку отправки
+            chatSendButtonElement.innerHTML = '<i class="fas fa-paper-plane"></i>'; 
             const payload = { userCode: userCode, text: messageText };
             if (tempFileId) {
                 payload.attachedFileId = tempFileId;
@@ -435,7 +437,6 @@
             }
         } catch (error) {
             console.error('Ошибка отправки сообщения в чат:', error);
-            // Не показываем alert если ошибка была "пустое сообщение" т.к. это UX-проверка
             if (error.message.toLowerCase() !== "пустое сообщение и нет файла.") {
                  alert(`Не удалось отправить сообщение: ${error.message}`);
             }
@@ -490,8 +491,7 @@
         const commentTextarea = document.getElementById('reworkCommentTextareaDetails');
         const submitReworkBtn = document.getElementById('submitReworkCommentBtnDetails');
         const cancelReworkBtn = document.getElementById('cancelReworkCommentBtnDetails');
-        const originalPageReworkButton = document.querySelector(`.rework-task-btn-details[data-task-id="${taskId}"]`);
-
+        
         if (!reworkModal || !commentTextarea || !submitReworkBtn || !cancelReworkBtn) {
             console.error("Не найдены элементы модального окна для доработки на странице деталей.");
             alert("Произошла ошибка интерфейса. Не удалось открыть окно для комментария.");
@@ -503,26 +503,27 @@
 		setupReworkFileAttachment('ReworkDetailsPage', 'reworkCommentTextareaDetails');
         commentTextarea.focus();
 
-        // Клонируем кнопки для удаления старых обработчиков
         const newSubmitBtn = submitReworkBtn.cloneNode(true);
         submitReworkBtn.parentNode.replaceChild(newSubmitBtn, submitReworkBtn);
         
         const newCancelBtn = cancelReworkBtn.cloneNode(true);
         cancelReworkBtn.parentNode.replaceChild(newCancelBtn, cancelReworkBtn);
 
-        newSubmitBtn.onclick = async () => { // Назначаем обработчик на новую кнопку
+        newSubmitBtn.onclick = async () => {
             const comment = commentTextarea.value.trim();
-            if (comment === "") {
-                alert("Комментарий не может быть пустым для отправки на доработку.");
-                commentTextarea.focus();
-                return;
-            }
-
-              newSubmitBtn.onclick = async () => {
-            const comment = commentTextarea.value.trim(); // commentTextarea должно быть определено ранее в этой функции
-            if (comment === "") {
-                alert("Комментарий не может быть пустым для отправки на доработку.");
-                commentTextarea.focus();
+              if (comment === "") {
+                // alert("Комментарий не может быть пустым для отправки на доработку."); // Старый alert
+                showCustomAlert("Комментарий не может быть пустым для отправки на доработку.", () => {
+                    // Этот код выполнится после закрытия кастомного алерта
+                    if (commentTextarea) {
+                        if (commentTextarea.disabled) {
+                            commentTextarea.disabled = false;
+                        }
+                        commentTextarea.focus();
+                        console.log('CustomAlert closed. Attempted to focus textarea. Disabled:', commentTextarea.disabled);
+                        console.log('Active element:', document.activeElement);
+                    }
+                });
                 return;
             }
 
@@ -530,7 +531,6 @@
             const originalSubmitText = newSubmitBtn.textContent;
             newSubmitBtn.textContent = 'Подготовка...';
 
-            // Кнопка на самой странице деталей (если есть)
             const originalPageReworkButton = document.querySelector(`.rework-task-btn-details[data-task-id="${taskId}"]`);
             let originalReworkButtonText = '';
             if (originalPageReworkButton) {
@@ -538,12 +538,15 @@
                 originalPageReworkButton.disabled = true;
                 originalPageReworkButton.textContent = 'Обработка...';
             }
+            
+            let responseObj; // To store response for finally block
+            let resultObj;   // To store result for finally block
 
             try {
                 let attachedFileId = null;
                 let attachedFileName = null;
 
-                if (currentReworkFileForModal) { // currentReworkFileForModal - файл, выбранный в модальном окне
+                if (currentReworkFileForModal) { 
                     newSubmitBtn.textContent = 'Загрузка файла...';
                     console.log(`[ReworkSubmit task-details.html] Загрузка файла: ${currentReworkFileForModal.name}`);
                     
@@ -577,7 +580,7 @@
                 newSubmitBtn.textContent = 'Отправка на доработку...';
 
                 const payload = { 
-                    userCode: userCode, // userCode должен быть доступен (из localStorage)
+                    userCode: userCode, 
                     comment: comment 
                 };
                 if (attachedFileId) {
@@ -591,8 +594,10 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
+                responseObj = response; // Store for finally
                 
                 const result = await response.json().catch(() => ({ success: false, message: `Ошибка ответа сервера: ${response.status} ${response.statusText}` }));
+                resultObj = result; // Store for finally
 
                 if (response.ok && result.success) {
                     alert(result.message || 'Задача успешно отправлена на доработку!');
@@ -600,7 +605,6 @@
                     commentTextarea.value = '';
                     currentReworkFileForModal = null;
                     
-                    // Сброс UI файла в модальном окне task-details.html
                     const fileInputToReset = document.getElementById('reworkFileDetailsPageInput');
                     const fileNameDisplayToReset = document.getElementById('fileNameDisplayReworkDetailsPage');
                     const imagePreviewToReset = document.getElementById('imagePreviewReworkDetailsPage');
@@ -608,9 +612,9 @@
                     if(fileNameDisplayToReset) { fileNameDisplayToReset.innerHTML = ''; fileNameDisplayToReset.style.display = 'none';}
                     if(imagePreviewToReset) imagePreviewToReset.innerHTML = '';
 
-                    if(reworkModal) reworkModal.style.display = 'none'; // reworkModal должно быть определено ранее
+                    if(reworkModal) reworkModal.style.display = 'none';
 
-                    loadTaskDetailsAndChat(taskId); // taskId передается в функцию
+                    loadTaskDetailsAndChat(taskId); 
 
                 } else {
                     throw new Error(result.message || `Ошибка ${response.status} при отправке на доработку.`);
@@ -620,55 +624,33 @@
                 alert('Не удалось отправить задачу на доработку: ' + error.message);
                 if (originalPageReworkButton && originalPageReworkButton.parentNode) {
                     originalPageReworkButton.disabled = false;
-                    originalPageReworkButton.textContent = 'Отправить на доработку'; // Или originalReworkButtonText
+                    originalPageReworkButton.textContent = originalReworkButtonText || 'Отправить на доработку'; 
                 }
             } finally {
                 newSubmitBtn.disabled = false;
                 newSubmitBtn.textContent = originalSubmitText;
-                 // Не закрываем модальное окно при ошибке здесь
-                if (reworkModal && reworkModal.style.display === 'flex' && !(response && response.ok && result && result.success)) {
+                
+                if (reworkModal && reworkModal.style.display === 'flex' && !(responseObj && responseObj.ok && resultObj && resultObj.success)) {
                     // Окно остается открытым при ошибке
                 } else if (reworkModal) {
                     reworkModal.style.display = 'none';
                 }
             }
         };
-    
-    async function loadTaskDetailsAndChat(taskId) {
-        currentOpenTaskId = taskId; 
-        const taskDetailsContentElement = document.getElementById('task-details-content');
-        const attachedFilesListElement = document.getElementById('attached-files'); 
-        const actionsPlaceholder = document.getElementById('taskDetailActionsPlaceholder'); // Убедимся что это правильный ID
-
-        if(actionsPlaceholder) actionsPlaceholder.innerHTML = '';
-        if(taskDetailsContentElement) taskDetailsContentElement.innerHTML = '<div class="loading-spinner" style="text-align:left; padding-left:0;">Загрузка деталей...</div>';
-        if(attachedFilesListElement) attachedFilesListElement.innerHTML = '<li><i class="fas fa-spinner fa-spin"></i> Загрузка файлов...</li>';
         
-        try {
-            const response = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/task/${taskId}`);
-            if (!response.ok) {
-                let errorMsg = `Ошибка ${response.status}`;
-                try { const errorData = await response.json(); errorMsg = errorData.message ? `${errorData.message} (${response.status})` : errorMsg; } catch (e) { errorMsg = `Ошибка ${response.status}: ${response.statusText}`; }
-                throw new Error(`Не удалось загрузить данные задачи. ${errorMsg}`);
-            }
-            const result = await response.json();
-            if (result.success && result.task) {
-                displayTaskDetails(result.task); 
-                await loadChatMessages(taskId);   
-                if (chatUpdateIntervalId) clearInterval(chatUpdateIntervalId);
-                chatUpdateIntervalId = setInterval(() => {
-                    loadChatMessages(taskId, true); 
-                }, CHAT_UPDATE_INTERVAL);
-            } else {
-                throw new Error(result.message || 'Получены некорректные данные о задаче.');
-            }
-        } catch (error) {
-            console.error('Ошибка при загрузке деталей задачи:', error);
-            if(taskDetailsContentElement) taskDetailsContentElement.innerHTML = `<div class="error-message-placeholder">Ошибка: ${error.message}</div>`;
-            if(attachedFilesListElement) attachedFilesListElement.innerHTML = '<li>Ошибка загрузки файлов.</li>';
-        }
+        newCancelBtn.onclick = () => {
+            if (reworkModal) reworkModal.style.display = 'none';
+            currentReworkFileForModal = null; // Сбрасываем выбранный файл
+             // Сброс UI файла в модальном окне task-details.html
+            const fileInputToReset = document.getElementById('reworkFileDetailsPageInput');
+            const fileNameDisplayToReset = document.getElementById('fileNameDisplayReworkDetailsPage');
+            const imagePreviewToReset = document.getElementById('imagePreviewReworkDetailsPage');
+            if(fileInputToReset) fileInputToReset.value = '';
+            if(fileNameDisplayToReset) { fileNameDisplayToReset.innerHTML = ''; fileNameDisplayToReset.style.display = 'none';}
+            if(imagePreviewToReset) imagePreviewToReset.innerHTML = '';
+        };
     }
-
+    
     document.addEventListener('DOMContentLoaded', async () => {
         currentOpenTaskId = localStorage.getItem('currentTaskId');
         const taskNumberFromStorage = localStorage.getItem('currentTaskNumber');
@@ -739,8 +721,6 @@
         if (chatUpdateIntervalId) { clearInterval(chatUpdateIntervalId); }
     });
 
-
-
 async function loadAndDisplayStatusHistory(taskId) {
     console.log("loadAndDisplayStatusHistory вызвана с taskId:", taskId);
     const historyContainer = document.getElementById('taskStatusHistoryContainer');
@@ -769,7 +749,7 @@ async function loadAndDisplayStatusHistory(taskId) {
         const result = await response.json();
         console.log("Результат JSON от statusHistory:", result);
 
-        if (result.success && result.history) { // Проверяем только result.history, его длина может быть 0
+        if (result.success && result.history) { 
             if (result.history.length > 0) {
                 let historyHTML = '<ul class="status-history-list">';
                 result.history.forEach((entry, index) => {
@@ -780,7 +760,6 @@ async function loadAndDisplayStatusHistory(taskId) {
                         displayAuthorName = 'ЦР';
                     }
                     
-                    // Добавляем класс "hidden-history-entry" для всех, кроме первого, если записей больше одной
                     const itemClass = (result.history.length > 1 && index > 0) ? "status-history-item hidden-history-entry" : "status-history-item";
 
                     historyHTML += `
@@ -793,45 +772,45 @@ async function loadAndDisplayStatusHistory(taskId) {
                 });
                 historyHTML += '</ul>';
 
-                // Добавляем кнопку "Вся история", если записей больше одной
                 if (result.history.length > 1) {
                     historyHTML += '<button id="toggleHistoryBtn" class="toggle-history-button">Вся история</button>';
                 }
                 historyContainer.innerHTML = historyHTML;
 
-                // Назначаем обработчик на кнопку, если она была добавлена
                 if (result.history.length > 1) {
                     const toggleBtn = document.getElementById('toggleHistoryBtn');
                     if (toggleBtn) {
                         toggleBtn.addEventListener('click', function() {
                             const list = historyContainer.querySelector('.status-history-list');
-                            let allHidden = true; // Флаг для проверки, все ли (кроме первого) сейчас скрыты
+                            let allHiddenInitially = true;
                             list.querySelectorAll('.status-history-item').forEach((item, index) => {
-                                if (index > 0) { // Пропускаем первый элемент
-                                    if (item.classList.contains('hidden-history-entry')) {
-                                        item.classList.remove('hidden-history-entry');
-                                        // Если хоть один был скрыт и мы его показали, значит не все были видны
-                                    } else {
-                                        item.classList.add('hidden-history-entry');
-                                        allHidden = false; // Если хоть один был виден и мы его скрыли
+                                if (index > 0) { // Проверяем только элементы, которые могут быть скрыты
+                                    if (!item.classList.contains('hidden-history-entry')) {
+                                        allHiddenInitially = false; // Если хоть один видимый (кроме первого), значит не все были скрыты
                                     }
                                 }
                             });
-                            // Обновляем текст кнопки
-                            // Если после клика все элементы (кроме первого) стали видимыми (т.е. мы их раскрыли)
-                            // или если изначально было что-то скрыто и мы это раскрыли.
-                            // Более простой способ: проверяем, есть ли еще скрытые элементы.
-                            const stillHiddenEntries = list.querySelector('.status-history-item.hidden-history-entry');
-                            if (stillHiddenEntries) { // Если есть скрытые, значит, мы их только что свернули или не все раскрыли
-                                this.textContent = 'Вся история';
-                            } else { // Если скрытых нет (все раскрыты)
+
+                            list.querySelectorAll('.status-history-item').forEach((item, index) => {
+                                if (index > 0) { 
+                                    if (allHiddenInitially) { // Если все были скрыты, раскрываем
+                                        item.classList.remove('hidden-history-entry');
+                                    } else { // Иначе (если хоть что-то было раскрыто), скрываем
+                                        item.classList.add('hidden-history-entry');
+                                    }
+                                }
+                            });
+                            
+                            if (allHiddenInitially) {
                                 this.textContent = 'Скрыть историю';
+                            } else {
+                                this.textContent = 'Вся история';
                             }
                         });
                     }
                 }
 
-            } else { // result.history.length === 0
+            } else { 
                 historyContainer.innerHTML = '<p>История изменения статусов для этой задачи пока отсутствует.</p>';
             }
         } else {
@@ -844,9 +823,6 @@ async function loadAndDisplayStatusHistory(taskId) {
     }
 }
 
-
-
-// Найдите вашу функцию loadTaskDetailsAndChat(taskId) и добавьте вызов новой функции
 async function loadTaskDetailsAndChat(taskId) {
     currentOpenTaskId = taskId; 
     const taskDetailsContentElement = document.getElementById('task-details-content');
@@ -857,7 +833,6 @@ async function loadTaskDetailsAndChat(taskId) {
     if(taskDetailsContentElement) taskDetailsContentElement.innerHTML = '<div class="loading-spinner" style="text-align:left; padding-left:0;">Загрузка деталей...</div>';
     if(attachedFilesListElement) attachedFilesListElement.innerHTML = '<li><i class="fas fa-spinner fa-spin"></i> Загрузка файлов...</li>';
     
-    // Обнуляем контейнер истории статусов перед загрузкой
     const historyContainer = document.getElementById('taskStatusHistoryContainer');
     if (historyContainer) {
         historyContainer.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Загрузка истории статусов...</p>';
@@ -874,10 +849,7 @@ async function loadTaskDetailsAndChat(taskId) {
         if (result.success && result.task) {
             displayTaskDetails(result.task); 
             await loadChatMessages(taskId);   
-            
-            // ***** НАЧАЛО: Вызов загрузки истории статусов *****
             await loadAndDisplayStatusHistory(taskId);
-            // ***** КОНЕЦ: Вызов загрузки истории статусов *****
             
             if (chatUpdateIntervalId) clearInterval(chatUpdateIntervalId);
             chatUpdateIntervalId = setInterval(() => {
@@ -890,39 +862,11 @@ async function loadTaskDetailsAndChat(taskId) {
         console.error('Ошибка при загрузке деталей задачи:', error);
         if(taskDetailsContentElement) taskDetailsContentElement.innerHTML = `<div class="error-message-placeholder">Ошибка: ${error.message}</div>`;
         if(attachedFilesListElement) attachedFilesListElement.innerHTML = '<li>Ошибка загрузки файлов.</li>';
-        if (historyContainer) { // Также отображаем ошибку в блоке истории
+        if (historyContainer) { 
              historyContainer.innerHTML = `<p class="error-message-placeholder">Ошибка загрузки истории статусов.</p>`;
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/**
- * Настраивает UI для прикрепления одного файла в модальном окне доработки.
- * @param {string} modalElementsPrefix - Префикс ID для элементов этого модального окна 
- * (например, "ReworkTaskPage" или "ReworkDetailsPage")
- * @param {string} commentTextareaId - ID текстового поля для комментария, для обработки вставки.
- */
-
-
-
-
 
 function setupReworkFileAttachment(modalElementsPrefix, commentTextareaId) {
     const dropZone = document.getElementById(`dropZone${modalElementsPrefix}`);
@@ -930,24 +874,28 @@ function setupReworkFileAttachment(modalElementsPrefix, commentTextareaId) {
     const fileNameDisplay = document.getElementById(`fileNameDisplay${modalElementsPrefix}`);
     const imagePreviewContainer = document.getElementById(`imagePreview${modalElementsPrefix}`);
     const commentTextarea = document.getElementById(commentTextareaId);
+    const dropZonePrompt = dropZone ? dropZone.querySelector('.drop-zone-prompt') : null;
 
-    if (!dropZone || !fileInput || !fileNameDisplay || !imagePreviewContainer || !commentTextarea) {
+
+    if (!dropZone || !fileInput || !fileNameDisplay || !imagePreviewContainer || !commentTextarea || !dropZonePrompt ) {
         console.error(`[setupReworkFileAttachment] Ошибка: Не найдены все необходимые DOM-элементы для префикса: ${modalElementsPrefix}`);
         return;
     }
 
     const resetFileInputUI = () => {
         currentReworkFileForModal = null;
-        if(fileInput) fileInput.value = ''; // Сбрасываем сам input file
+        if(fileInput) fileInput.value = ''; 
         if(fileNameDisplay) {
             fileNameDisplay.innerHTML = '';
             fileNameDisplay.style.display = 'none';
         }
         if(imagePreviewContainer) imagePreviewContainer.innerHTML = '';
+        if(dropZonePrompt) {
+            dropZonePrompt.style.display = 'block'; // Показываем подсказку обратно
+        }
         console.log(`[${modalElementsPrefix}] UI выбора файла сброшен.`);
     };
 
-    // Сбрасываем UI при каждой инициализации (например, при открытии модального окна)
     resetFileInputUI();
 
     const processSelectedFile = (file) => {
@@ -956,7 +904,6 @@ function setupReworkFileAttachment(modalElementsPrefix, commentTextareaId) {
             return;
         }
         
-        // Проверка на максимальный размер файла (например, 30МБ)
         const MAX_FILE_SIZE_MB = 30;
         const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
         if (file.size > MAX_FILE_SIZE_BYTES) {
@@ -970,6 +917,9 @@ function setupReworkFileAttachment(modalElementsPrefix, commentTextareaId) {
         if(fileNameDisplay) {
             fileNameDisplay.innerHTML = `Выбран: <span>${escapeHTML(file.name)}</span> <a href="#" class="remove-rework-file" title="Удалить файл">&times;</a>`;
             fileNameDisplay.style.display = 'block';
+            if(dropZonePrompt) {
+                dropZonePrompt.style.display = 'none'; // Скрываем подсказку, так как файл выбран
+            }
 
             const removeLink = fileNameDisplay.querySelector('.remove-rework-file');
             if (removeLink) {
@@ -980,13 +930,13 @@ function setupReworkFileAttachment(modalElementsPrefix, commentTextareaId) {
             }
         }
 
-        if(imagePreviewContainer) imagePreviewContainer.innerHTML = ''; // Очищаем предыдущее превью
+        if(imagePreviewContainer) imagePreviewContainer.innerHTML = ''; 
         if (file.type.startsWith('image/')) {
             const reader = new FileReader();
             reader.onload = (e) => {
                 const img = document.createElement('img');
                 img.src = e.target.result;
-                img.style.maxWidth = '80px'; // Уменьшил для компактности в модалке
+                img.style.maxWidth = '80px'; 
                 img.style.maxHeight = '80px';
                 img.style.borderRadius = '4px';
                 img.style.objectFit = 'cover';
@@ -1002,7 +952,6 @@ function setupReworkFileAttachment(modalElementsPrefix, commentTextareaId) {
     };
 
     dropZone.onclick = (e) => {
-        // Предотвращаем клик по ссылке удаления от вызова диалога выбора файла
         if (e.target.classList.contains('remove-rework-file')) {
             return;
         }
@@ -1013,9 +962,7 @@ function setupReworkFileAttachment(modalElementsPrefix, commentTextareaId) {
         if (e.target.files && e.target.files.length > 0) {
             processSelectedFile(e.target.files[0]);
         } else {
-            // Если пользователь отменил выбор в диалоге, currentReworkFileForModal может остаться старым,
-            // но fileInput.files будет пуст. Лучше сбросить, если файлов нет.
-             if (!currentReworkFileForModal && fileInput.files.length === 0) { // только если и так не было файла
+             if (!currentReworkFileForModal && fileInput.files.length === 0) { 
                 resetFileInputUI();
              }
         }
@@ -1032,13 +979,12 @@ function setupReworkFileAttachment(modalElementsPrefix, commentTextareaId) {
         e.preventDefault();
         dropZone.classList.remove('drag-over');
         if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-            processSelectedFile(e.dataTransfer.files[0]); // Берем только первый файл
+            processSelectedFile(e.dataTransfer.files[0]); 
         }
     };
 
-    // Обработка вставки из буфера обмена (Ctrl+V) для поля комментария
     commentTextarea.onpaste = (event) => {
-        if (currentReworkFileForModal) { // Если файл уже выбран, не обрабатываем вставку как новый файл
+        if (currentReworkFileForModal) { 
             console.log(`[${modalElementsPrefix}] Вставка из буфера проигнорирована, т.к. файл уже выбран.`);
             return;
         }
@@ -1052,7 +998,7 @@ function setupReworkFileAttachment(modalElementsPrefix, commentTextareaId) {
             }
         }
         if (pastedImageFile) {
-            event.preventDefault(); // Предотвращаем вставку текста/пути к файлу в textarea
+            event.preventDefault(); 
             const timestamp = new Date().toISOString().replace(/[-:.]/g, '').substring(0,14);
             const extension = pastedImageFile.type.split('/')[1] || 'png';
             const fileName = `clipboard-${timestamp}.${extension}`;
@@ -1062,6 +1008,37 @@ function setupReworkFileAttachment(modalElementsPrefix, commentTextareaId) {
         }
     };
     console.log(`[setupReworkFileAttachment] Настройка UI для прикрепления файла для префикса ${modalElementsPrefix} завершена.`);
+}
+
+
+
+function showCustomAlert(message, callback) {
+    const overlay = document.getElementById('customAlertOverlay');
+    const messageElement = document.getElementById('customAlertMessage');
+    const okButton = document.getElementById('customAlertOkButton');
+
+    if (!overlay || !messageElement || !okButton) {
+        console.error('Custom alert elements not found!');
+        // Fallback to system alert if custom elements are missing
+        alert(message);
+        if (callback) callback();
+        return;
+    }
+
+    messageElement.textContent = message;
+    overlay.style.display = 'flex';
+
+    // Удаляем старый обработчик, если он был, чтобы избежать многократных вызовов
+    const newOkButton = okButton.cloneNode(true);
+    okButton.parentNode.replaceChild(newOkButton, okButton);
+
+    newOkButton.onclick = function() {
+        overlay.style.display = 'none';
+        if (callback) {
+            callback(); // Выполняем callback после закрытия
+        }
+    };
+    newOkButton.focus(); // Устанавливаем фокус на кнопку "ОК" в кастомном алерте
 }
 
 </script>
