@@ -19,12 +19,20 @@
             <input type="text" id="phoneNumber" placeholder="Номер телефона" required>
             <small class="phone-hint">Введите 11 цифр, начиная с 7 (без + и без 8, например 77071233211)</small>
             <button type="button" class="button-primary" id="checkPhoneButton">Продолжить</button>
+            <div style="margin-top: 15px; text-align: left;">
+                <input type="checkbox" id="rememberPhoneNumber" name="rememberPhoneNumber">
+                <label for="rememberPhoneNumber" style="font-size: 0.9em; color: #555;">Запомнить номер телефона</label>
+            </div>
         </div>
 
         <div id="passwordStep" style="display: none;">
             <p>Для номера <strong id="displayPhoneNumberPassword"></strong> введите пароль:</p>
             <input type="password" id="password" placeholder="Пароль" required>
             <button type="button" class="button-primary" id="loginButton">Войти</button>
+            <div style="margin-top: 15px; text-align: left;">
+                <input type="checkbox" id="rememberPassword" name="rememberPassword" disabled> 
+                <label for="rememberPassword" style="font-size: 0.9em; color: #555;">Запомнить пароль <small>(небезопасно)</small></label>
+            </div>
         </div>
 
         <div id="createPasswordStep" style="display: none;">
@@ -32,11 +40,11 @@
             <input type="password" id="newPassword" placeholder="Создайте пароль" required>
             <input type="password" id="confirmPassword" placeholder="Повторите пароль" required>
             <button type="button" class="button-primary" id="createPasswordButton">Создать и войти</button>
-        </div>
+            </div>
         
         <p id="errorMessage" class="error" style="display: none;"></p>
     </div>
-    </body>
+    
 
     <script>
      const BASE_URL = 'https://1c.c-r.kz/Registrator_test/hs/auth';
@@ -47,10 +55,13 @@
         let phoneStepDiv, passwordStepDiv, createPasswordStepDiv;
         let errorMessageParagraph;
         let displayPhoneNumberPasswordSpan, displayPhoneNumberCreateSpan;
+        // Элементы для чекбоксов "Запомнить"
+        let rememberPhoneCheckboxEl, rememberPasswordCheckboxEl;
+
 
         // Данные между шагами
         let currentPhoneNumber = '';
-        let currentUserCodeForPasswordCreation = ''; // Для случая passwordNotExists
+        let currentUserCodeForPasswordCreation = ''; 
 
         document.addEventListener('DOMContentLoaded', () => {
             // Инициализация элементов UI
@@ -71,6 +82,44 @@
             displayPhoneNumberPasswordSpan = document.getElementById('displayPhoneNumberPassword');
             displayPhoneNumberCreateSpan = document.getElementById('displayPhoneNumberCreate');
 
+            // Инициализация чекбоксов
+            rememberPhoneCheckboxEl = document.getElementById('rememberPhoneNumber');
+            rememberPasswordCheckboxEl = document.getElementById('rememberPassword');
+
+            // <<< НАЧАЛО: Загрузка сохраненных данных >>>
+            const rememberedPhoneNumber = localStorage.getItem('rememberedPhoneNumber');
+            if (rememberedPhoneNumber && phoneNumberInput) {
+                phoneNumberInput.value = rememberedPhoneNumber;
+                if (rememberPhoneCheckboxEl) {
+                    rememberPhoneCheckboxEl.checked = true;
+                }
+            }
+
+            if (rememberPhoneCheckboxEl && rememberPasswordCheckboxEl) {
+                // Включаем/отключаем чекбокс пароля в зависимости от чекбокса телефона
+                rememberPasswordCheckboxEl.disabled = !rememberPhoneCheckboxEl.checked;
+
+                rememberPhoneCheckboxEl.addEventListener('change', function() {
+                    rememberPasswordCheckboxEl.disabled = !this.checked;
+                    if (!this.checked) { // Если сняли галочку с номера
+                        rememberPasswordCheckboxEl.checked = false; // Снимаем галочку и с пароля
+                        localStorage.removeItem('rememberedPassword'); // Удаляем сохраненный пароль
+                        if(passwordInput) passwordInput.value = ''; // Очищаем поле пароля
+                    }
+                });
+
+                // Загружаем пароль, только если оба чекбокса были бы активны и отмечены
+                if (rememberPhoneCheckboxEl.checked) { // Чекбокс "Запомнить номер" должен быть отмечен
+                    const rememberedPassword = localStorage.getItem('rememberedPassword');
+                    if (rememberedPassword && passwordInput) {
+                        passwordInput.value = rememberedPassword;
+                        rememberPasswordCheckboxEl.checked = true; // Отмечаем чекбокс "Запомнить пароль"
+                    }
+                }
+            }
+            // <<< КОНЕЦ: Загрузка сохраненных данных >>>
+
+
             // Начальное состояние UI
             updateUIState('initial');
 
@@ -85,7 +134,6 @@
                 createPasswordButton.addEventListener('click', handleCreatePassword);
             }
             
-            // Обработка Enter в поле номера телефона
             if (phoneNumberInput) {
                 phoneNumberInput.addEventListener('keypress', function(event) {
                     if (event.key === 'Enter') {
@@ -96,7 +144,6 @@
                     }
                 });
             }
-            // Обработка Enter в поле пароля (существующего)
             if (passwordInput) {
                  passwordInput.addEventListener('keypress', function(event) {
                     if (event.key === 'Enter') {
@@ -107,12 +154,11 @@
                     }
                 });
             }
-            // Обработка Enter в полях создания пароля
             if (newPasswordInput) {
                 newPasswordInput.addEventListener('keypress', function(event) {
                     if (event.key === 'Enter') {
                         event.preventDefault();
-                        if (confirmPasswordInput) confirmPasswordInput.focus(); // Перевод фокуса на следующее поле
+                        if (confirmPasswordInput) confirmPasswordInput.focus(); 
                     }
                 });
             }
@@ -129,14 +175,12 @@
         });
 
         function updateUIState(state, message = '', phoneNumberForDisplay = '') {
-            // Скрываем все шаги и сообщение об ошибке по умолчанию
             phoneStepDiv.style.display = 'none';
             passwordStepDiv.style.display = 'none';
             createPasswordStepDiv.style.display = 'none';
             errorMessageParagraph.style.display = 'none';
             errorMessageParagraph.textContent = '';
 
-            // Включаем кнопки по умолчанию, если они существуют
             if(checkPhoneButton) checkPhoneButton.disabled = false;
             if(loginButton) loginButton.disabled = false;
             if(createPasswordButton) createPasswordButton.disabled = false;
@@ -144,25 +188,36 @@
             switch (state) {
                 case 'initial':
                     phoneStepDiv.style.display = 'block';
-                    phoneNumberInput.disabled = false;
-                    phoneNumberInput.focus();
+                    if(phoneNumberInput) {
+                         phoneNumberInput.disabled = false;
+                         phoneNumberInput.focus();
+                    }
+                    // Обновляем состояние чекбокса пароля при возврате к начальному шагу
+                    if (rememberPhoneCheckboxEl && rememberPasswordCheckboxEl) {
+                        rememberPasswordCheckboxEl.disabled = !rememberPhoneCheckboxEl.checked;
+                    }
                     break;
                 case 'enterPassword':
                     passwordStepDiv.style.display = 'block';
                     if(displayPhoneNumberPasswordSpan) displayPhoneNumberPasswordSpan.textContent = phoneNumberForDisplay;
-                    passwordInput.value = ''; // Очищаем поле пароля
-                    passwordInput.focus();
+                    if(passwordInput && (!localStorage.getItem('rememberedPassword') || !rememberPhoneCheckboxEl || !rememberPhoneCheckboxEl.checked) ) {
+                        passwordInput.value = ''; 
+                    }
+                    if(passwordInput) passwordInput.focus();
+                    // Активируем/деактивируем чекбокс пароля
+                     if (rememberPhoneCheckboxEl && rememberPasswordCheckboxEl) {
+                        rememberPasswordCheckboxEl.disabled = !rememberPhoneCheckboxEl.checked;
+                    }
                     break;
                 case 'createPassword':
                     createPasswordStepDiv.style.display = 'block';
                     if(displayPhoneNumberCreateSpan) displayPhoneNumberCreateSpan.textContent = phoneNumberForDisplay;
-                    newPasswordInput.value = ''; // Очищаем поля
-                    confirmPasswordInput.value = '';
-                    newPasswordInput.focus();
+                    if(newPasswordInput) newPasswordInput.value = ''; 
+                    if(confirmPasswordInput) confirmPasswordInput.value = '';
+                    if(newPasswordInput) newPasswordInput.focus();
                     break;
                 case 'loading':
-                    errorMessageParagraph.style.display = 'none'; // Убираем ошибку на время загрузки
-                    // Можно добавить спиннер или изменить текст кнопки
+                    errorMessageParagraph.style.display = 'none'; 
                     if (phoneStepDiv.style.display === 'block' && checkPhoneButton) checkPhoneButton.disabled = true;
                     if (passwordStepDiv.style.display === 'block' && loginButton) loginButton.disabled = true;
                     if (createPasswordStepDiv.style.display === 'block' && createPasswordButton) createPasswordButton.disabled = true;
@@ -170,28 +225,25 @@
                 case 'error':
                     errorMessageParagraph.textContent = message;
                     errorMessageParagraph.style.display = 'block';
-                    // Возвращаем к активному шагу с возможностью исправить ошибку
                     if (passwordStepDiv.style.display === 'block' || createPasswordStepDiv.style.display === 'block') {
-                        // Если ошибка на шаге ввода пароля или создания, оставляем эти шаги видимыми
                         if(passwordStepDiv.style.display === 'block') {
-                             passwordStepDiv.style.display = 'block'; // Убедимся, что он видим
+                             passwordStepDiv.style.display = 'block';
                              if(loginButton) loginButton.disabled = false;
                         }
                         if(createPasswordStepDiv.style.display === 'block') {
-                             createPasswordStepDiv.style.display = 'block'; // Убедимся, что он видим
+                             createPasswordStepDiv.style.display = 'block'; 
                              if(createPasswordButton) createPasswordButton.disabled = false;
                         }
                     } else {
-                        phoneStepDiv.style.display = 'block'; // По умолчанию возвращаем на шаг ввода телефона
+                        phoneStepDiv.style.display = 'block'; 
                         if(checkPhoneButton) checkPhoneButton.disabled = false;
-                        phoneNumberInput.focus();
+                        if(phoneNumberInput) phoneNumberInput.focus();
                     }
                     break;
             }
         }
         
         function isValidPhoneNumber(number) {
-            // Простая проверка: 11 цифр, начинается с 7
             return /^[7]\d{10}$/.test(number);
         }
 
@@ -228,7 +280,7 @@
                 } else if (result.status === 'passwordExists') {
                     updateUIState('enterPassword', '', currentPhoneNumber);
                 } else if (result.status === 'passwordNotExists') {
-                    currentUserCodeForPasswordCreation = result.userCode; // Сохраняем userCode
+                    currentUserCodeForPasswordCreation = result.userCode; 
                     updateUIState('createPassword', '', currentPhoneNumber);
                 } else {
                     throw new Error('Неожиданный ответ от сервера при проверке телефона.');
@@ -240,13 +292,11 @@
         }
 
         async function handleLogin() {
-            const password = passwordInput.value;
+            const password = passwordInput.value; // Пароль из поля ввода
 
             if (!password) {
-                // Технически, ошибка должна отображаться под полем, но errorMessageParagraph глобальный
                 errorMessageParagraph.textContent = 'Пожалуйста, введите пароль.';
                 errorMessageParagraph.style.display = 'block';
-                // updateUIState('error', 'Пожалуйста, введите пароль.'); // Это сбросит UI не так, как нужно
                 passwordInput.focus();
                 return;
             }
@@ -275,21 +325,34 @@
                     localStorage.setItem('userName', result.userName);
                     localStorage.setItem('userId', result.userId);
                     localStorage.setItem('userCode', result.userCode);
+
+                    // <<< НАЧАЛО: Сохранение/удаление номера и пароля >>>
+                    if (rememberPhoneCheckboxEl && rememberPhoneCheckboxEl.checked) {
+                        localStorage.setItem('rememberedPhoneNumber', currentPhoneNumber);
+                        if (rememberPasswordCheckboxEl && rememberPasswordCheckboxEl.checked) {
+                            localStorage.setItem('rememberedPassword', password); // Сохраняем введенный пароль
+                        } else {
+                            localStorage.removeItem('rememberedPassword');
+                        }
+                    } else {
+                        localStorage.removeItem('rememberedPhoneNumber');
+                        localStorage.removeItem('rememberedPassword'); // Если номер не запоминаем, то и пароль тоже
+                    }
+                    // <<< КОНЕЦ: Сохранение/удаление номера и пароля >>>
+
                     window.location.href = 'tasks.html';
                 } else {
-                    // Оставляем пользователя на том же шаге (ввода пароля) и показываем ошибку
-                    updateUIState('enterPassword', '', currentPhoneNumber); // Сначала UI в нужное состояние
-                    errorMessageParagraph.textContent = result.message || 'Ошибка входа. Проверьте данные.'; // Потом текст ошибки
+                    updateUIState('enterPassword', '', currentPhoneNumber); 
+                    errorMessageParagraph.textContent = result.message || 'Ошибка входа. Проверьте данные.';
                     errorMessageParagraph.style.display = 'block';
-                    passwordInput.focus(); // Фокус обратно на пароль
+                    if (passwordInput) passwordInput.focus();
                 }
             } catch (error) {
                 console.error('Ошибка при входе в систему:', error);
-                // Оставляем пользователя на том же шаге (ввода пароля) и показываем ошибку
                 updateUIState('enterPassword', '', currentPhoneNumber);
                 errorMessageParagraph.textContent = error.message || 'Не удалось войти. Попробуйте позже.';
                 errorMessageParagraph.style.display = 'block';
-                passwordInput.focus();
+                if (passwordInput) passwordInput.focus();
             }
         }
 
@@ -305,31 +368,22 @@
             if (newPass !== confirmPass) {
                 errorMessageParagraph.textContent = 'Пароли не совпадают.';
                 errorMessageParagraph.style.display = 'block';
-                confirmPasswordInput.focus();
+                if (confirmPasswordInput) confirmPasswordInput.focus();
                 return;
             }
-            // Можно добавить проверку сложности пароля здесь, если требуется
-
+            
             updateUIState('loading');
 
             try {
                 const payload = {
-                    // phoneNumber: currentPhoneNumber, // Отправляем или номер, или userCode. userCode предпочтительнее, если есть.
                     newPassword: newPass
                 };
-                // Если мы получили userCode на шаге проверки телефона, используем его
                 if (currentUserCodeForPasswordCreation) {
                     payload.userCode = currentUserCodeForPasswordCreation;
                 } else {
-                    // В крайнем случае, если userCode не был получен (не должен быть такой сценарий по логике /checkUserStatus)
-                    // Можно было бы снова найти пользователя по currentPhoneNumber на сервере, но лучше передавать userCode.
-                    // Сейчас, если userCode нет, сервер /createPassword должен будет его найти по phoneNumber, если мы его передадим.
-                    // Для надежности, /createPassword должен принимать userCode.
-                    // Если бэкенд /createPassword будет искать по номеру телефона, то:
                     payload.phoneNumber = currentPhoneNumber; 
-                    console.warn("Отправка phoneNumber в /createPassword, userCode не был получен ранее. Это нештатная ситуация.");
+                    console.warn("Отправка phoneNumber в /createPassword, userCode не был получен ранее.");
                 }
-
 
                 const response = await fetch(`${BASE_URL}/createPassword`, {
                     method: 'POST',
@@ -348,25 +402,39 @@
 
                 const result = await response.json();
 
-                if (result.success) { // /createPassword должен возвращать такой же формат, как /login при успехе
+                if (result.success) { 
                     localStorage.setItem('userName', result.userName);
                     localStorage.setItem('userId', result.userId);
                     localStorage.setItem('userCode', result.userCode);
+
+                    // <<< НАЧАЛО: Сохранение/удаление номера (пароль только что создан, обычно не запоминают сразу, но можно добавить, если нужно) >>>
+                    if (rememberPhoneCheckboxEl && rememberPhoneCheckboxEl.checked) {
+                        localStorage.setItem('rememberedPhoneNumber', currentPhoneNumber);
+                        // Если вы хотите запоминать и только что созданный пароль:
+                        // if (rememberPasswordCheckboxEl && rememberPasswordCheckboxEl.checked) { // Предполагая, что такой чекбокс есть и на шаге создания
+                        //     localStorage.setItem('rememberedPassword', newPass);
+                        // } else {
+                        //     localStorage.removeItem('rememberedPassword');
+                        // }
+                    } else {
+                        localStorage.removeItem('rememberedPhoneNumber');
+                        localStorage.removeItem('rememberedPassword');
+                    }
+                    // <<< КОНЕЦ: Сохранение/удаление номера >>>
+
                     window.location.href = 'tasks.html';
                 } else {
-                     // Оставляем пользователя на том же шаге (создания пароля) и показываем ошибку
                     updateUIState('createPassword', '', currentPhoneNumber);
                     errorMessageParagraph.textContent = result.message || 'Не удалось создать пароль.';
                     errorMessageParagraph.style.display = 'block';
-                    newPasswordInput.focus();
+                    if (newPasswordInput) newPasswordInput.focus();
                 }
             } catch (error) {
                 console.error('Ошибка при создании пароля:', error);
-                // Оставляем пользователя на том же шаге (создания пароля) и показываем ошибку
                 updateUIState('createPassword', '', currentPhoneNumber);
                 errorMessageParagraph.textContent = error.message || 'Не удалось создать пароль. Попробуйте позже.';
                 errorMessageParagraph.style.display = 'block';
-                newPasswordInput.focus();
+                if (newPasswordInput) newPasswordInput.focus();
             }
         }
     </script>
