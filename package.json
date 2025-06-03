@@ -1,13 +1,13 @@
 {
   "name": "task-app-desktop",
   "productName": "Менеджер Задач Клиента",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Менеджер задач для клиентов",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dist": "electron-builder --win --publish never"
+    "dist": "electron-builder --win --publish always"
   },
   "repository": {
     "type": "git",

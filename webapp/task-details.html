@@ -28,10 +28,7 @@
         <div id="taskDetailActionsPlaceholder" class="task-detail-actions-container" style="margin-top: 20px; margin-bottom: 20px;">
             </div>
 
-<h2>История статусов</h2>
-                <div id="taskStatusHistoryContainer">
-                    <p>Загрузка истории статусов...</p>
-                </div>
+
 
         <h2>Прикрепленные файлы</h2>
         <div class="expandable-file-list-container">
@@ -40,6 +37,11 @@
             </ul>
             <button id="toggle-files-btn" class="toggle-files-button" style="display:none;">Показать все</button>
         </div>
+		
+		<h2>История статусов</h2>
+                <div id="taskStatusHistoryContainer">
+                    <p>Загрузка истории статусов...</p>
+                </div>
     </div>
 
     <div class="chat-container">
@@ -66,6 +68,17 @@
         <h3>Отправка задачи на доработку</h3>
         <p>Пожалуйста, укажите причину отправки задачи на доработку. Этот комментарий будет добавлен в чат по задаче.</p>
         <textarea id="reworkCommentTextareaDetails" class="modal-comment-textarea" placeholder="Введите ваш комментарий..." rows="4"></textarea>
+
+        <div class="form-group" style="margin-top: 15px; margin-bottom: 10px;">
+            <label for="reworkFileDetailsPageInput">Прикрепить файл (1 шт.)</label>
+            <div id="dropZoneReworkDetailsPage" class="drop-zone" style="padding: 15px 10px; min-height: 50px;">
+                <span class="drop-zone-prompt" style="font-size: 0.9em;">Перетащите файл сюда или <u>кликните для выбора</u></span>
+                <input type="file" id="reworkFileDetailsPageInput" class="drop-zone-input" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar"> </div>
+            <div id="fileNameDisplayReworkDetailsPage" class="file-name-display" style="margin-top: 5px; font-size: 0.85em;">
+                </div>
+            <div id="imagePreviewReworkDetailsPage" class="image-previews-container" style="margin-top: 10px; display: flex; justify-content: center; max-height: 80px;">
+                </div>
+        </div>
         <div class="modal-actions">
             <button id="submitReworkCommentBtnDetails" class="button-primary">Отправить</button>
             <button id="cancelReworkCommentBtnDetails" class="button-secondary">Отмена</button>
@@ -73,14 +86,14 @@
     </div>
 </div>
 </div>
-
-<script>
+ <script>
     // Глобальные переменные для чата и файлов
     let chatUpdateIntervalId = null;
     const CHAT_UPDATE_INTERVAL = 5000; 
     let currentSelectedFile = null; 
     let currentOpenTaskId = null;
-
+    let currentReworkFileForModal = null;
+	
     function escapeHTML(str) {
         if (typeof str !== 'string') return '';
         const div = document.createElement('div');
@@ -209,11 +222,19 @@
         }
 
         if (attachedFilesListElement) {
-            if (task.files && task.files.length > 0) {
+          if (task.files && task.files.length > 0) {
                 let filesHTML = '';
                 task.files.forEach(file => {
                     const downloadTaskFileUrl = `https://1c.c-r.kz/Registrator_test/hs/auth/taskfile/${task.id}/${file.file_guid}`;
-                    filesHTML += `<li><a href="${downloadTaskFileUrl}" target="_blank" class="task-file-link" title="Скачать файл ${escapeHTML(file.name)}"><i class="fas fa-paperclip"></i> ${escapeHTML(file.name)}</a></li>`;
+                    const safeFileName = escapeHTML(file.name);
+                    
+                    // Определяем, является ли файл изображением (простая проверка по расширению для клиентской стороны)
+                    // Бэкенд все равно решает окончательно через Content-Type
+                    const isLikelyImage = /\.(jpe?g|png|gif|bmp|webp|svg)$/i.test(file.name);
+                    
+                    const targetAttribute = isLikelyImage ? 'target="_blank"' : ''; // Убираем target="_blank" для не-изображений
+
+                    filesHTML += `<li><a href="${downloadTaskFileUrl}" ${targetAttribute} class="task-file-link" title="Скачать файл ${safeFileName}"><i class="fas fa-paperclip"></i> ${safeFileName}</a></li>`;
                 });
                 attachedFilesListElement.innerHTML = filesHTML;
                 setupExpandableFileList(task.files.length);
@@ -479,6 +500,7 @@
 
         commentTextarea.value = ''; 
         reworkModal.style.display = 'flex'; 
+		setupReworkFileAttachment('ReworkDetailsPage', 'reworkCommentTextareaDetails');
         commentTextarea.focus();
 
         // Клонируем кнопки для удаления старых обработчиков
@@ -496,45 +518,121 @@
                 return;
             }
 
+              newSubmitBtn.onclick = async () => {
+            const comment = commentTextarea.value.trim(); // commentTextarea должно быть определено ранее в этой функции
+            if (comment === "") {
+                alert("Комментарий не может быть пустым для отправки на доработку.");
+                commentTextarea.focus();
+                return;
+            }
+
             newSubmitBtn.disabled = true;
             const originalSubmitText = newSubmitBtn.textContent;
-            newSubmitBtn.textContent = 'Отправка...';
+            newSubmitBtn.textContent = 'Подготовка...';
+
+            // Кнопка на самой странице деталей (если есть)
+            const originalPageReworkButton = document.querySelector(`.rework-task-btn-details[data-task-id="${taskId}"]`);
+            let originalReworkButtonText = '';
             if (originalPageReworkButton) {
+                originalReworkButtonText = originalPageReworkButton.textContent;
                 originalPageReworkButton.disabled = true;
                 originalPageReworkButton.textContent = 'Обработка...';
             }
 
             try {
+                let attachedFileId = null;
+                let attachedFileName = null;
+
+                if (currentReworkFileForModal) { // currentReworkFileForModal - файл, выбранный в модальном окне
+                    newSubmitBtn.textContent = 'Загрузка файла...';
+                    console.log(`[ReworkSubmit task-details.html] Загрузка файла: ${currentReworkFileForModal.name}`);
+                    
+                    const fileUploadResponse = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/chat/uploadfile`, {
+                        method: 'POST',
+                        body: currentReworkFileForModal,
+                        headers: {
+                            'X-File-Name': encodeURIComponent(currentReworkFileForModal.name)
+                        }
+                    });
+
+                    if (!fileUploadResponse.ok) {
+                        let errorMsg = `Ошибка загрузки файла (${currentReworkFileForModal.name}): ${fileUploadResponse.status}`;
+                        try { 
+                            const errorData = await fileUploadResponse.json(); 
+                            errorMsg = errorData.message || errorMsg; 
+                        } catch (e) { /* не JSON */ }
+                        throw new Error(errorMsg);
+                    }
+
+                    const fileResult = await fileUploadResponse.json();
+                    if (fileResult.success && fileResult.tempFileId) {
+                        attachedFileId = fileResult.tempFileId;
+                        attachedFileName = fileResult.fileName;
+                        console.log(`[ReworkSubmit task-details.html] Файл успешно загружен: tempFileId=${attachedFileId}, fileName=${attachedFileName}`);
+                    } else {
+                        throw new Error(fileResult.message || `Не удалось загрузить файл "${escapeHTML(currentReworkFileForModal.name)}".`);
+                    }
+                }
+
+                newSubmitBtn.textContent = 'Отправка на доработку...';
+
+                const payload = { 
+                    userCode: userCode, // userCode должен быть доступен (из localStorage)
+                    comment: comment 
+                };
+                if (attachedFileId) {
+                    payload.attachedFileId = attachedFileId;
+                    payload.attachedFileName = attachedFileName;
+                }
+
+                console.log(`[ReworkSubmit task-details.html] Отправка запроса на доработку для задачи ${taskId} с payload:`, JSON.stringify(payload));
                 const response = await fetch(`https://1c.c-r.kz/Registrator_test/hs/auth/chat/${taskId}/requestRework`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userCode: userCode, comment: comment })
+                    body: JSON.stringify(payload)
                 });
-                const result = await response.json();
+                
+                const result = await response.json().catch(() => ({ success: false, message: `Ошибка ответа сервера: ${response.status} ${response.statusText}` }));
+
                 if (response.ok && result.success) {
                     alert(result.message || 'Задача успешно отправлена на доработку!');
-                    loadTaskDetailsAndChat(taskId);
+                    
+                    commentTextarea.value = '';
+                    currentReworkFileForModal = null;
+                    
+                    // Сброс UI файла в модальном окне task-details.html
+                    const fileInputToReset = document.getElementById('reworkFileDetailsPageInput');
+                    const fileNameDisplayToReset = document.getElementById('fileNameDisplayReworkDetailsPage');
+                    const imagePreviewToReset = document.getElementById('imagePreviewReworkDetailsPage');
+                     if(fileInputToReset) fileInputToReset.value = '';
+                    if(fileNameDisplayToReset) { fileNameDisplayToReset.innerHTML = ''; fileNameDisplayToReset.style.display = 'none';}
+                    if(imagePreviewToReset) imagePreviewToReset.innerHTML = '';
+
+                    if(reworkModal) reworkModal.style.display = 'none'; // reworkModal должно быть определено ранее
+
+                    loadTaskDetailsAndChat(taskId); // taskId передается в функцию
+
                 } else {
-                    throw new Error(result.message || `Ошибка ${response.status}`);
+                    throw new Error(result.message || `Ошибка ${response.status} при отправке на доработку.`);
                 }
             } catch (error) {
-                console.error('Ошибка при отправке задачи на доработку (детали):', error);
+                console.error('[ReworkSubmit task-details.html] Ошибка при отправке задачи на доработку:', error);
                 alert('Не удалось отправить задачу на доработку: ' + error.message);
-                 if (originalPageReworkButton) {
+                if (originalPageReworkButton && originalPageReworkButton.parentNode) {
                     originalPageReworkButton.disabled = false;
-                    originalPageReworkButton.textContent = 'Отправить на доработку';
+                    originalPageReworkButton.textContent = 'Отправить на доработку'; // Или originalReworkButtonText
                 }
             } finally {
-                reworkModal.style.display = 'none';
-                newSubmitBtn.disabled = false; // Возвращаем кнопку модального окна в исх. состояние
+                newSubmitBtn.disabled = false;
                 newSubmitBtn.textContent = originalSubmitText;
+                 // Не закрываем модальное окно при ошибке здесь
+                if (reworkModal && reworkModal.style.display === 'flex' && !(response && response.ok && result && result.success)) {
+                    // Окно остается открытым при ошибке
+                } else if (reworkModal) {
+                    reworkModal.style.display = 'none';
+                }
             }
         };
-
-        newCancelBtn.onclick = () => { // Назначаем обработчик на новую кнопку
-            reworkModal.style.display = 'none';
-        };
-    }
     
     async function loadTaskDetailsAndChat(taskId) {
         currentOpenTaskId = taskId; 
@@ -796,6 +894,174 @@ async function loadTaskDetailsAndChat(taskId) {
              historyContainer.innerHTML = `<p class="error-message-placeholder">Ошибка загрузки истории статусов.</p>`;
         }
     }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * Настраивает UI для прикрепления одного файла в модальном окне доработки.
+ * @param {string} modalElementsPrefix - Префикс ID для элементов этого модального окна 
+ * (например, "ReworkTaskPage" или "ReworkDetailsPage")
+ * @param {string} commentTextareaId - ID текстового поля для комментария, для обработки вставки.
+ */
+
+
+
+
+
+function setupReworkFileAttachment(modalElementsPrefix, commentTextareaId) {
+    const dropZone = document.getElementById(`dropZone${modalElementsPrefix}`);
+    const fileInput = document.getElementById(`${modalElementsPrefix}Input`);
+    const fileNameDisplay = document.getElementById(`fileNameDisplay${modalElementsPrefix}`);
+    const imagePreviewContainer = document.getElementById(`imagePreview${modalElementsPrefix}`);
+    const commentTextarea = document.getElementById(commentTextareaId);
+
+    if (!dropZone || !fileInput || !fileNameDisplay || !imagePreviewContainer || !commentTextarea) {
+        console.error(`[setupReworkFileAttachment] Ошибка: Не найдены все необходимые DOM-элементы для префикса: ${modalElementsPrefix}`);
+        return;
+    }
+
+    const resetFileInputUI = () => {
+        currentReworkFileForModal = null;
+        if(fileInput) fileInput.value = ''; // Сбрасываем сам input file
+        if(fileNameDisplay) {
+            fileNameDisplay.innerHTML = '';
+            fileNameDisplay.style.display = 'none';
+        }
+        if(imagePreviewContainer) imagePreviewContainer.innerHTML = '';
+        console.log(`[${modalElementsPrefix}] UI выбора файла сброшен.`);
+    };
+
+    // Сбрасываем UI при каждой инициализации (например, при открытии модального окна)
+    resetFileInputUI();
+
+    const processSelectedFile = (file) => {
+        if (!file) {
+            resetFileInputUI();
+            return;
+        }
+        
+        // Проверка на максимальный размер файла (например, 30МБ)
+        const MAX_FILE_SIZE_MB = 30;
+        const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+        if (file.size > MAX_FILE_SIZE_BYTES) {
+            alert(`Файл слишком большой. Максимальный размер: ${MAX_FILE_SIZE_MB} МБ.`);
+            resetFileInputUI();
+            return;
+        }
+
+        currentReworkFileForModal = file;
+        
+        if(fileNameDisplay) {
+            fileNameDisplay.innerHTML = `Выбран: <span>${escapeHTML(file.name)}</span> <a href="#" class="remove-rework-file" title="Удалить файл">&times;</a>`;
+            fileNameDisplay.style.display = 'block';
+
+            const removeLink = fileNameDisplay.querySelector('.remove-rework-file');
+            if (removeLink) {
+                removeLink.onclick = (e) => {
+                    e.preventDefault();
+                    resetFileInputUI();
+                };
+            }
+        }
+
+        if(imagePreviewContainer) imagePreviewContainer.innerHTML = ''; // Очищаем предыдущее превью
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.maxWidth = '80px'; // Уменьшил для компактности в модалке
+                img.style.maxHeight = '80px';
+                img.style.borderRadius = '4px';
+                img.style.objectFit = 'cover';
+                if(imagePreviewContainer) imagePreviewContainer.appendChild(img);
+            };
+            reader.onerror = () => {
+                console.error(`[${modalElementsPrefix}] Ошибка чтения файла для превью: ${file.name}`);
+                if(imagePreviewContainer) imagePreviewContainer.innerHTML = '<p style="font-size:0.8em; color:red;">Не удалось показать превью.</p>';
+            }
+            reader.readAsDataURL(file);
+        }
+        console.log(`[${modalElementsPrefix}] Файл выбран: ${file.name}`);
+    };
+
+    dropZone.onclick = (e) => {
+        // Предотвращаем клик по ссылке удаления от вызова диалога выбора файла
+        if (e.target.classList.contains('remove-rework-file')) {
+            return;
+        }
+        fileInput.click();
+    };
+
+    fileInput.onchange = (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+            processSelectedFile(e.target.files[0]);
+        } else {
+            // Если пользователь отменил выбор в диалоге, currentReworkFileForModal может остаться старым,
+            // но fileInput.files будет пуст. Лучше сбросить, если файлов нет.
+             if (!currentReworkFileForModal && fileInput.files.length === 0) { // только если и так не было файла
+                resetFileInputUI();
+             }
+        }
+    };
+
+    dropZone.ondragover = (e) => {
+        e.preventDefault();
+        dropZone.classList.add('drag-over');
+    };
+    dropZone.ondragleave = (e) => {
+        dropZone.classList.remove('drag-over');
+    };
+    dropZone.ondrop = (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            processSelectedFile(e.dataTransfer.files[0]); // Берем только первый файл
+        }
+    };
+
+    // Обработка вставки из буфера обмена (Ctrl+V) для поля комментария
+    commentTextarea.onpaste = (event) => {
+        if (currentReworkFileForModal) { // Если файл уже выбран, не обрабатываем вставку как новый файл
+            console.log(`[${modalElementsPrefix}] Вставка из буфера проигнорирована, т.к. файл уже выбран.`);
+            return;
+        }
+        const items = (event.clipboardData || window.clipboardData)?.items;
+        if (!items) return;
+        let pastedImageFile = null;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+                pastedImageFile = items[i].getAsFile();
+                break;
+            }
+        }
+        if (pastedImageFile) {
+            event.preventDefault(); // Предотвращаем вставку текста/пути к файлу в textarea
+            const timestamp = new Date().toISOString().replace(/[-:.]/g, '').substring(0,14);
+            const extension = pastedImageFile.type.split('/')[1] || 'png';
+            const fileName = `clipboard-${timestamp}.${extension}`;
+            const fileToAdd = new File([pastedImageFile], fileName, {type: pastedImageFile.type});
+            processSelectedFile(fileToAdd);
+            console.log(`[${modalElementsPrefix}] Изображение вставлено из буфера обмена: ${fileName}`);
+        }
+    };
+    console.log(`[setupReworkFileAttachment] Настройка UI для прикрепления файла для префикса ${modalElementsPrefix} завершена.`);
 }
 
 </script>
